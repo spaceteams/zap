@@ -8,7 +8,7 @@ export function record<T>(schema: Schema<T>): Schema<{ [key: string]: T }> {
     if (v === null) {
       return "value should not be null";
     }
-    const validation: { [key: string]: unknown } = {};
+    const validation: Validation<{ [key: string]: T }> = {};
     for (const [key, value] of Object.entries(v)) {
       const innerValidation = schema.validate(value);
       if (isFailure(innerValidation)) {
@@ -18,6 +18,6 @@ export function record<T>(schema: Schema<T>): Schema<{ [key: string]: T }> {
     if (Object.keys(validation).length === 0) {
       return;
     }
-    return validation as Validation<{ [key: string]: T }>;
+    return validation;
   });
 }

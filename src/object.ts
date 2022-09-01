@@ -3,9 +3,11 @@ import { isFailure, makeSchema, Schema, Validation } from "./schema";
 export function object<T>(schema: { [K in keyof T]: Schema<T[K]> }): Schema<T> {
   return makeSchema((v) => {
     if (typeof v !== "object") {
+      // FIXME: this cast should be unnecessary
       return "value should be an object" as Validation<T>;
     }
     if (v === null) {
+      // FIXME: this cast should be unnecessary
       return "value should not be null" as Validation<T>;
     }
     const validation: { [key: string]: unknown } = {};
@@ -20,6 +22,7 @@ export function object<T>(schema: { [K in keyof T]: Schema<T[K]> }): Schema<T> {
     if (Object.keys(validation).length === 0) {
       return;
     }
+    // FIXME: this cast should be unnecessary
     return validation as Validation<T>;
   });
 }

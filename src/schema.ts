@@ -8,12 +8,14 @@ export type Validation<T> = T extends { [key: string]: unknown }
   ? Validation<T[number]>[] | string
   : string;
 
-export function validate(
+export function makeValidation<T>(
   valid: boolean,
-  message: string,
-  onValid?: string
-): string | undefined {
-  return valid ? onValid : message;
+  message: (() => Validation<T>) | Validation<T>,
+  onValid?: () => Validation<T>
+): Validation<T> | undefined {
+  const getMessage = () =>
+    typeof message === "function" ? message() : message;
+  return valid ? onValid && onValid() : getMessage();
 }
 
 export function isSuccess<T>(validation: Validation<T> | undefined): boolean {

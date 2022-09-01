@@ -2,15 +2,17 @@
 
 import { literal } from "./literal";
 
-it("accepts", () => {
-  expect(literal("a").accepts("a")).toBeTruthy();
+const schema = literal("a");
 
-  expect(literal("a").accepts("b")).toBeFalsy();
-  expect(literal("a").accepts(undefined)).toBeFalsy();
+it("accepts", () => {
+  expect(schema.accepts("a")).toBeTruthy();
+
+  expect(schema.accepts("b")).toBeFalsy();
+  expect(schema.accepts(undefined)).toBeFalsy();
 });
 
 it("validates", () => {
-  expect(literal("a").validate("a")).toBeUndefined();
+  expect(schema.validate("a")).toBeUndefined();
 
-  expect(literal("a").validate("b")).toEqual("value should literally be a");
+  expect(schema.validate("b")).toEqual("value should literally be a");
 });

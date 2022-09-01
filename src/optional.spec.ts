@@ -5,48 +5,50 @@ import { number } from "./number";
 import { nullable, nullish, optional } from "./optional";
 
 describe("optional", () => {
-  it("accepts", () => {
-    expect(optional(number()).accepts(undefined)).toBeTruthy();
-    expect(optional(number()).accepts(1)).toBeTruthy();
+  const schema = optional(number());
 
-    expect(optional(number()).accepts(null)).toBeFalsy();
+  it("accepts", () => {
+    expect(schema.accepts(undefined)).toBeTruthy();
+    expect(schema.accepts(1)).toBeTruthy();
+
+    expect(schema.accepts(null)).toBeFalsy();
   });
 
   it("validates", () => {
-    expect(optional(number()).validate(undefined)).toBeUndefined();
+    expect(schema.validate(undefined)).toBeUndefined();
 
-    expect(optional(number()).validate(null)).toEqual(
-      "value should be a number"
-    );
+    expect(schema.validate(null)).toEqual("value should be a number");
   });
 });
 
 describe("nullable", () => {
-  it("accepts", () => {
-    expect(nullable(number()).accepts(1)).toBeTruthy();
-    expect(nullable(number()).accepts(null)).toBeTruthy();
+  const schema = nullable(number());
 
-    expect(nullable(number()).accepts(undefined)).toBeFalsy();
+  it("accepts", () => {
+    expect(schema.accepts(1)).toBeTruthy();
+    expect(schema.accepts(null)).toBeTruthy();
+
+    expect(schema.accepts(undefined)).toBeFalsy();
   });
 
   it("validates", () => {
-    expect(nullable(number()).validate(null)).toBeUndefined();
+    expect(schema.validate(null)).toBeUndefined();
 
-    expect(nullable(number()).validate(undefined)).toEqual(
-      "value should be a number"
-    );
+    expect(schema.validate(undefined)).toEqual("value should be a number");
   });
 });
 
 describe("nullish", () => {
+  const schema = nullish(number());
+
   it("accepts", () => {
-    expect(nullish(number()).accepts(undefined)).toBeTruthy();
-    expect(nullish(number()).accepts(1)).toBeTruthy();
-    expect(nullish(number()).accepts(null)).toBeTruthy();
+    expect(schema.accepts(undefined)).toBeTruthy();
+    expect(schema.accepts(1)).toBeTruthy();
+    expect(schema.accepts(null)).toBeTruthy();
   });
 
   it("validates", () => {
-    expect(nullish(number()).validate(undefined)).toBeUndefined();
-    expect(nullish(number()).validate(null)).toBeUndefined();
+    expect(schema.validate(undefined)).toBeUndefined();
+    expect(schema.validate(null)).toBeUndefined();
   });
 });

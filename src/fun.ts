@@ -1,18 +1,22 @@
-import { makeSchema, refine, Schema } from "./schema";
+import { makeSchema, makeValidation, refine, Schema } from "./schema";
+
+export type Procedure<Args extends unknown[], Result> = (
+  ...args: Args
+) => Result;
 
 export function fun<Args extends unknown[], Result>(): Schema<
-  (...args: Args) => Result
+  Procedure<Args, Result>
 > {
   return makeSchema((v) =>
-    typeof v === "function" ? undefined : "value should be a function"
+    makeValidation(typeof v === "function", "value should be a function")
   );
 }
 
 export function arity<Args extends unknown[], Result>(
-  schema: Schema<(...args: Args) => Result>,
+  schema: Schema<Procedure<Args, Result>>,
   arity: number
-): Schema<(...args: Args) => Result> {
+): Schema<Procedure<Args, Result>> {
   return refine(schema, (v) =>
-    v.length === arity ? undefined : `function should have arity ${arity}`
+    makeValidation(v.length === arity, `function should have arity ${arity}`)
   );
 }

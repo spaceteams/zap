@@ -9,19 +9,21 @@ import {
 export function tuple<T extends Schema<unknown>[]>(
   ...schemas: T
 ): Schema<InferSchemaSources<T>> {
+  type V = Validation<InferSchemaSources<T>>;
   return makeSchema((v) => {
     if (!Array.isArray(v)) {
-      return "value should be an array" as Validation<InferSchemaSources<T>>;
+      // FIXME: this cast should be unnecessary
+      return "value should be an array" as V;
     }
     if (schemas.length !== v.length) {
-      return `value should have length ${schemas.length}` as Validation<
-        InferSchemaSources<T>
-      >;
+      // FIXME: this cast should be unnecessary
+      return `value should have length ${schemas.length}` as V;
     }
     const validations = v.map((value, i) => schemas[i].validate(value));
     if (validations.every((v) => isSuccess(v))) {
       return;
     }
-    return validations as Validation<InferSchemaSources<T>>;
+    // FIXME: this cast should be unnecessary
+    return validations as V;
   });
 }
