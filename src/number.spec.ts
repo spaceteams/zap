@@ -1,13 +1,14 @@
-import { negative, number, positive } from "./number";
-
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
+import { nan, negative, number, positive } from "./number";
+import { or } from "./or";
+
 it("accepts", () => {
   expect(number().accepts(0)).toBeTruthy();
-  expect(number().accepts(Number.NaN)).toBeTruthy();
   expect(number().accepts(Number.POSITIVE_INFINITY)).toBeTruthy();
 
+  expect(number().accepts(Number.NaN)).toBeFalsy();
   expect(number().accepts(undefined)).toBeFalsy();
   expect(number().accepts(null)).toBeFalsy();
 });
@@ -15,6 +16,21 @@ it("accepts", () => {
 it("validates", () => {
   expect(number().validate(0)).toBeUndefined();
   expect(number().validate(undefined)).toEqual("value should be a number");
+  expect(number().validate(Number.NaN)).toEqual("value should not be NaN");
+});
+
+describe("nan", () => {
+  it("accepts", () => {
+    expect(nan().accepts(Number.NaN)).toBeTruthy();
+    expect(or(number(), nan()).accepts(Number.NaN)).toBeTruthy();
+
+    expect(nan().accepts(0)).toBeFalsy();
+  });
+  it("validates", () => {
+    expect(nan().validate(Number.NaN)).toBeUndefined();
+
+    expect(nan().validate(0)).toEqual("value should be NaN");
+  });
 });
 
 describe("positive", () => {

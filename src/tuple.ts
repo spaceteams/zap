@@ -1,5 +1,5 @@
 import {
-  InferTypes,
+  InferSchemaSources,
   isSuccess,
   makeSchema,
   Schema,
@@ -8,20 +8,20 @@ import {
 
 export function tuple<T extends Schema<unknown>[]>(
   ...schemas: T
-): Schema<InferTypes<T>> {
+): Schema<InferSchemaSources<T>> {
   return makeSchema((v) => {
     if (!Array.isArray(v)) {
-      return "value should be an array" as Validation<InferTypes<T>>;
+      return "value should be an array" as Validation<InferSchemaSources<T>>;
     }
     if (schemas.length !== v.length) {
       return `value should have length ${schemas.length}` as Validation<
-        InferTypes<T>
+        InferSchemaSources<T>
       >;
     }
     const validations = v.map((value, i) => schemas[i].validate(value));
     if (validations.every((v) => isSuccess(v))) {
       return;
     }
-    return validations as Validation<InferTypes<T>>;
+    return validations as Validation<InferSchemaSources<T>>;
   });
 }
