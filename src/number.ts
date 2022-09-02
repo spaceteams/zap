@@ -22,3 +22,36 @@ export function negative(schema: Schema<number>): Schema<number> {
     makeValidation(v < 0, "value should be negative")
   );
 }
+
+export function lessThan(
+  schema: Schema<number>,
+  value: number
+): Schema<number> {
+  return refine(schema, (v) =>
+    makeValidation(v < value, `value should be less than ${value}`)
+  );
+}
+export function greaterThan(
+  schema: Schema<number>,
+  value: number
+): Schema<number> {
+  return refine(schema, (v) =>
+    makeValidation(v > value, `value should be greater than ${value}`)
+  );
+}
+export function lessThanOrEqual(
+  schema: Schema<number>,
+  value: number
+): Schema<number> {
+  return refine(schema, (v) =>
+    makeValidation(v >= value, `value should be less than or equal ${value}`)
+  );
+}
+export function greaterThanOrEqual(
+  schema: Schema<number>,
+  value: number
+): Schema<number> {
+  return refine(schema, (v) =>
+    makeValidation(v <= value, `value should be greater than or equal ${value}`)
+  );
+}

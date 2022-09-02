@@ -2,7 +2,8 @@
 
 import { array } from "./array";
 import { number } from "./number";
-import { at, object, omit, pick } from "./object";
+import { InferResultType } from "./schema";
+import { at, fromInstance, isInstance, object, omit, pick } from "./object";
 import { optional } from "./optional";
 import { string } from "./string";
 
@@ -11,9 +12,20 @@ const schema = object({
   name: array(string()),
   description: optional(string()),
   nested: object({
-    user: string(),
+    user: optional(string()),
   }),
 });
+
+class MyObject implements InferResultType<typeof schema> {
+  constructor(
+    public readonly id: number,
+    public readonly name: string[],
+    public readonly nested: {
+      user?: string;
+    },
+    public readonly description?: string | undefined
+  ) {}
+}
 
 it("accepts", () => {
   expect(
@@ -54,6 +66,27 @@ it("validates", () => {
   ).toEqual({
     id: "value should be a number",
     nested: { user: "value should be a string" },
+  });
+});
+
+describe("isInstance", () => {
+  const strictSchema = isInstance(schema, MyObject);
+  const instanceSchema = fromInstance(MyObject);
+
+  it("accepts", () => {
+    expect(
+      strictSchema.accepts(new MyObject(12, [], { user: "12" }))
+    ).toBeTruthy();
+    expect(
+      instanceSchema.accepts(new MyObject(12, [], { user: "12" }))
+    ).toBeTruthy();
+
+    expect(
+      strictSchema.accepts({ id: 12, name: [], nested: { user: "12" } })
+    ).toBeFalsy();
+    expect(
+      instanceSchema.accepts({ id: 12, name: [], nested: { user: "12" } })
+    ).toBeFalsy();
   });
 });
 

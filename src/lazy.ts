@@ -8,7 +8,7 @@ export function memoize<T>(provider: () => T): () => T {
       value = provider();
       memoized = true;
     }
-    return value;
+    return value as T;
   };
 }
 

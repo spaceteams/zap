@@ -1,6 +1,24 @@
-import { isFailure, makeSchema, Schema, Validation } from "./schema";
+import {
+  isFailure,
+  makeSchema,
+  makeValidation,
+  refine,
+  Schema,
+  Validation,
+} from "./schema";
 
-export function object<T>(schema: { [K in keyof T]: Schema<T[K]> }): Schema<T> {
+type UndefinedProperties<T> = {
+  [P in keyof T]-?: undefined extends T[P] ? P : never;
+}[keyof T];
+
+type ToOptional<T> = Partial<Pick<T, UndefinedProperties<T>>> &
+  Pick<T, Exclude<keyof T, UndefinedProperties<T>>>;
+
+export type ObjectSchema<T> = Schema<ToOptional<T>>;
+
+export function object<T>(schema: {
+  [K in keyof T]: Schema<T[K]>;
+}): ObjectSchema<T> {
   return makeSchema((v) => {
     if (typeof v !== "object") {
       // FIXME: this cast should be unnecessary
@@ -25,6 +43,37 @@ export function object<T>(schema: { [K in keyof T]: Schema<T[K]> }): Schema<T> {
     // FIXME: this cast should be unnecessary
     return validation as Validation<T>;
   });
+}
+
+export function empty(): Schema<Record<string, never>> {
+  return object({});
+}
+
+export function fromInstance<T>(
+  constructor: {
+    new (...args: unknown[]): T;
+  },
+  message?: string
+): Schema<T> {
+  return makeSchema((v) =>
+    makeValidation(
+      v instanceof constructor,
+      (message ||
+        "value should be instanceof the given constructor") as Validation<T>
+    )
+  );
+}
+
+export function isInstance<T>(
+  schema: Schema<T>,
+  constructor: { new (...args: unknown[]): T }
+): Schema<T> {
+  return refine(schema, (v) =>
+    makeValidation(
+      v instanceof constructor,
+      `value should be instanceof the given constructor` as Validation<T>
+    )
+  );
 }
 
 export function omit<T, K extends keyof T>(

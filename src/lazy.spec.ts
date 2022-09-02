@@ -5,7 +5,7 @@ import { optional } from "./optional";
 import { Schema } from "./schema";
 
 interface Category {
-  subCategories: Category[] | undefined;
+  subCategories?: Category[] | undefined;
 }
 const schema: Schema<Category> = lazy(() =>
   object({

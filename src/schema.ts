@@ -8,26 +8,28 @@ export type Validation<T> = T extends { [key: string]: unknown }
   ? Validation<T[number]>[] | string
   : string;
 
+export type ValidationResult<T> = Validation<T> | undefined;
+
 export function makeValidation<T>(
   valid: boolean,
-  message: (() => Validation<T>) | Validation<T>,
-  onValid?: () => Validation<T>
-): Validation<T> | undefined {
+  message: (() => ValidationResult<T>) | ValidationResult<T>,
+  onValid?: () => ValidationResult<T>
+): ValidationResult<T> {
   const getMessage = () =>
     typeof message === "function" ? message() : message;
   return valid ? onValid && onValid() : getMessage();
 }
 
-export function isSuccess<T>(validation: Validation<T> | undefined): boolean {
+export function isSuccess<T>(validation: ValidationResult<T>): boolean {
   return validation === undefined;
 }
 export function isFailure<T>(
-  validation: Validation<T> | undefined
+  validation: ValidationResult<T>
 ): validation is Validation<T> {
   return validation !== undefined;
 }
 
-export interface Schema<T, V = T> {
+export interface Schema<T, R = T> {
   /**
    * a typeguard of type T
    * this method is constructed by the makeSchema function
@@ -38,14 +40,14 @@ export interface Schema<T, V = T> {
    * builds a validation object containing all validation errors of the object
    * @param v the value to be checked
    */
-  validate: (v: unknown) => Validation<T> | undefined;
+  validate: (v: unknown) => ValidationResult<T>;
   /**
    * validates a value and returns it
-   * the type of the parsed result can be additionally transformed into another type V
+   * the result can be additionally transformed into result type R (see transform method)
    * @param v the value to be parsed
    * @throws Validation<T> if validation of v fails
    */
-  parse: (v: unknown) => V;
+  parse: (v: unknown) => R;
 }
 
 export function makeSchema<T>(validate: Schema<T>["validate"]): Schema<T> {
@@ -63,7 +65,7 @@ export function makeSchema<T>(validate: Schema<T>["validate"]): Schema<T> {
 }
 export function refine<T>(
   schema: Schema<T>,
-  validate: (v: T) => Validation<T> | undefined
+  validate: (v: T) => ValidationResult<T>
 ): Schema<T> {
   return makeSchema((v) => {
     const validation = schema.validate(v);
@@ -94,22 +96,18 @@ export function transform<S, T>(
   };
 }
 
-export type InferSchemaValue<T> = T extends Schema<unknown, infer U>
-  ? U
-  : never;
-export type InferSchemaValues<T extends [...unknown[]]> = T extends [
+export type InferResultType<T> = T extends Schema<unknown, infer U> ? U : never;
+export type InferResultTypes<T extends [...unknown[]]> = T extends [
   infer Head,
   ...infer Tail
 ]
-  ? [InferSchemaValue<Head>, ...InferSchemaValues<Tail>]
+  ? [InferResultType<Head>, ...InferResultTypes<Tail>]
   : [];
 
-export type InferSchemaSource<T> = T extends Schema<infer U, unknown>
-  ? U
-  : never;
-export type InferSchemaSources<T extends [...unknown[]]> = T extends [
+export type InferType<T> = T extends Schema<infer U, unknown> ? U : never;
+export type InferTypes<T extends [...unknown[]]> = T extends [
   infer Head,
   ...infer Tail
 ]
-  ? [InferSchemaSource<Head>, ...InferSchemaSources<Tail>]
+  ? [InferType<Head>, ...InferTypes<Tail>]
   : [];

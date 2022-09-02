@@ -1,5 +1,5 @@
 import {
-  InferSchemaSources,
+  InferTypes,
   isSuccess,
   makeSchema,
   Schema,
@@ -8,8 +8,8 @@ import {
 
 export function tuple<T extends Schema<unknown>[]>(
   ...schemas: T
-): Schema<InferSchemaSources<T>> {
-  type V = Validation<InferSchemaSources<T>>;
+): Schema<InferTypes<T>> {
+  type V = Validation<InferTypes<T>>;
   return makeSchema((v) => {
     if (!Array.isArray(v)) {
       // FIXME: this cast should be unnecessary
