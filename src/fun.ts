@@ -1,4 +1,5 @@
-import { makeSchema, makeValidation, refine, Schema } from "./schema";
+import { makeSchema, refine, Schema } from "./schema";
+import { makeValidation } from "./validation";
 
 export type Procedure<Args extends unknown[], Result> = (
   ...args: Args

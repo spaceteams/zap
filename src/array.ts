@@ -1,11 +1,5 @@
-import {
-  isSuccess,
-  makeSchema,
-  makeValidation,
-  refine,
-  Schema,
-  Validation,
-} from "./schema";
+import { makeSchema, refine, Schema } from "./schema";
+import { isSuccess, makeValidation, Validation } from "./validation";
 
 export function array<T>(schema: Schema<T>): Schema<T[]> {
   return makeSchema((v) => {

@@ -1,11 +1,5 @@
-import {
-  isFailure,
-  makeSchema,
-  makeValidation,
-  refine,
-  Schema,
-  Validation,
-} from "./schema";
+import { makeSchema, refine, Schema } from "./schema";
+import { isFailure, makeValidation, Validation } from "./validation";
 
 type UndefinedProperties<T> = {
   [P in keyof T]-?: undefined extends T[P] ? P : never;
@@ -131,6 +125,7 @@ export function at<T, K extends keyof T>(
     if (validation === undefined) {
       return;
     }
-    return validation[key as keyof Validation<T>] as Validation<T[K]>;
+    // FIXME: this cast should be unnecessary
+    return validation[key as string] as Validation<T[K]>;
   });
 }

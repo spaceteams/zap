@@ -1,4 +1,5 @@
-import { makeSchema, makeValidation, Schema, Validation } from "./schema";
+import { makeSchema, Schema } from "./schema";
+import { makeValidation, Validation } from "./validation";
 
 export function literal<T extends number | string | boolean>(
   literal: T

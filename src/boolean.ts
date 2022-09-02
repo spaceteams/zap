@@ -1,4 +1,5 @@
-import { makeSchema, makeValidation, Schema } from "./schema";
+import { makeSchema, Schema } from "./schema";
+import { makeValidation } from "./validation";
 
 export function boolean(): Schema<boolean> {
   return makeSchema((v) =>

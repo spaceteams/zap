@@ -2,7 +2,7 @@
 
 import { array } from "./array";
 import { number } from "./number";
-import { InferResultType } from "./schema";
+import { InferType } from "./schema";
 import { at, fromInstance, isInstance, object, omit, pick } from "./object";
 import { optional } from "./optional";
 import { string } from "./string";
@@ -12,18 +12,17 @@ const schema = object({
   name: array(string()),
   description: optional(string()),
   nested: object({
-    user: optional(string()),
+    user: string(),
   }),
 });
 
-class MyObject implements InferResultType<typeof schema> {
+class MyObject implements InferType<typeof schema> {
   constructor(
     public readonly id: number,
     public readonly name: string[],
     public readonly nested: {
-      user?: string;
-    },
-    public readonly description?: string | undefined
+      user: string;
+    }
   ) {}
 }
 

@@ -1,10 +1,5 @@
-import {
-  InferTypes,
-  isSuccess,
-  makeSchema,
-  Schema,
-  Validation,
-} from "./schema";
+import { InferTypes, makeSchema, Schema } from "./schema";
+import { isSuccess, Validation } from "./validation";
 
 export function tuple<T extends Schema<unknown>[]>(
   ...schemas: T

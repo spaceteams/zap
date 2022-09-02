@@ -1,5 +1,6 @@
 import { fromInstance } from "./object";
-import { makeValidation, refine, Schema } from "./schema";
+import { refine, Schema } from "./schema";
+import { makeValidation } from "./validation";
 
 export function date(): Schema<Date> {
   return fromInstance(Date, "value should be a date");

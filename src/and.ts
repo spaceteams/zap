@@ -1,4 +1,5 @@
-import { isFailure, makeSchema, Schema, Validation } from "./schema";
+import { makeSchema, Schema } from "./schema";
+import { isFailure, Validation } from "./validation";
 
 export function mergeValidations<S, T>(
   left: Validation<S> | undefined,

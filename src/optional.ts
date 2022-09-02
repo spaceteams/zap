@@ -1,4 +1,5 @@
-import { makeSchema, makeValidation, Schema, transform } from "./schema";
+import { makeSchema, Schema, transform } from "./schema";
+import { makeValidation } from "./validation";
 
 export function optional<T>(schema: Schema<T>): Schema<T | undefined> {
   return makeSchema((v) =>

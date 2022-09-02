@@ -1,4 +1,5 @@
-import { makeSchema, refine, Schema, makeValidation } from "./schema";
+import { makeSchema, refine, Schema } from "./schema";
+import { makeValidation } from "./validation";
 
 export function number(): Schema<number> {
   return makeSchema((v) =>

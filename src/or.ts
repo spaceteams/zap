@@ -1,4 +1,5 @@
-import { isSuccess, makeSchema, makeValidation, Schema } from "./schema";
+import { makeSchema, Schema } from "./schema";
+import { isSuccess, makeValidation } from "./validation";
 
 export function or<S, T>(left: Schema<S>, right: Schema<T>): Schema<S | T> {
   return makeSchema((v) =>
