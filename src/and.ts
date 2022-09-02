@@ -6,20 +6,25 @@ export function mergeValidations<S, T>(
   right: Validation<T> | undefined
 ): Validation<S & T> | undefined {
   if (typeof left === "string") {
+    // FIXME: this cast should be unnecessary
     return left as Validation<S & T>;
   }
   if (Array.isArray(left)) {
     if (Array.isArray(right)) {
+      // FIXME: this cast should be unnecessary
       return [...left, ...right] as Validation<S & T>;
     }
     return left as Validation<S & T>;
   }
   if (typeof left === "object") {
     if (typeof right === "object") {
+      // FIXME: this cast should be unnecessary
       return { ...(left as object), ...(right as object) } as Validation<S & T>;
     }
+    // FIXME: this cast should be unnecessary
     return left as Validation<S & T>;
   }
+  // FIXME: this cast should be unnecessary
   return right as Validation<S & T>;
 }
 export function and<S, T>(left: Schema<S>, right: Schema<T>): Schema<S & T> {
@@ -29,6 +34,7 @@ export function and<S, T>(left: Schema<S>, right: Schema<T>): Schema<S & T> {
     if (isFailure(leftValidation)) {
       return mergeValidations(leftValidation, rightValidation);
     }
-    return right.validate(v) as Validation<S & T> | undefined;
+    // FIXME: this cast should be unnecessary
+    return rightValidation as Validation<S & T> | undefined;
   });
 }

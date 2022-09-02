@@ -1,8 +1,9 @@
 import { makeSchema, Schema } from "./schema";
-import { makeValidation } from "./validation";
 
 export function boolean(): Schema<boolean> {
-  return makeSchema((v) =>
-    makeValidation(typeof v === "boolean", "value should be a boolean")
-  );
+  return makeSchema((v) => {
+    if (typeof v !== "boolean") {
+      return "value should be a boolean";
+    }
+  });
 }

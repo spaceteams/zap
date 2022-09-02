@@ -1,6 +1,6 @@
 import { isFailure, isSuccess, ValidationResult } from "./validation";
 
-export interface Schema<T, R = T> {
+export interface Schema<T> {
   /**
    * a typeguard of type T
    * this method is constructed by the makeSchema function
@@ -14,11 +14,11 @@ export interface Schema<T, R = T> {
   validate: (v: unknown) => ValidationResult<T>;
   /**
    * validates a value and returns it
-   * the result can be additionally transformed into result type R (see transform method)
+   * the result can be additionally be coerced
    * @param v the value to be parsed
    * @throws Validation<T> if validation of v fails
    */
-  parse: (v: unknown) => R;
+  parse: (v: unknown) => T;
 }
 
 /**
@@ -45,11 +45,20 @@ export function makeSchema<T>(validate: Schema<T>["validate"]): Schema<T> {
  *
  * For example
  * ```
- * refine(number, v =>
- *   makeValidation(v % 2 === 0, "must be even!")
- * )
+ * const userSchema = object({
+ *   id: number(),
+ *   name: string()
+ * });
+ * const refined = refine(userSchema, ({id}) => {
+ *   if (id > 42) {
+ *     return {
+ *       name: "id is too high for this user",
+ *     };
+ *   }
+ * });
  * ```
- * will accept only even numbers.
+ * will validate the id and write it as a validation
+ * error of the name.
  *
  * @param schema the base schema
  * @param validate the additional validation function
@@ -57,14 +66,14 @@ export function makeSchema<T>(validate: Schema<T>["validate"]): Schema<T> {
  */
 export function refine<T>(
   schema: Schema<T>,
-  validate: (v: T) => ValidationResult<T>
+  validate: (v: T) => ValidationResult<T> | void
 ): Schema<T> {
   return makeSchema((v) => {
     const validation = schema.validate(v);
     if (isFailure(validation)) {
       return validation;
     }
-    return validate(v as T);
+    return validate(v as T) || undefined;
   });
 }
 
@@ -107,36 +116,7 @@ export function json<T>(schema: Schema<T>): Schema<T> {
   );
 }
 
-/**
- * Transforms the parse result into another type.
- * Note that the validation type (T) remains the same
- * and only the result type (R) is modified.
- * It is used to implement @see default()
- *
- * @param schema the base schema
- * @param transformer the transformer function
- * @returns the transformed schema
- */
-export function transform<T, R>(
-  schema: Schema<T>,
-  transformer: (v: T) => R
-): Schema<T, R> {
-  return {
-    accepts: (v): v is T => schema.accepts(v),
-    parse: (v) => transformer(schema.parse(v)),
-    validate: (v) => schema.validate(v),
-  };
-}
-
-export type InferResultType<T> = T extends Schema<unknown, infer U> ? U : never;
-export type InferResultTypes<T extends [...unknown[]]> = T extends [
-  infer Head,
-  ...infer Tail
-]
-  ? [InferResultType<Head>, ...InferResultTypes<Tail>]
-  : [];
-
-export type InferType<T> = T extends Schema<infer U, unknown> ? U : never;
+export type InferType<T> = T extends Schema<infer U> ? U : never;
 export type InferTypes<T extends [...unknown[]]> = T extends [
   infer Head,
   ...infer Tail

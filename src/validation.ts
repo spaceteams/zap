@@ -31,20 +31,10 @@ export type Validation<T> = T extends { [key: string]: unknown }
         }
       | string
   : T extends unknown[]
-  ? Validation<T[number]>[] | string
+  ? (Validation<T[number]> | undefined)[] | string
   : string;
 
 export type ValidationResult<T> = Validation<T> | undefined;
-
-export function makeValidation<T>(
-  valid: boolean,
-  message: (() => ValidationResult<T>) | ValidationResult<T>,
-  onValid?: () => ValidationResult<T>
-): ValidationResult<T> {
-  const getMessage = () =>
-    typeof message === "function" ? message() : message;
-  return valid ? onValid && onValid() : getMessage();
-}
 
 export function isSuccess<T>(validation: ValidationResult<T>): boolean {
   return validation === undefined;

@@ -15,7 +15,6 @@ const schema = object({
     user: string(),
   }),
 });
-
 class MyObject implements InferType<typeof schema> {
   constructor(
     public readonly id: number,

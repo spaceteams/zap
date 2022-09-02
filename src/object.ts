@@ -1,5 +1,5 @@
 import { makeSchema, refine, Schema } from "./schema";
-import { isFailure, makeValidation, Validation } from "./validation";
+import { isFailure, Validation } from "./validation";
 
 type UndefinedProperties<T> = {
   [P in keyof T]-?: undefined extends T[P] ? P : never;
@@ -49,25 +49,25 @@ export function fromInstance<T>(
   },
   message?: string
 ): Schema<T> {
-  return makeSchema((v) =>
-    makeValidation(
-      v instanceof constructor,
-      (message ||
-        "value should be instanceof the given constructor") as Validation<T>
-    )
-  );
+  return makeSchema((v) => {
+    const isValid = v instanceof constructor;
+    if (!isValid) {
+      return (message ||
+        "value should be instanceof the given constructor") as Validation<T>;
+    }
+  });
 }
 
 export function isInstance<T>(
   schema: Schema<T>,
   constructor: { new (...args: unknown[]): T }
 ): Schema<T> {
-  return refine(schema, (v) =>
-    makeValidation(
-      v instanceof constructor,
-      `value should be instanceof the given constructor` as Validation<T>
-    )
-  );
+  return refine(schema, (v) => {
+    const isValid = v instanceof constructor;
+    if (!isValid) {
+      return "value should be instanceof the given constructor" as Validation<T>;
+    }
+  });
 }
 
 export function omit<T, K extends keyof T>(

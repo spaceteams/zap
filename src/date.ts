@@ -1,18 +1,21 @@
 import { fromInstance } from "./object";
 import { refine, Schema } from "./schema";
-import { makeValidation } from "./validation";
 
 export function date(): Schema<Date> {
   return fromInstance(Date, "value should be a date");
 }
 
 export function before(schema: Schema<Date>, value: Date): Schema<Date> {
-  return refine(schema, (v) =>
-    makeValidation(v < value, `value should be before ${value.toISOString()}`)
-  );
+  return refine(schema, (v) => {
+    if (v >= value) {
+      return `value should be before ${value.toISOString()}`;
+    }
+  });
 }
 export function after(schema: Schema<Date>, value: Date): Schema<Date> {
-  return refine(schema, (v) =>
-    makeValidation(v > value, `value should be after ${value.toISOString()}`)
-  );
+  return refine(schema, (v) => {
+    if (v <= value) {
+      return `value should be after ${value.toISOString()}`;
+    }
+  });
 }

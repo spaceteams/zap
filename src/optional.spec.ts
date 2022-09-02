@@ -2,7 +2,7 @@
 /* eslint-disable unicorn/no-null */
 
 import { number } from "./number";
-import { defaultValue, nullable, nullish, optional } from "./optional";
+import { nullable, nullish, optional, required } from "./optional";
 
 describe("optional", () => {
   const schema = optional(number());
@@ -21,13 +21,19 @@ describe("optional", () => {
   });
 });
 
-describe("defaultValue", () => {
-  const schema = defaultValue(optional(number()), 42);
+describe("required", () => {
+  const schema = required(optional(number()));
 
-  it("parses", () => {
-    expect(schema.parse(1)).toEqual(1);
-    expect(schema.parse(undefined)).toEqual(42);
-    expect(() => schema.parse(null)).toThrow();
+  it("accepts", () => {
+    expect(schema.accepts(1)).toBeTruthy();
+
+    expect(schema.accepts(undefined)).toBeFalsy();
+    expect(schema.accepts(null)).toBeFalsy();
+  });
+
+  it("validates", () => {
+    expect(schema.validate(undefined)).toEqual("value should be present");
+    expect(schema.validate(null)).toEqual("value should be present");
   });
 });
 

@@ -1,58 +1,81 @@
 import { makeSchema, refine, Schema } from "./schema";
-import { makeValidation } from "./validation";
 
 export function number(): Schema<number> {
-  return makeSchema((v) =>
-    makeValidation(typeof v === "number", "value should be a number", () =>
-      makeValidation(!Number.isNaN(v), "value should not be NaN")
-    )
-  );
+  return makeSchema((v) => {
+    if (typeof v !== "number") {
+      return "value should be a number";
+    }
+    if (Number.isNaN(v)) {
+      return "value should not be NaN";
+    }
+  });
 }
 export function nan(): Schema<number> {
-  return makeSchema((v) =>
-    makeValidation(Number.isNaN(v), "value should be NaN")
-  );
+  return makeSchema((v) => {
+    if (!Number.isNaN(v)) {
+      return "value should be NaN";
+    }
+  });
 }
 export function positive(schema: Schema<number>): Schema<number> {
-  return refine(schema, (v) =>
-    makeValidation(v > 0, "value should be positive")
-  );
+  return refine(schema, (v) => {
+    if (v <= 0) {
+      return "value should be positive";
+    }
+  });
 }
 export function negative(schema: Schema<number>): Schema<number> {
-  return refine(schema, (v) =>
-    makeValidation(v < 0, "value should be negative")
-  );
+  return refine(schema, (v) => {
+    if (v >= 0) {
+      return "value should be negative";
+    }
+  });
+}
+export function integer(schema: Schema<number>): Schema<number> {
+  return refine(schema, (v) => {
+    if (!Number.isInteger(v)) {
+      return "value should be an integer";
+    }
+  });
 }
 
 export function lessThan(
   schema: Schema<number>,
   value: number
 ): Schema<number> {
-  return refine(schema, (v) =>
-    makeValidation(v < value, `value should be less than ${value}`)
-  );
+  return refine(schema, (v) => {
+    if (v >= value) {
+      return `value should be less than ${value}`;
+    }
+  });
 }
 export function greaterThan(
   schema: Schema<number>,
   value: number
 ): Schema<number> {
-  return refine(schema, (v) =>
-    makeValidation(v > value, `value should be greater than ${value}`)
-  );
+  return refine(schema, (v) => {
+    if (v <= value) {
+      return `value should be greater than ${value}`;
+    }
+  });
 }
 export function lessThanOrEqual(
   schema: Schema<number>,
   value: number
 ): Schema<number> {
-  return refine(schema, (v) =>
-    makeValidation(v >= value, `value should be less than or equal ${value}`)
-  );
+  return refine(schema, (v) => {
+    if (v > value) {
+      return `value should be less than or equal ${value}`;
+    }
+  });
 }
 export function greaterThanOrEqual(
   schema: Schema<number>,
   value: number
 ): Schema<number> {
-  return refine(schema, (v) =>
-    makeValidation(v <= value, `value should be greater than or equal ${value}`)
-  );
+  return refine(schema, (v) => {
+    if (v < value) {
+      return `value should be greater than or equal ${value}`;
+    }
+  });
 }

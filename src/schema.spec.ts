@@ -1,7 +1,7 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
 import { number } from "./number";
-import { coerce, refine, transform } from "./schema";
+import { coerce, refine } from "./schema";
 
 describe("refine", () => {
   const schema = refine(number(), (v) =>
@@ -31,23 +31,5 @@ describe("coerce", () => {
   it("parses", () => {
     expect(schema.parse("")).toEqual(0);
     expect(schema.parse("1")).toEqual(1);
-  });
-});
-
-describe("transform", () => {
-  const schema = transform(number(), (v) => ({ user: `user-id-${v}` }));
-
-  it("accepts", () => {
-    expect(schema.accepts(1)).toBeTruthy();
-    expect(schema.accepts({ user: "user-id-1" })).toBeFalsy();
-  });
-  it("validates", () => {
-    expect(schema.validate(1)).toBeUndefined();
-    expect(schema.validate({ user: "user-id-1" })).toEqual(
-      "value should be a number"
-    );
-  });
-  it("parses", () => {
-    expect(schema.parse(1)).toEqual({ user: "user-id-1" });
   });
 });
