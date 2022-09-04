@@ -5,14 +5,12 @@ type UndefinedProperties<T> = {
   [P in keyof T]-?: undefined extends T[P] ? P : never;
 }[keyof T];
 
-type ToOptional<T> = Partial<Pick<T, UndefinedProperties<T>>> &
+type Partialized<T> = Partial<Pick<T, UndefinedProperties<T>>> &
   Pick<T, Exclude<keyof T, UndefinedProperties<T>>>;
-
-export type ObjectSchema<T> = Schema<ToOptional<T>>;
 
 export function object<T>(schema: {
   [K in keyof T]: Schema<T[K]>;
-}): ObjectSchema<T> {
+}): Schema<Partialized<T>> {
   return makeSchema((v) => {
     if (typeof v !== "object") {
       // FIXME: this cast should be unnecessary

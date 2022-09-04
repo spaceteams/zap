@@ -31,6 +31,13 @@ export function negative(schema: Schema<number>): Schema<number> {
     }
   });
 }
+export function nonNegative(schema: Schema<number>): Schema<number> {
+  return refine(schema, (v) => {
+    if (v < 0) {
+      return "value should be non-negative";
+    }
+  });
+}
 export function integer(schema: Schema<number>): Schema<number> {
   return refine(schema, (v) => {
     if (!Number.isInteger(v)) {
