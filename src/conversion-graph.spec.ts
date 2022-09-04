@@ -1,21 +1,24 @@
+import { and } from "./and";
 import { ConversionGraph } from "./conversion-graph";
 import { nonNegative, number } from "./number";
-import { object } from "./object";
+import { at, object, omit } from "./object";
 import { optional } from "./optional";
 import { nonEmpty, string } from "./string";
 
-const g = new ConversionGraph({
-  v1: number(),
-  v2: object({
-    value: number(),
-    unit: string(),
-  }),
-  v3: object({
-    value: number(),
-    unit: nonEmpty(string()),
-    decimalPlaces: optional(nonNegative(number())),
-  }),
+const v1 = number();
+const v2 = object({
+  value: number(),
+  unit: string(),
 });
+const v3 = and(
+  omit(v2, "unit"),
+  object({
+    unit: nonEmpty(at(v2, "unit")),
+    decimalPlaces: optional(nonNegative(number())),
+  })
+);
+
+const g = new ConversionGraph({ v1, v2, v3 });
 
 g.addTransformation("v1", "v2", (v) => ({ value: v, unit: "m" }));
 g.addTransformation("v2", "v3", ({ value, unit }) => ({

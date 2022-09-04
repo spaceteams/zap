@@ -4,6 +4,10 @@ type OutNode<T, Source extends keyof T> = {
   [target in keyof T]?: (s: T[Source]) => T[target];
 };
 
+/**
+ * Useful if you have a bunch of schemas and you want to convert values between them.
+ * @see conversion-graph.spec.ts for examples
+ */
 export class ConversionGraph<T> {
   edges: {
     [source in keyof T]?: OutNode<T, source>;

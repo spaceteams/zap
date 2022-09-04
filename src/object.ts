@@ -1,12 +1,18 @@
 import { makeSchema, refine, Schema } from "./schema";
 import { isFailure, Validation } from "./validation";
 
-type UndefinedProperties<T> = {
+type OptionalProperties<T> = {
   [P in keyof T]-?: undefined extends T[P] ? P : never;
 }[keyof T];
+type RequiredProperties<T> = Exclude<keyof T, OptionalProperties<T>>;
 
-type Partialized<T> = Partial<Pick<T, UndefinedProperties<T>>> &
-  Pick<T, Exclude<keyof T, UndefinedProperties<T>>>;
+/**
+ * Make all optional properties partial. E.g. transform
+ * `{ name: string | undefined }` to `{ name?: string | undefined }`
+ */
+type Partialized<T> = OptionalProperties<T> extends never
+  ? T
+  : Partial<Pick<T, OptionalProperties<T>>> & Pick<T, RequiredProperties<T>>;
 
 export function object<T>(schema: {
   [K in keyof T]: Schema<T[K]>;
