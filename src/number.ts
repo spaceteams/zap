@@ -46,6 +46,27 @@ export function integer(schema: Schema<number>): Schema<number> {
   });
 }
 
+// https://stackoverflow.com/questions/3966484/why-does-modulus-operator-return-fractional-number-in-javascript/31711034#31711034
+function floatSafeRemainder(val: number, step: number) {
+  const valDecCount = (val.toString().split(".")[1] || "").length;
+  const stepDecCount = (step.toString().split(".")[1] || "").length;
+  const decCount = valDecCount > stepDecCount ? valDecCount : stepDecCount;
+  const valInt = Number.parseInt(val.toFixed(decCount).replace(".", ""));
+  const stepInt = Number.parseInt(step.toFixed(decCount).replace(".", ""));
+  return (((valInt % stepInt) + stepInt) % stepInt) / Math.pow(10, decCount);
+}
+
+export function multipleOf(
+  schema: Schema<number>,
+  step: number
+): Schema<number> {
+  return refine(schema, (v) => {
+    if (floatSafeRemainder(v, step) > 0) {
+      return `value should be a multiple of ${step}`;
+    }
+  });
+}
+
 export function lessThan(
   schema: Schema<number>,
   value: number

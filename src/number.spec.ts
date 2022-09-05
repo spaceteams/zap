@@ -1,7 +1,7 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
-import { nan, negative, number, positive } from "./number";
+import { integer, nan, negative, number, positive, multipleOf } from "./number";
 import { or } from "./or";
 
 it("accepts", () => {
@@ -34,21 +34,45 @@ describe("nan", () => {
 });
 
 describe("positive", () => {
+  const schema = positive(number());
   it("validates", () => {
-    expect(positive(number()).validate(1)).toBeUndefined();
+    expect(schema.validate(1)).toBeUndefined();
 
-    expect(positive(number()).validate(0)).toEqual("value should be positive");
-    expect(positive(number()).validate(-1)).toEqual("value should be positive");
-    expect(positive(number()).validate(-0)).toEqual("value should be positive");
+    expect(schema.validate(0)).toEqual("value should be positive");
+    expect(schema.validate(-1)).toEqual("value should be positive");
+    expect(schema.validate(-0)).toEqual("value should be positive");
   });
 });
 
 describe("negative", () => {
+  const schema = negative(number());
   it("validates", () => {
-    expect(negative(number()).validate(-1)).toBeUndefined();
+    expect(schema.validate(-1)).toBeUndefined();
 
-    expect(negative(number()).validate(-0)).toEqual("value should be negative");
-    expect(negative(number()).validate(1)).toEqual("value should be negative");
-    expect(negative(number()).validate(0)).toEqual("value should be negative");
+    expect(schema.validate(-0)).toEqual("value should be negative");
+    expect(schema.validate(1)).toEqual("value should be negative");
+    expect(schema.validate(0)).toEqual("value should be negative");
+  });
+});
+
+describe("int", () => {
+  const schema = integer(number());
+  it("validates", () => {
+    expect(schema.validate(-1)).toBeUndefined();
+
+    expect(schema.validate(0.1)).toEqual("value should be an integer");
+    expect(schema.validate(Number.POSITIVE_INFINITY)).toEqual(
+      "value should be an integer"
+    );
+  });
+});
+
+describe("multipleOf", () => {
+  const schema = multipleOf(number(), 0.1);
+  it("validates", () => {
+    expect(schema.validate(-1)).toBeUndefined();
+    expect(schema.validate(-1.2)).toBeUndefined();
+
+    expect(schema.validate(-1.21)).toEqual("value should be a multiple of 0.1");
   });
 });

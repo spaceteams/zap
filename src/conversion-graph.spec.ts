@@ -41,6 +41,12 @@ describe("convert", () => {
       unit: "m",
     });
   });
+  it("finds shortest conversion path", () => {
+    expect(g.convert("v1", "v3", 2)).toEqual({
+      value: 2,
+      unit: "m",
+    });
+  });
   it("fails on unreachable target", () => {
     expect(
       g.convert("v3", "v2", { value: 2, unit: "", decimalPlaces: 2 })
