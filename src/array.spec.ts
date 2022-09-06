@@ -18,9 +18,17 @@ it("accepts", () => {
 
 it("validates", () => {
   expect(schema.validate([])).toBeUndefined();
-  expect(schema.validate([0, "string"])).toEqual([
+  expect(schema.validate([0, "string", Number.NaN])).toEqual([
+    undefined,
+    "value should be a number",
+    "value should not be NaN",
+  ]);
+  expect(schema.validate({})).toEqual("value should be an array");
+});
+
+it("validates with early exit", () => {
+  expect(schema.validate([0, "string"], { earlyExit: true })).toEqual([
     undefined,
     "value should be a number",
   ]);
-  expect(schema.validate({})).toEqual("value should be an array");
 });

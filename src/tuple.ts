@@ -1,24 +1,36 @@
-import { InferTypes, makeSchema, Schema } from "./schema";
-import { isSuccess, Validation } from "./validation";
+import { defaultOptions, InferTypes, makeSchema, Schema } from "./schema";
+import {
+  isFailure,
+  isSuccess,
+  Validation,
+  ValidationResult,
+} from "./validation";
 
 export function tuple<T extends Schema<unknown>[]>(
   ...schemas: T
 ): Schema<InferTypes<T>> {
   type V = Validation<InferTypes<T>>;
-  return makeSchema((v) => {
+  return makeSchema((v, o = defaultOptions) => {
     if (!Array.isArray(v)) {
-      // FIXME: this cast should be unnecessary
       return "value should be an array" as V;
     }
     if (schemas.length !== v.length) {
-      // FIXME: this cast should be unnecessary
       return `value should have length ${schemas.length}` as V;
     }
-    const validations = v.map((value, i) => schemas[i].validate(value));
+
+    const validations = [] as ValidationResult<unknown>[];
+    let i = 0;
+    for (const value of v) {
+      const validation = schemas[i].validate(value, o);
+      validations.push(validation);
+      if (o?.earlyExit && isFailure(validation)) {
+        return validations as V;
+      }
+      i++;
+    }
     if (validations.every((v) => isSuccess(v))) {
       return;
     }
-    // FIXME: this cast should be unnecessary
     return validations as V;
   });
 }

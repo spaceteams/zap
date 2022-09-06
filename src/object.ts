@@ -1,29 +1,24 @@
-import { makeSchema, refine, Schema } from "./schema";
+import { defaultOptions, makeSchema, refine, Schema } from "./schema";
 import { isFailure, Validation } from "./validation";
 
-type OptionalProperties<T> = {
-  [P in keyof T]-?: undefined extends T[P] ? P : never;
+type optionalKeys<T> = {
+  [k in keyof T]-?: undefined extends T[k] ? k : never;
 }[keyof T];
-type RequiredProperties<T> = Exclude<keyof T, OptionalProperties<T>>;
-
-/**
- * Make all optional properties partial. E.g. transform
- * `{ name: string | undefined }` to `{ name?: string | undefined }`
- */
-type Partialized<T> = OptionalProperties<T> extends never
+type requiredKeys<T> = {
+  [k in keyof T]: undefined extends T[k] ? never : k;
+}[keyof T];
+type fixPartialKeys<T> = optionalKeys<T> extends never
   ? T
-  : Partial<Pick<T, OptionalProperties<T>>> & Pick<T, RequiredProperties<T>>;
+  : { [k in requiredKeys<T>]: T[k] } & { [k in optionalKeys<T>]?: T[k] };
 
 export function object<T>(schema: {
   [K in keyof T]: Schema<T[K]>;
-}): Schema<Partialized<T>> {
-  return makeSchema((v) => {
+}): Schema<fixPartialKeys<T>> {
+  return makeSchema((v, o = defaultOptions) => {
     if (typeof v !== "object") {
-      // FIXME: this cast should be unnecessary
       return "value should be an object" as Validation<T>;
     }
     if (v === null) {
-      // FIXME: this cast should be unnecessary
       return "value should not be null" as Validation<T>;
     }
     const validation: { [key: string]: unknown } = {};
@@ -33,12 +28,14 @@ export function object<T>(schema: {
       );
       if (isFailure(innerValidation)) {
         validation[key] = innerValidation;
+        if (o.earlyExit) {
+          return validation as Validation<T>;
+        }
       }
     }
     if (Object.keys(validation).length === 0) {
       return;
     }
-    // FIXME: this cast should be unnecessary
     return validation as Validation<T>;
   });
 }
@@ -77,7 +74,9 @@ export function isInstance<T>(
 export function omit<T, K extends keyof T>(
   schema: Schema<T>,
   ...keys: K[]
-): Schema<Omit<T, K>> {
+): Schema<{
+  [Key in keyof T as Key extends K ? never : Key]: T[Key];
+}> {
   return makeSchema((v) => {
     const validation = schema.validate(v);
     if (validation === undefined) {
@@ -100,7 +99,7 @@ export function omit<T, K extends keyof T>(
 export function pick<T, K extends keyof T>(
   schema: Schema<T>,
   ...keys: K[]
-): Schema<Pick<T, K>> {
+): Schema<{ [key in K]: T[key] }> {
   return makeSchema((v) => {
     const validation = schema.validate(v);
     if (validation === undefined) {
@@ -129,7 +128,6 @@ export function at<T, K extends keyof T>(
     if (validation === undefined) {
       return;
     }
-    // FIXME: this cast should be unnecessary
     return validation[key as string] as Validation<T[K]>;
   });
 }

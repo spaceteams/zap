@@ -1,24 +1,31 @@
 import { isFailure, isSuccess, ValidationResult } from "./validation";
 
+interface ValidationOptions {
+  earlyExit: boolean;
+}
+export const defaultOptions: ValidationOptions = {
+  earlyExit: false,
+};
+
 export interface Schema<T> {
   /**
    * a typeguard of type T
    * this method is constructed by the makeSchema function
    * @param v the value to be checked
    */
-  accepts: (v: unknown) => v is T;
+  accepts: (v: unknown, options?: ValidationOptions) => v is T;
   /**
    * builds a validation object containing all validation errors of the object
    * @param v the value to be checked
    */
-  validate: (v: unknown) => ValidationResult<T>;
+  validate: (v: unknown, options?: ValidationOptions) => ValidationResult<T>;
   /**
    * validates a value and returns it
    * the result can be additionally be coerced
    * @param v the value to be parsed
    * @throws Validation<T> if validation of v fails
    */
-  parse: (v: unknown) => T;
+  parse: (v: unknown, options?: ValidationOptions) => T;
 }
 
 /**
@@ -28,9 +35,9 @@ export interface Schema<T> {
  */
 export function makeSchema<T>(validate: Schema<T>["validate"]): Schema<T> {
   return {
-    accepts: (v): v is T => isSuccess(validate(v)),
-    parse: (v) => {
-      const validation = validate(v);
+    accepts: (v, o): v is T => isSuccess(validate(v, o)),
+    parse: (v, o) => {
+      const validation = validate(v, o);
       if (isFailure(validation)) {
         throw validation;
       }
@@ -66,14 +73,14 @@ export function makeSchema<T>(validate: Schema<T>["validate"]): Schema<T> {
  */
 export function refine<T>(
   schema: Schema<T>,
-  validate: (v: T) => ValidationResult<T> | void
+  validate: (v: T, o: ValidationOptions) => ValidationResult<T> | void
 ): Schema<T> {
-  return makeSchema((v) => {
-    const validation = schema.validate(v);
+  return makeSchema((v, o) => {
+    const validation = schema.validate(v, o);
     if (isFailure(validation)) {
       return validation;
     }
-    return validate(v as T) || undefined;
+    return validate(v as T, o ?? defaultOptions) || undefined;
   });
 }
 
@@ -98,9 +105,9 @@ export function coerce<T>(
   coercion: (v: unknown) => unknown
 ): Schema<T> {
   return {
-    accepts: (v): v is T => schema.accepts(coercion(v)),
-    parse: (v) => schema.parse(coercion(v)),
-    validate: (v) => schema.validate(coercion(v)),
+    accepts: (v, o): v is T => schema.accepts(coercion(v), o),
+    parse: (v, o) => schema.parse(coercion(v), o),
+    validate: (v, o) => schema.validate(coercion(v), o),
   };
 }
 

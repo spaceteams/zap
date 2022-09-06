@@ -18,6 +18,15 @@ it("accepts", () => {
 it("validates", () => {
   expect(schema.validate([1, "a"])).toBeUndefined();
 
+  expect(schema.validate([Number.NaN, "b"])).toEqual([
+    "value should not be NaN",
+    "value should literally be a",
+  ]);
   expect(schema.validate(null)).toEqual("value should be an array");
   expect(schema.validate([])).toEqual("value should have length 2");
+});
+it("validates with early exit", () => {
+  expect(schema.validate([Number.NaN, "b"], { earlyExit: true })).toEqual([
+    "value should not be NaN",
+  ]);
 });

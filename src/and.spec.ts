@@ -67,3 +67,14 @@ it("validates", () => {
     nested: { user: "value should be a string" },
   });
 });
+
+it("validates with early exit", () => {
+  expect(
+    schema.validate(
+      { id: "", name: ["some", "string"], nested: {} },
+      { earlyExit: true }
+    )
+  ).toEqual({
+    id: "value should be a number",
+  });
+});

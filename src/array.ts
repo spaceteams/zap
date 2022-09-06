@@ -1,12 +1,19 @@
 import { makeSchema, refine, Schema } from "./schema";
-import { isSuccess } from "./validation";
+import { isFailure, isSuccess, ValidationResult } from "./validation";
 
 export function array<T>(schema: Schema<T>): Schema<T[]> {
-  return makeSchema((v) => {
+  return makeSchema((v, o) => {
     if (!Array.isArray(v)) {
       return "value should be an array";
     }
-    const validations = v.map((value) => schema.validate(value));
+    const validations: ValidationResult<T[]> = [];
+    for (const value of v) {
+      const validation = schema.validate(value, o);
+      validations.push(validation);
+      if (o?.earlyExit && isFailure(validation)) {
+        return validations;
+      }
+    }
     if (validations.every((v) => isSuccess(v))) {
       return;
     }

@@ -1,8 +1,8 @@
-import { makeSchema, Schema } from "./schema";
+import { defaultOptions, makeSchema, Schema } from "./schema";
 import { isFailure, Validation } from "./validation";
 
 export function record<T>(schema: Schema<T>): Schema<{ [key: string]: T }> {
-  return makeSchema((v) => {
+  return makeSchema((v, o = defaultOptions) => {
     if (typeof v !== "object") {
       return "value should be an object";
     }
@@ -14,6 +14,9 @@ export function record<T>(schema: Schema<T>): Schema<{ [key: string]: T }> {
       const innerValidation = schema.validate(value);
       if (isFailure(innerValidation)) {
         validation[key] = innerValidation;
+        if (o.earlyExit) {
+          return validation;
+        }
       }
     }
     if (Object.keys(validation).length === 0) {

@@ -67,6 +67,17 @@ it("validates", () => {
   });
 });
 
+it("validates with early exit", () => {
+  expect(
+    schema.validate(
+      { id: "", name: ["some", "string"], nested: {} },
+      { earlyExit: true }
+    )
+  ).toEqual({
+    id: "value should be a number",
+  });
+});
+
 describe("isInstance", () => {
   const strictSchema = isInstance(schema, MyObject);
   const instanceSchema = fromInstance(MyObject);
