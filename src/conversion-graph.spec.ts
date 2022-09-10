@@ -17,7 +17,6 @@ const v3 = and(
     decimalPlaces: optional(nonNegative(number())),
   })
 );
-
 const g = new ConversionGraph({ v1, v2, v3 });
 
 g.addTransformation("v1", "v2", (v) => ({ value: v, unit: "m" }));
@@ -29,7 +28,7 @@ g.addTransformation("v2", "v3", ({ value, unit }) => ({
 g.addTransformation("v2", "v1", ({ value }) => value);
 
 describe("convert", () => {
-  it("works on self edges", () => {
+  it("supports self edges", () => {
     expect(g.convert("v2", "v2", { value: 2, unit: "" })).toEqual({
       value: 2,
       unit: "",
@@ -41,7 +40,7 @@ describe("convert", () => {
       unit: "m",
     });
   });
-  it("finds shortest conversion path", () => {
+  it("finds a conversion path", () => {
     expect(g.convert("v1", "v3", 2)).toEqual({
       value: 2,
       unit: "m",

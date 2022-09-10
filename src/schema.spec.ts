@@ -1,7 +1,10 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
-import { number } from "./number";
-import { coerce, refine } from "./schema";
+import { nan, number } from "./number";
+import { object } from "./object";
+import { undefinedSchema } from "./optional";
+import { or } from "./or";
+import { coerce, narrow, refine, transform } from "./schema";
 
 describe("refine", () => {
   const schema = refine(number(), (v) =>
@@ -31,5 +34,34 @@ describe("coerce", () => {
   it("parses", () => {
     expect(schema.parse("")).toEqual(0);
     expect(schema.parse("1")).toEqual(1);
+  });
+});
+
+describe("transform", () => {
+  const schema = transform(object({ v: number() }), ({ v }) => v);
+
+  it("accepts", () => {
+    expect(schema.accepts({ v: 12 })).toBeTruthy();
+    expect(schema.accepts(12)).toBeFalsy();
+  });
+  it("parses", () => {
+    expect(schema.parse({ v: 12 })).toEqual(12);
+  });
+});
+
+describe("narrow", () => {
+  const schema = narrow(or(number(), or(nan(), undefinedSchema())), (v) =>
+    Number.isNaN(v) ? undefined : v
+  );
+
+  it("accepts", () => {
+    expect(schema.accepts(12)).toBeTruthy();
+    expect(schema.accepts(Number.NaN)).toBeTruthy();
+    expect(schema.accepts(undefined)).toBeTruthy();
+  });
+  it("parses", () => {
+    expect(schema.parse(12)).toEqual(12);
+    expect(schema.parse(undefined)).toEqual(undefined);
+    expect(schema.parse(Number.NaN)).toEqual(undefined);
   });
 });

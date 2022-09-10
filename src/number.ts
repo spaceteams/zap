@@ -58,11 +58,11 @@ function floatSafeRemainder(val: number, step: number) {
 
 export function multipleOf(
   schema: Schema<number>,
-  step: number
+  value: number
 ): Schema<number> {
   return refine(schema, (v) => {
-    if (floatSafeRemainder(v, step) > 0) {
-      return `value should be a multiple of ${step}`;
+    if (floatSafeRemainder(v, value) > 0) {
+      return `value should be a multiple of ${value}`;
     }
   });
 }

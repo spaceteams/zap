@@ -1,4 +1,4 @@
-import { defaultOptions, InferTypes, makeSchema, Schema } from "./schema";
+import { InferTypes, getOption, makeSchema, Schema } from "./schema";
 import {
   isFailure,
   isSuccess,
@@ -10,7 +10,7 @@ export function tuple<T extends Schema<unknown>[]>(
   ...schemas: T
 ): Schema<InferTypes<T>> {
   type V = Validation<InferTypes<T>>;
-  return makeSchema((v, o = defaultOptions) => {
+  return makeSchema((v, o) => {
     if (!Array.isArray(v)) {
       return "value should be an array" as V;
     }
@@ -23,7 +23,7 @@ export function tuple<T extends Schema<unknown>[]>(
     for (const value of v) {
       const validation = schemas[i].validate(value, o);
       validations.push(validation);
-      if (o?.earlyExit && isFailure(validation)) {
+      if (getOption(o, "earlyExit") && isFailure(validation)) {
         return validations as V;
       }
       i++;

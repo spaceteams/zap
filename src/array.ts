@@ -1,4 +1,4 @@
-import { makeSchema, refine, Schema } from "./schema";
+import { getOption, makeSchema, refine, Schema } from "./schema";
 import { isFailure, isSuccess, ValidationResult } from "./validation";
 
 export function array<T>(schema: Schema<T>): Schema<T[]> {
@@ -6,11 +6,13 @@ export function array<T>(schema: Schema<T>): Schema<T[]> {
     if (!Array.isArray(v)) {
       return "value should be an array";
     }
+
     const validations: ValidationResult<T[]> = [];
     for (const value of v) {
       const validation = schema.validate(value, o);
       validations.push(validation);
-      if (o?.earlyExit && isFailure(validation)) {
+
+      if (getOption(o, "earlyExit") && isFailure(validation)) {
         return validations;
       }
     }

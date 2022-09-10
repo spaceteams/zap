@@ -1,5 +1,5 @@
-import { defaultOptions, makeSchema, refine, Schema } from "./schema";
-import { isFailure, Validation } from "./validation";
+import { getOption, makeSchema, refine, Schema } from "./schema";
+import { isFailure, isSuccess, Validation } from "./validation";
 
 type optionalKeys<T> = {
   [k in keyof T]-?: undefined extends T[k] ? k : never;
@@ -14,13 +14,14 @@ type fixPartialKeys<T> = optionalKeys<T> extends never
 export function object<T>(schema: {
   [K in keyof T]: Schema<T[K]>;
 }): Schema<fixPartialKeys<T>> {
-  return makeSchema((v, o = defaultOptions) => {
+  const validate: Schema<fixPartialKeys<T>>["validate"] = (v, o) => {
     if (typeof v !== "object") {
       return "value should be an object" as Validation<T>;
     }
     if (v === null) {
       return "value should not be null" as Validation<T>;
     }
+
     const validation: { [key: string]: unknown } = {};
     for (const [key, inner] of Object.entries(schema)) {
       const innerValidation = (inner as Schema<unknown>).validate(
@@ -28,7 +29,7 @@ export function object<T>(schema: {
       );
       if (isFailure(innerValidation)) {
         validation[key] = innerValidation;
-        if (o.earlyExit) {
+        if (getOption(o, "earlyExit")) {
           return validation as Validation<T>;
         }
       }
@@ -37,7 +38,25 @@ export function object<T>(schema: {
       return;
     }
     return validation as Validation<T>;
-  });
+  };
+  return {
+    accepts: (v): v is T => isSuccess(validate(v, { earlyExit: true })),
+    validate,
+    parse: (v, o) => {
+      const validation = validate(v, o);
+      if (isFailure(validation)) {
+        throw validation;
+      }
+      if (!getOption(o, "strip")) {
+        return v as T;
+      }
+      const result: Partial<T> = {};
+      for (const key of Object.keys(schema)) {
+        result[key] = (v as T)[key as keyof T];
+      }
+      return result as T;
+    },
+  };
 }
 
 export function empty(): Schema<Record<string, never>> {

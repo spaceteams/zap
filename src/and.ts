@@ -1,4 +1,4 @@
-import { defaultOptions, makeSchema, Schema } from "./schema";
+import { getOption, makeSchema, Schema } from "./schema";
 import { isFailure, Validation } from "./validation";
 
 export function mergeValidations<S, T>(
@@ -22,17 +22,26 @@ export function mergeValidations<S, T>(
   }
   return right as Validation<S & T>;
 }
-export function and<S, T>(left: Schema<S>, right: Schema<T>): Schema<S & T> {
-  return makeSchema((v, o = defaultOptions) => {
+function call<S, T>(fn: T | ((v: S) => T), v: S): T {
+  if (typeof fn !== "function") {
+    return fn;
+  }
+  return (fn as (v: S) => T)(v);
+}
+export function and<S, T>(
+  left: Schema<S>,
+  right: Schema<T> | ((v: S) => Schema<T>)
+): Schema<S & T> {
+  return makeSchema((v, o) => {
     const leftValidation = left.validate(v, o);
     if (isFailure(leftValidation)) {
-      if (o.earlyExit) {
+      if (getOption(o, "earlyExit")) {
         return leftValidation as Validation<S & T> | undefined;
       }
-      const rightValidation = right.validate(v, o);
+      const rightValidation = call(right, v as S).validate(v, o);
       return mergeValidations(leftValidation, rightValidation);
     } else {
-      const rightValidation = right.validate(v, o);
+      const rightValidation = call(right, v as S).validate(v, o);
       return rightValidation as Validation<S & T> | undefined;
     }
   });

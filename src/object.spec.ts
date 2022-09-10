@@ -78,6 +78,37 @@ it("validates with early exit", () => {
   });
 });
 
+it("parses with stripping", () => {
+  expect(
+    schema.parse({
+      id: 12,
+      name: ["first", "last"],
+      nested: { user: "some user" },
+      additional: "add",
+    })
+  ).toEqual({
+    id: 12,
+    name: ["first", "last"],
+    nested: { user: "some user" },
+  });
+  expect(
+    schema.parse(
+      {
+        id: 12,
+        name: ["first", "last"],
+        nested: { user: "some user" },
+        additional: "add",
+      },
+      { earlyExit: false, strip: false }
+    )
+  ).toEqual({
+    id: 12,
+    name: ["first", "last"],
+    nested: { user: "some user" },
+    additional: "add",
+  });
+});
+
 describe("isInstance", () => {
   const strictSchema = isInstance(schema, MyObject);
   const instanceSchema = fromInstance(MyObject);
@@ -122,5 +153,6 @@ describe("pick", () => {
 describe("at", () => {
   it("accepts", () => {
     expect(at(schema, "nested").accepts({ user: "3" })).toBeTruthy();
+    expect(at(schema, "id").accepts(12)).toBeTruthy();
   });
 });
