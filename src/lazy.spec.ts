@@ -7,7 +7,7 @@ import { Schema } from "./schema";
 interface Category {
   subCategories?: Category[] | undefined;
 }
-const schema: Schema<Category> = lazy(() =>
+const schema: Schema<Category, { type: "object" }> = lazy(() =>
   object({
     subCategories: optional(array(schema)),
   })

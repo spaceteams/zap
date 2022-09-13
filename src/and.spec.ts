@@ -78,3 +78,9 @@ it("validates with early exit", () => {
     id: "value should be a number",
   });
 });
+
+it("builds metadata", () => {
+  expect(schema.meta().type).toEqual("and");
+  expect(schema.meta().schemas[0]).toEqual(Named);
+  expect(schema.meta().schemas[1]).toEqual(Described);
+});

@@ -1,49 +1,82 @@
-import { makeSchema, refine, Schema } from "./schema";
+import { makeSchema, refineWithMetainformation, Schema } from "./schema";
 
-export function number(): Schema<number> {
-  return makeSchema((v) => {
-    if (typeof v !== "number") {
-      return "value should be a number";
-    }
-    if (Number.isNaN(v)) {
-      return "value should not be NaN";
-    }
-  });
+export function number(): Schema<number, { type: "number" }> {
+  return makeSchema(
+    (v) => {
+      if (typeof v !== "number") {
+        return "value should be a number";
+      }
+      if (Number.isNaN(v)) {
+        return "value should not be NaN";
+      }
+    },
+    () => ({ type: "number" })
+  );
 }
-export function nan(): Schema<number> {
-  return makeSchema((v) => {
-    if (!Number.isNaN(v)) {
-      return "value should be NaN";
-    }
-  });
+export function nan(): Schema<number, { type: "nan" }> {
+  return makeSchema(
+    (v) => {
+      if (!Number.isNaN(v)) {
+        return "value should be NaN";
+      }
+    },
+    () => ({ type: "nan" })
+  );
 }
-export function positive(schema: Schema<number>): Schema<number> {
-  return refine(schema, (v) => {
-    if (v <= 0) {
-      return "value should be positive";
-    }
-  });
+export function positive<M>(schema: Schema<number, M>) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (v <= 0) {
+        return "value should be positive";
+      }
+    },
+    { exclusiveMinimum: 0 }
+  );
 }
-export function negative(schema: Schema<number>): Schema<number> {
-  return refine(schema, (v) => {
-    if (v >= 0) {
-      return "value should be negative";
-    }
-  });
+export function nonPositive<M>(schema: Schema<number, M>) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (v <= 0) {
+        return "value should be non-positive";
+      }
+    },
+    { maximum: 0 }
+  );
 }
-export function nonNegative(schema: Schema<number>): Schema<number> {
-  return refine(schema, (v) => {
-    if (v < 0) {
-      return "value should be non-negative";
-    }
-  });
+export function negative<M>(schema: Schema<number, M>) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (v >= 0) {
+        return "value should be negative";
+      }
+    },
+    { minimum: 0 }
+  );
 }
-export function integer(schema: Schema<number>): Schema<number> {
-  return refine(schema, (v) => {
-    if (!Number.isInteger(v)) {
-      return "value should be an integer";
-    }
-  });
+export function nonNegative<M>(schema: Schema<number, M>) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (v < 0) {
+        return "value should be non-negative";
+      }
+    },
+    { exclusiveMaximum: 0 }
+  );
+}
+export function integer<M>(schema: Schema<number, M>) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (!Number.isInteger(v)) {
+        return "value should be an integer";
+      }
+    },
+    { type: "integer" as const }
+  );
 }
 
 // https://stackoverflow.com/questions/3966484/why-does-modulus-operator-return-fractional-number-in-javascript/31711034#31711034
@@ -56,54 +89,62 @@ function floatSafeRemainder(val: number, step: number) {
   return (((valInt % stepInt) + stepInt) % stepInt) / Math.pow(10, decCount);
 }
 
-export function multipleOf(
-  schema: Schema<number>,
-  value: number
-): Schema<number> {
-  return refine(schema, (v) => {
-    if (floatSafeRemainder(v, value) > 0) {
-      return `value should be a multiple of ${value}`;
-    }
-  });
+export function multipleOf<M>(schema: Schema<number, M>, value: number) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (floatSafeRemainder(v, value) > 0) {
+        return `value should be a multiple of ${value}`;
+      }
+    },
+    { multipleOf: value }
+  );
 }
 
-export function lessThan(
-  schema: Schema<number>,
-  value: number
-): Schema<number> {
-  return refine(schema, (v) => {
-    if (v >= value) {
-      return `value should be less than ${value}`;
-    }
-  });
+export function lessThan<M>(schema: Schema<number, M>, value: number) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (v >= value) {
+        return `value should be less than ${value}`;
+      }
+    },
+    { exclusiveMaximum: value }
+  );
 }
-export function greaterThan(
-  schema: Schema<number>,
-  value: number
-): Schema<number> {
-  return refine(schema, (v) => {
-    if (v <= value) {
-      return `value should be greater than ${value}`;
-    }
-  });
+export function greaterThan<M>(schema: Schema<number, M>, value: number) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (v <= value) {
+        return `value should be greater than ${value}`;
+      }
+    },
+    { exclusiveMinimum: value }
+  );
 }
-export function lessThanOrEqual(
-  schema: Schema<number>,
-  value: number
-): Schema<number> {
-  return refine(schema, (v) => {
-    if (v > value) {
-      return `value should be less than or equal ${value}`;
-    }
-  });
+export function lessThanOrEqual<M>(schema: Schema<number, M>, value: number) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (v > value) {
+        return `value should be less than or equal ${value}`;
+      }
+    },
+    { maximum: value }
+  );
 }
-export function greaterThanOrEqual(
-  schema: Schema<number>,
+export function greaterThanOrEqual<M>(
+  schema: Schema<number, M>,
   value: number
-): Schema<number> {
-  return refine(schema, (v) => {
-    if (v < value) {
-      return `value should be greater than or equal ${value}`;
-    }
-  });
+) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (v < value) {
+        return `value should be greater than or equal ${value}`;
+      }
+    },
+    { minimum: value }
+  );
 }

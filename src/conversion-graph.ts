@@ -17,7 +17,9 @@ export class ConversionGraph<T> {
     [source in keyof T]?: OutNode<T, source>;
   } = {};
 
-  constructor(protected readonly nodes: { [key in keyof T]: Schema<T[key]> }) {}
+  constructor(
+    protected readonly nodes: { [key in keyof T]: Schema<T[key], unknown> }
+  ) {}
 
   firstNodeOf(value: unknown): keyof T | undefined {
     const allKeys = Object.keys(this.nodes) as (keyof T)[];

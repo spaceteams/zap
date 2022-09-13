@@ -61,3 +61,9 @@ it("validates", () => {
     nested: { user: "value should be a string" },
   });
 });
+
+it("builds metadata", () => {
+  expect(schema.meta().type).toEqual("or");
+  expect(schema.meta().schemas[0]).toEqual(Named);
+  expect(schema.meta().schemas[1]).toEqual(Described);
+});

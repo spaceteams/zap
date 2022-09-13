@@ -1,21 +1,29 @@
 import { fromInstance } from "./object";
-import { refine, Schema } from "./schema";
+import { refineWithMetainformation, Schema } from "./schema";
 
-export function date(): Schema<Date> {
+export function date(): Schema<Date, { type: "object"; instance: string }> {
   return fromInstance(Date, "value should be a date");
 }
 
-export function before(schema: Schema<Date>, value: Date): Schema<Date> {
-  return refine(schema, (v) => {
-    if (v >= value) {
-      return `value should be before ${value.toISOString()}`;
-    }
-  });
+export function before<M>(schema: Schema<Date, M>, value: Date) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (v >= value) {
+        return `value should be before ${value.toISOString()}`;
+      }
+    },
+    { max: value }
+  );
 }
-export function after(schema: Schema<Date>, value: Date): Schema<Date> {
-  return refine(schema, (v) => {
-    if (v <= value) {
-      return `value should be after ${value.toISOString()}`;
-    }
-  });
+export function after<M>(schema: Schema<Date, M>, value: Date) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (v <= value) {
+        return `value should be after ${value.toISOString()}`;
+      }
+    },
+    { min: value }
+  );
 }

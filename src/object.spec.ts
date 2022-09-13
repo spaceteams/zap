@@ -15,6 +15,7 @@ const schema = object({
     user: string(),
   }),
 });
+
 class MyObject implements InferType<typeof schema> {
   constructor(
     public readonly id: number,
@@ -48,6 +49,16 @@ it("accepts", () => {
   expect(
     schema.accepts({ id: "", name: ["some", "string"], nested: {} })
   ).toBeFalsy();
+});
+
+it("builds metadata", () => {
+  expect(schema.meta().type).toEqual("object");
+  expect(Object.keys(schema.meta().schema)).toEqual([
+    "id",
+    "name",
+    "description",
+    "nested",
+  ]);
 });
 
 it("validates", () => {
@@ -140,6 +151,12 @@ describe("omit", () => {
       })
     ).toBeTruthy();
   });
+
+  it("builds metadata", () => {
+    expect(
+      Object.keys(omit(schema, "id", "description").meta().schema)
+    ).toEqual(["name", "nested"]);
+  });
 });
 
 describe("pick", () => {
@@ -148,11 +165,21 @@ describe("pick", () => {
       pick(schema, "nested").accepts({ id: "", nested: { user: "3" } })
     ).toBeTruthy();
   });
+
+  it("builds metadata", () => {
+    expect(Object.keys(pick(schema, "nested").meta().schema)).toEqual([
+      "nested",
+    ]);
+  });
 });
 
 describe("at", () => {
   it("accepts", () => {
     expect(at(schema, "nested").accepts({ user: "3" })).toBeTruthy();
     expect(at(schema, "id").accepts(12)).toBeTruthy();
+  });
+
+  it("builds metadata", () => {
+    expect(at(schema, "id").meta().type).toEqual("number");
   });
 });

@@ -12,8 +12,9 @@ export const getOption = (
 
 /**
  * A Schema of type T that can be used to typeguard, validate and parse values.
+ * It also has a metadata type M that allows introspection.
  */
-export interface Schema<T> {
+export interface Schema<T, M> {
   /**
    * a typeguard of type T
    * this method is constructed by the makeSchema function
@@ -32,6 +33,10 @@ export interface Schema<T> {
    * @throws Validation<T> if validation of v fails
    */
   parse: (v: unknown, options?: ParsingOptions & ValidationOptions) => T;
+  /**
+   * returns the Meta Object
+   */
+  meta: () => M;
 }
 
 /**
@@ -39,7 +44,10 @@ export interface Schema<T> {
  * @param validate the validation method
  * @returns the schema
  */
-export function makeSchema<T>(validate: Schema<T>["validate"]): Schema<T> {
+export function makeSchema<T, M>(
+  validate: Schema<T, M>["validate"],
+  meta: () => M
+): Schema<T, M> {
   return {
     accepts: (v): v is T => isSuccess(validate(v, { earlyExit: true })),
     parse: (v, o) => {
@@ -50,6 +58,7 @@ export function makeSchema<T>(validate: Schema<T>["validate"]): Schema<T> {
       return v as T;
     },
     validate,
+    meta,
   };
 }
 
@@ -77,17 +86,34 @@ export function makeSchema<T>(validate: Schema<T>["validate"]): Schema<T> {
  * @param validate the additional validation function
  * @returns the refined schema
  */
-export function refine<T>(
-  schema: Schema<T>,
+export function refine<T, M>(
+  schema: Schema<T, M>,
   validate: (v: T, o: ValidationOptions) => ValidationResult<T> | void
-): Schema<T> {
+): Schema<T, M> {
   return makeSchema((v, o) => {
     const validation = schema.validate(v, o);
     if (isFailure(validation)) {
       return validation;
     }
     return validate(v as T, o ?? defaultOptions) || undefined;
-  });
+  }, schema.meta);
+}
+
+export function refineWithMetainformation<T, M, N>(
+  schema: Schema<T, M>,
+  validate: (v: T, o: ValidationOptions) => ValidationResult<T> | void,
+  metaExtension: N
+): Schema<T, Omit<M, keyof N> & N> {
+  return makeSchema(
+    (v, o) => {
+      const validation = schema.validate(v, o);
+      if (isFailure(validation)) {
+        return validation;
+      }
+      return validate(v as T, o ?? defaultOptions) || undefined;
+    },
+    () => ({ ...schema.meta(), ...metaExtension })
+  );
 }
 
 /**
@@ -112,14 +138,15 @@ export function refine<T>(
  * @param coercion the coercion function
  * @returns the coerced schema
  */
-export function coerce<T>(
-  schema: Schema<T>,
+export function coerce<T, M>(
+  schema: Schema<T, M>,
   coercion: (v: unknown) => unknown
-): Schema<T> {
+): Schema<T, M> {
   return {
     accepts: (v): v is T => schema.accepts(coercion(v)),
     parse: (v, o) => schema.parse(coercion(v), o),
     validate: (v, o) => schema.validate(coercion(v), o),
+    meta: () => schema.meta(),
   };
 }
 
@@ -131,7 +158,7 @@ export function coerce<T>(
  * const boxedNumber = object({ v: number() })
  * const unboxedNumber = transform(boxedNumber, ({ v }) => v);
  * ```
- * `unboxedNumber` is of type Schema<S> but it will only accept values
+ * `unboxedNumber` is of type Schema<S, M> but it will only accept values
  * that conform to `boxedNumber`. You can of course fix that with
  * ```
  * const fixedSchema = or(unboxedNumber, number())
@@ -142,14 +169,15 @@ export function coerce<T>(
  * @param transformation the transformation function
  * @returns a schema that parses T into S and accepts T as S
  */
-export function transform<T, S>(
-  schema: Schema<T>,
+export function transform<T, S, M>(
+  schema: Schema<T, M>,
   transformation: (v: T) => S
-): Schema<S> {
+): Schema<S, M> {
   return {
     accepts: (v): v is S => schema.accepts(v),
     parse: (v, o) => transformation(schema.parse(v, o)),
     validate: (v, o) => schema.validate(v, o) as ValidationResult<S>,
+    meta: () => schema.meta(),
   };
 }
 
@@ -162,10 +190,10 @@ export function transform<T, S>(
  * @param projection the projection function
  * @returns a schema that parses T into S and accepts T as S
  */
-export function narrow<T, S extends T>(
-  schema: Schema<T>,
+export function narrow<T, S extends T, M>(
+  schema: Schema<T, M>,
   projection: (v: T) => S
-): Schema<S> {
+): Schema<S, M> {
   return transform(schema, projection);
 }
 
@@ -175,18 +203,18 @@ export function narrow<T, S extends T>(
  * @param schema the base schema to coerce values into
  * @returns the coerced schema
  */
-export function json<T>(schema: Schema<T>): Schema<T> {
+export function json<T, M>(schema: Schema<T, M>): Schema<T, M> {
   return coerce(schema, (v) =>
     typeof v === "string" ? JSON.parse(v) : undefined
   );
 }
 
 /**
- * Infers the result type of a Schema<S> to S
+ * Infers the result type of a Schema<T, M> to T
  */
-export type InferType<T> = T extends Schema<infer U> ? U : never;
+export type InferType<T> = T extends Schema<infer U, unknown> ? U : never;
 /**
- * Infers the result type of a tuple of Schemas. E.g. [Schema<A>, Schema<B>] to [A, B]
+ * Infers the result type of a tuple of Schemas. E.g. [Schema<A, M>, Schema<B, N>] to [A, B]
  */
 export type InferTypes<T extends [...unknown[]]> = T extends [
   infer Head,
@@ -194,3 +222,8 @@ export type InferTypes<T extends [...unknown[]]> = T extends [
 ]
   ? [InferType<Head>, ...InferTypes<Tail>]
   : [];
+
+/**
+ * Infers the meta type of a Schema<T, M> to M
+ */
+export type InferMetaType<T> = T extends Schema<unknown, infer U> ? U : never;

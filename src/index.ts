@@ -8,6 +8,8 @@ export * from "./literal";
 export * from "./number";
 export * from "./object";
 export * from "./optional";
+export * from "./partial";
+export * from "./deep-partial";
 export * from "./or";
 export * from "./record";
 export * from "./schema";

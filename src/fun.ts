@@ -1,26 +1,34 @@
-import { makeSchema, refine, Schema } from "./schema";
+import { makeSchema, refineWithMetainformation, Schema } from "./schema";
 
 export type Procedure<Args extends unknown[], Result> = (
   ...args: Args
 ) => Result;
 
 export function fun<Args extends unknown[], Result>(): Schema<
-  Procedure<Args, Result>
+  Procedure<Args, Result>,
+  { type: "function" }
 > {
-  return makeSchema((v) => {
-    if (typeof v !== "function") {
-      return "value should be a function";
-    }
-  });
+  return makeSchema(
+    (v) => {
+      if (typeof v !== "function") {
+        return "value should be a function";
+      }
+    },
+    () => ({ type: "function" })
+  );
 }
 
-export function arity<Args extends unknown[], Result>(
-  schema: Schema<Procedure<Args, Result>>,
+export function arity<Args extends unknown[], M, Result>(
+  schema: Schema<Procedure<Args, Result>, M>,
   arity: number
-): Schema<Procedure<Args, Result>> {
-  return refine(schema, (v) => {
-    if (v.length !== arity) {
-      return `function should have arity ${arity}`;
-    }
-  });
+) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (v.length !== arity) {
+        return `function should have arity ${arity}`;
+      }
+    },
+    { arity }
+  );
 }
