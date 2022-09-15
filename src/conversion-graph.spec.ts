@@ -3,7 +3,7 @@ import { ConversionGraph } from "./conversion-graph";
 import { nonNegative, number } from "./number";
 import { at, object, omit } from "./object";
 import { optional } from "./optional";
-import { nonEmpty, string } from "./string";
+import { nonEmptyString, string } from "./string";
 
 const v1 = number();
 const v2 = object({
@@ -13,7 +13,7 @@ const v2 = object({
 const v3 = and(
   omit(v2, "unit"),
   object({
-    unit: nonEmpty(at(v2, "unit")),
+    unit: nonEmptyString(at(v2, "unit")),
     decimalPlaces: optional(nonNegative(number())),
   })
 );

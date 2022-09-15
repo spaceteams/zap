@@ -15,7 +15,7 @@ export function string(): Schema<string, { type: "string" }> {
     () => ({ type: "string" })
   );
 }
-export function min<M>(schema: Schema<string, M>, minLength: number) {
+export function maxLength<M>(schema: Schema<string, M>, minLength: number) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -23,10 +23,10 @@ export function min<M>(schema: Schema<string, M>, minLength: number) {
         return `value should have at least length ${minLength}`;
       }
     },
-    { min: minLength }
+    { minLength }
   );
 }
-export function max<M>(schema: Schema<string, M>, maxLength: number) {
+export function minLength<M>(schema: Schema<string, M>, maxLength: number) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -34,7 +34,7 @@ export function max<M>(schema: Schema<string, M>, maxLength: number) {
         return `value should have at most length ${maxLength}`;
       }
     },
-    { max: maxLength }
+    { maxLength }
   );
 }
 export function length<M>(schema: Schema<string, M>, length: number) {
@@ -45,21 +45,21 @@ export function length<M>(schema: Schema<string, M>, length: number) {
         return `value should have length ${length}`;
       }
     },
-    { min: length, max: length }
+    { minLength: length, maxLength: length }
   );
 }
-export function nonEmpty<M>(schema: Schema<string, M>) {
-  return min(schema, 1);
+export function nonEmptyString<M>(schema: Schema<string, M>) {
+  return minLength(schema, 1);
 }
-export function regex<M>(schema: Schema<string, M>, regex: RegExp) {
+export function pattern<M>(schema: Schema<string, M>, pattern: RegExp) {
   return refineWithMetainformation(
     schema,
     (v) => {
-      if (!regex.test(v)) {
+      if (!pattern.test(v)) {
         return "value should match expression";
       }
     },
-    { regex }
+    { pattern }
   );
 }
 export function startsWith<M>(

@@ -1,5 +1,12 @@
-import { getOption, makeSchema, Schema } from "./schema";
-import { isFailure, Validation } from "./validation";
+import { getOption, InferTypes, makeSchema, Schema } from "./schema";
+import { isFailure, Validation, ValidationResult } from "./validation";
+
+export type Intersect<T extends [...unknown[]]> = T extends [
+  infer Head,
+  ...infer Tail
+]
+  ? Head & Intersect<Tail>
+  : unknown;
 
 export function mergeValidations<S, T>(
   left: Validation<S> | undefined,
@@ -22,24 +29,20 @@ export function mergeValidations<S, T>(
   }
   return right as Validation<S & T>;
 }
-export function and<S, T, M, N>(
-  left: Schema<S, M>,
-  right: Schema<T, N>
-): Schema<S & T, { type: "and"; schemas: [Schema<S, M>, Schema<T, N>] }> {
+export function and<T extends Schema<unknown, unknown>[]>(
+  ...schemas: T
+): Schema<Intersect<InferTypes<T>>, { type: "and"; schemas: T }> {
   return makeSchema(
     (v, o) => {
-      const leftValidation = left.validate(v, o);
-      if (isFailure(leftValidation)) {
-        if (getOption(o, "earlyExit")) {
-          return leftValidation as Validation<S & T> | undefined;
+      let result: ValidationResult<unknown>;
+      for (const schema of schemas) {
+        result = mergeValidations(result, schema.validate(v));
+        if (isFailure(result) && getOption(o, "earlyExit")) {
+          break;
         }
-        const rightValidation = right.validate(v, o);
-        return mergeValidations(leftValidation, rightValidation);
-      } else {
-        const rightValidation = right.validate(v, o);
-        return rightValidation as Validation<S & T> | undefined;
       }
+      return result as ValidationResult<Intersect<InferTypes<T>>>;
     },
-    () => ({ type: "and", schemas: [left, right] })
+    () => ({ type: "and", schemas })
   );
 }

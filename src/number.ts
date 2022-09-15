@@ -101,7 +101,7 @@ export function multipleOf<M>(schema: Schema<number, M>, value: number) {
   );
 }
 
-export function lessThan<M>(schema: Schema<number, M>, value: number) {
+export function exclusiveMaximum<M>(schema: Schema<number, M>, value: number) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -112,7 +112,7 @@ export function lessThan<M>(schema: Schema<number, M>, value: number) {
     { exclusiveMaximum: value }
   );
 }
-export function greaterThan<M>(schema: Schema<number, M>, value: number) {
+export function exclusiveMinimum<M>(schema: Schema<number, M>, value: number) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -123,7 +123,7 @@ export function greaterThan<M>(schema: Schema<number, M>, value: number) {
     { exclusiveMinimum: value }
   );
 }
-export function lessThanOrEqual<M>(schema: Schema<number, M>, value: number) {
+export function maximum<M>(schema: Schema<number, M>, value: number) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -134,10 +134,7 @@ export function lessThanOrEqual<M>(schema: Schema<number, M>, value: number) {
     { maximum: value }
   );
 }
-export function greaterThanOrEqual<M>(
-  schema: Schema<number, M>,
-  value: number
-) {
+export function minimum<M>(schema: Schema<number, M>, value: number) {
   return refineWithMetainformation(
     schema,
     (v) => {

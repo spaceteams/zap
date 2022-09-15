@@ -18,7 +18,8 @@ const Described = object({
     user: string(),
   }),
 });
-const schema = and(Named, Described);
+const Empty = object({});
+const schema = and(Named, Empty, Described);
 
 it("accepts", () => {
   expect(
@@ -82,5 +83,6 @@ it("validates with early exit", () => {
 it("builds metadata", () => {
   expect(schema.meta().type).toEqual("and");
   expect(schema.meta().schemas[0]).toEqual(Named);
-  expect(schema.meta().schemas[1]).toEqual(Described);
+  expect(schema.meta().schemas[1]).toEqual(Empty);
+  expect(schema.meta().schemas[2]).toEqual(Described);
 });

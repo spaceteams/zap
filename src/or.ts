@@ -1,16 +1,24 @@
-import { makeSchema, Schema } from "./schema";
-import { isFailure } from "./validation";
+import { InferTypes, makeSchema, Schema } from "./schema";
+import { isSuccess, ValidationResult } from "./validation";
 
-export function or<S, T, M, N>(
-  left: Schema<S, M>,
-  right: Schema<T, N>
-): Schema<S | T, { type: "or"; schemas: [Schema<S, M>, Schema<T, N>] }> {
+type Unionize<T extends [...unknown[]]> = T extends [infer Head, ...infer Tail]
+  ? Head | Unionize<Tail>
+  : never;
+
+export function or<T extends Schema<unknown, unknown>[]>(
+  ...schemas: T
+): Schema<Unionize<InferTypes<T>>, { type: "or"; schemas: T }> {
   return makeSchema(
     (v) => {
-      if (isFailure(left.validate(v))) {
-        return right.validate(v);
+      let result: ValidationResult<unknown>;
+      for (const schema of schemas) {
+        result = schema.validate(v);
+        if (isSuccess(schema.validate(v))) {
+          break;
+        }
       }
+      return result as ValidationResult<Unionize<InferTypes<T>>>;
     },
-    () => ({ type: "or", schemas: [left, right] })
+    () => ({ type: "or", schemas })
   );
 }

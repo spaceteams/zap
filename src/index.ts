@@ -16,11 +16,7 @@ export * from "./schema";
 export * from "./enum";
 export * from "./tuple";
 export * from "./validation";
-
-export { array } from "./array";
-export { string } from "./string";
-
-export * as NumberUtils from "./number";
-export * as ObjectUtils from "./object";
-export * as ArrayUtils from "./array";
-export * as StringUtils from "./string";
+export * from "./number";
+export * from "./object";
+export * from "./array";
+export * from "./string";

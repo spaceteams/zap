@@ -13,16 +13,14 @@ export function optional<T, M>(
     () => ({ ...schema.meta(), required: false })
   );
 }
-export function nullable<T, M>(
-  schema: Schema<T, M>
-): Schema<T | null, { required: false } & M> {
+export function nullable<T, M>(schema: Schema<T, M>): Schema<T | null, M> {
   return makeSchema(
     (v) => {
       if (v !== null) {
         return schema.validate(v);
       }
     },
-    () => ({ ...schema.meta(), required: false })
+    () => ({ ...schema.meta() })
   );
 }
 export function nullish<T, M>(

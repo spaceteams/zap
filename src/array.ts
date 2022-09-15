@@ -33,29 +33,29 @@ export function array<T, M>(
     () => ({ type: "array", schema })
   );
 }
-export function min<T, M>(schema: Schema<T[], M>, minLength: number) {
+export function minItems<T, M>(schema: Schema<T[], M>, minItems: number) {
   return refineWithMetainformation(
     schema,
     (v) => {
-      if (v.length < minLength) {
-        return `value should contain at least ${minLength} items`;
+      if (v.length < minItems) {
+        return `value should contain at least ${minItems} items`;
       }
     },
-    { min: minLength }
+    { minItems }
   );
 }
-export function max<T, M>(schema: Schema<T[], M>, maxLength: number) {
+export function maxItems<T, M>(schema: Schema<T[], M>, maxItems: number) {
   return refineWithMetainformation(
     schema,
     (v) => {
-      if (v.length > maxLength) {
-        return `value should contain at most ${maxLength} items`;
+      if (v.length > maxItems) {
+        return `value should contain at most ${maxItems} items`;
       }
     },
-    { max: maxLength }
+    { maxItems }
   );
 }
-export function length<T, M>(schema: Schema<T[], M>, length: number) {
+export function items<T, M>(schema: Schema<T[], M>, items: number) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -63,7 +63,26 @@ export function length<T, M>(schema: Schema<T[], M>, length: number) {
         return `value should contain exactly ${length} items`;
       }
     },
-    { min: length, max: length }
+    { minItems: items, maxItems: items }
+  );
+}
+export function uniqueItems<T, M>(schema: Schema<T[], M>) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      const seen = new Set();
+      const hasDuplicates = v.some((item) => {
+        if (seen.has(item)) {
+          return true;
+        }
+        seen.add(item);
+        return false;
+      });
+      if (hasDuplicates) {
+        return "value should only contain unique items";
+      }
+    },
+    { uniqueItems: true }
   );
 }
 export function includes<T, M>(
@@ -77,6 +96,6 @@ export function includes<T, M>(
     }
   });
 }
-export function nonEmpty<T, M>(schema: Schema<T[], M>) {
-  return min(schema, 1);
+export function nonEmptyArray<T, M>(schema: Schema<T[], M>) {
+  return minItems(schema, 1);
 }

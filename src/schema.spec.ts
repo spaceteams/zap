@@ -50,7 +50,7 @@ describe("transform", () => {
 });
 
 describe("narrow", () => {
-  const schema = narrow(or(number(), or(nan(), undefinedSchema())), (v) =>
+  const schema = narrow(or(number(), nan(), undefinedSchema()), (v) =>
     Number.isNaN(v) ? undefined : v
   );
 
