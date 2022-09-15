@@ -1,3 +1,5 @@
 .direnv
-lib
+.envrc
+build
+dist
 node_modules

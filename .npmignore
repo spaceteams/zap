@@ -1,0 +1,10 @@
+.direnv
+build
+node_modules
+src
+.envrc
+.gitignore
+flake.lock
+flake.nix
+rollup.config.js
+tsconfig.json

@@ -59,8 +59,8 @@ export function items<T, M>(schema: Schema<T[], M>, items: number) {
   return refineWithMetainformation(
     schema,
     (v) => {
-      if (v.length === length) {
-        return `value should contain exactly ${length} items`;
+      if (v.length === items) {
+        return `value should contain exactly ${items} items`;
       }
     },
     { minItems: items, maxItems: items }
