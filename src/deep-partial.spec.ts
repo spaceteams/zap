@@ -1,12 +1,13 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
-import { array } from "./array";
+import { array, minItems } from "./array";
 import { number } from "./number";
 import { object } from "./object";
-import { optional } from "./optional";
+import { nullable, optional } from "./optional";
 import { deepPartial } from "./deep-partial";
 import { string } from "./string";
 import { tuple } from "./tuple";
+import { date } from "./date";
 
 const schema = object({
   id: number(),
@@ -57,14 +58,16 @@ it("builds metadata of arrays", () => {
       .schema.meta()
       .schema.meta().required
   ).toEqual(false);
+  expect(deepPartial(minItems(array(number()), 2)).meta().minItems).toEqual(2);
 });
 it("builds metadata of objects", () => {
   expect(deepPartial(schema).meta().schema.id.meta().required).toEqual(false);
   expect(
     deepPartial(schema).meta().schema.nested.meta().schema.user.meta().required
   ).toEqual(false);
+  expect(deepPartial(date()).meta().instance).toEqual("Date");
 });
-it("builds metadata of tuple", () => {
+it("builds metadata of tuples", () => {
   expect(
     deepPartial(tuple(number(), string())).meta().schemas[0].meta().required
   ).toEqual(false);

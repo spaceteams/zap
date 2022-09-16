@@ -1,6 +1,7 @@
 import { and } from "./and";
 import { array } from "./array";
 import { boolean } from "./boolean";
+import { literal, literals } from "./literal";
 import {
   exclusiveMaximum,
   exclusiveMinimum,
@@ -47,6 +48,9 @@ it("translates types", () => {
   expect(toJsonSchema(object({}))).toMatchObject({ type: "object" });
   expect(toJsonSchema(array(string()))).toMatchObject({ type: "array" });
   expect(toJsonSchema(tuple(string()))).toMatchObject({ type: "array" });
+
+  expect(toJsonSchema(literal("a"))).toEqual({ const: "a" });
+  expect(toJsonSchema(literals("a", 2))).toMatchObject({ enum: ["a", 2] });
 });
 
 describe("number", () => {

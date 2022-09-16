@@ -1,3 +1,4 @@
+import { Literal } from "./literal";
 import { Schema } from "./schema";
 
 interface JsonSchemaHeader {
@@ -52,7 +53,6 @@ export function toJsonSchema<M extends { type: string }>(
     }
     case "array": {
       const arrayMeta = meta as unknown as {
-        type: "array";
         schema: Schema<unknown, { type: string }>;
       };
       return {
@@ -62,7 +62,6 @@ export function toJsonSchema<M extends { type: string }>(
     }
     case "tuple": {
       const tupleMeta = meta as unknown as {
-        type: "array";
         schemas: Schema<unknown, { type: string }>[];
       };
       return {
@@ -73,7 +72,6 @@ export function toJsonSchema<M extends { type: string }>(
     }
     case "or": {
       const tupleMeta = meta as unknown as {
-        type: "or";
         schemas: Schema<unknown, { type: string }>[];
       };
       return {
@@ -82,7 +80,6 @@ export function toJsonSchema<M extends { type: string }>(
     }
     case "and": {
       const tupleMeta = meta as unknown as {
-        type: "and";
         schemas: Schema<unknown, { type: string }>[];
       };
       return {
@@ -91,11 +88,18 @@ export function toJsonSchema<M extends { type: string }>(
     }
     case "literal": {
       const literalMeta = meta as unknown as {
-        type: "literal";
-        literal: string | symbol | number;
+        literal: Literal;
       };
       return {
         const: literalMeta.literal,
+      };
+    }
+    case "literals": {
+      const literalsMeta = meta as unknown as {
+        literals: Literal[];
+      };
+      return {
+        enum: literalsMeta.literals,
       };
     }
     case "nan":

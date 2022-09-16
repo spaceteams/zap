@@ -99,6 +99,16 @@ export function refine<T, M>(
   }, schema.meta);
 }
 
+export function withMetaInformation<T, M, N>(
+  schema: Schema<T, M>,
+  metaExtension: N
+) {
+  return makeSchema(schema.validate, () => ({
+    ...schema.meta(),
+    ...metaExtension,
+  }));
+}
+
 export function refineWithMetainformation<T, M, N>(
   schema: Schema<T, M>,
   validate: (v: T, o: ValidationOptions) => ValidationResult<T> | void,

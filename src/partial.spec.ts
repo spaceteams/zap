@@ -1,6 +1,7 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
-import { array } from "./array";
+import { array, minItems } from "./array";
+import { date } from "./date";
 import { number } from "./number";
 import { object } from "./object";
 import { optional } from "./optional";
@@ -38,12 +39,14 @@ it("builds metadata of primitives", () => {
 });
 it("builds metadata of arrays", () => {
   expect(partial(array(number())).meta().schema.meta().required).toEqual(false);
+  expect(partial(minItems(array(number()), 2)).meta().minItems).toEqual(2);
 });
 it("builds metadata of objects", () => {
   expect(partial(schema).meta().schema.id.meta().required).toEqual(false);
   expect(
     partial(schema).meta().schema.nested.meta().schema.user.meta()
   ).toEqual({ type: "string" });
+  expect(partial(date()).meta().instance).toEqual("Date");
 });
 it("builds metadata of tuples", () => {
   expect(

@@ -4,7 +4,7 @@ export type EnumLike = { [k: string]: string | number };
 
 export function nativeEnum<T extends EnumLike>(
   e: T
-): Schema<string | number, { type: "enum" }> {
+): Schema<string | number, { type: "enum"; enum: T }> {
   const entries = new Set(
     Object.entries(e)
       .filter(([key]) => !Number.isInteger(Number(key)))
@@ -20,6 +20,6 @@ export function nativeEnum<T extends EnumLike>(
         return "value should be a valid enum";
       }
     },
-    () => ({ type: "enum" })
+    () => ({ type: "enum", enum: e })
   );
 }

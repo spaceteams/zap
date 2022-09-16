@@ -1,7 +1,10 @@
 import { InferTypes, makeSchema, Schema } from "./schema";
 import { isSuccess, ValidationResult } from "./validation";
 
-type Unionize<T extends [...unknown[]]> = T extends [infer Head, ...infer Tail]
+export type Unionize<T extends [...unknown[]]> = T extends [
+  infer Head,
+  ...infer Tail
+]
   ? Head | Unionize<Tail>
   : never;
 
