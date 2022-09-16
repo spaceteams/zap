@@ -1,10 +1,4 @@
-import {
-  getOption,
-  makeSchema,
-  refine,
-  refineWithMetainformation,
-  Schema,
-} from "./schema";
+import { getOption, refine, refineWithMetainformation, Schema } from "./schema";
 import {
   isFailure,
   isSuccess,
@@ -15,28 +9,39 @@ import {
 export function array<T, M>(
   schema: Schema<T, M>
 ): Schema<T[], { type: "array"; schema: Schema<T, M> }> {
-  return makeSchema(
-    (v, o) => {
-      if (!Array.isArray(v)) {
-        return makeError("wrong_type", v, "array");
+  const validate: Schema<T[], unknown>["validate"] = (v, o) => {
+    if (!Array.isArray(v)) {
+      return makeError("wrong_type", v, "array");
+    }
+
+    const validations: ValidationResult<T[]> = [];
+    for (const value of v) {
+      const validation = schema.validate(value, o);
+      validations.push(validation);
+
+      if (getOption(o, "earlyExit") && isFailure(validation)) {
+        return validations;
       }
-
-      const validations: ValidationResult<T[]> = [];
-      for (const value of v) {
-        const validation = schema.validate(value, o);
-        validations.push(validation);
-
-        if (getOption(o, "earlyExit") && isFailure(validation)) {
-          return validations;
+    }
+    if (validations.every((v) => isSuccess(v))) {
+      return;
+    }
+    return validations;
+  };
+  return {
+    accepts: (v, o): v is T[] => isSuccess(validate(v, o)),
+    validate,
+    parse: (v, o) => {
+      if (!getOption(o, "skipValidation")) {
+        const validation = validate(v, o);
+        if (isFailure(validation)) {
+          throw validation;
         }
       }
-      if (validations.every((v) => isSuccess(v))) {
-        return;
-      }
-      return validations;
+      return (v as T[]).map((item) => schema.parse(item));
     },
-    () => ({ type: "array", schema })
-  );
+    meta: () => ({ type: "array", schema }),
+  };
 }
 export function minItems<T, M>(schema: Schema<T[], M>, minItems: number) {
   return refineWithMetainformation(

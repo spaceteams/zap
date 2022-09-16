@@ -99,6 +99,22 @@ it("validates with early exit", () => {
   });
 });
 
+it("validates with strict", () => {
+  expect(
+    translate(
+      schema.validate(
+        {
+          id: 12,
+          name: ["first", "last"],
+          nested: { user: "some user" },
+          additional: "add",
+        },
+        { strict: true }
+      )
+    )
+  ).toEqual("validation failed: additionalField(additional)");
+});
+
 it("parses with stripping", () => {
   expect(
     schema.parse({
@@ -120,7 +136,7 @@ it("parses with stripping", () => {
         nested: { user: "some user" },
         additional: "add",
       },
-      { earlyExit: false, strip: false }
+      { strip: false }
     )
   ).toEqual({
     id: 12,

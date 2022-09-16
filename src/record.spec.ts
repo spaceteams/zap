@@ -1,6 +1,7 @@
 /* eslint-disable unicorn/no-null */
 
 import { number } from "./number";
+import { defaultValue, optional } from "./optional";
 import { record } from "./record";
 import { translate } from "./validation";
 
@@ -37,4 +38,13 @@ it("validates with early exit", () => {
   ).toEqual({
     id: "value was of type string expected number",
   });
+});
+
+it("parses", () => {
+  expect(
+    record(defaultValue(optional(number()), 42)).parse({
+      id: 12,
+      missing: undefined,
+    })
+  ).toEqual({ id: 12, missing: 42 });
 });

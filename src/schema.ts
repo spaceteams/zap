@@ -1,9 +1,14 @@
 import { isFailure, isSuccess, ValidationResult } from "./validation";
 
-export type ValidationOptions = { earlyExit: boolean };
-export type ParsingOptions = { strip: boolean };
+export type ValidationOptions = { earlyExit: boolean; strict: boolean };
+export type ParsingOptions = { strip: boolean; skipValidation: boolean };
 export type Options = ParsingOptions & ValidationOptions;
-export const defaultOptions: Options = { earlyExit: false, strip: true };
+export const defaultOptions: Options = {
+  earlyExit: false,
+  strip: true,
+  strict: false,
+  skipValidation: false,
+};
 
 export const getOption = (
   o: Partial<Options> | undefined,
@@ -20,19 +25,22 @@ export interface Schema<T, M> {
    * this method is constructed by the makeSchema function
    * @param v the value to be checked
    */
-  accepts: (v: unknown) => v is T;
+  accepts: (v: unknown, options?: Partial<ValidationOptions>) => v is T;
   /**
    * builds a validation object containing all validation errors of the object
    * @param v the value to be checked
    */
-  validate: (v: unknown, options?: ValidationOptions) => ValidationResult<T>;
+  validate: (
+    v: unknown,
+    options?: Partial<ValidationOptions>
+  ) => ValidationResult<T>;
   /**
    * validates a value and returns it
    * the result can be additionally be coerced
    * @param v the value to be parsed
    * @throws Validation<T> if validation of v fails
    */
-  parse: (v: unknown, options?: ParsingOptions & ValidationOptions) => T;
+  parse: (v: unknown, options?: Partial<Options>) => T;
   /**
    * returns the Meta Object
    */
@@ -49,11 +57,13 @@ export function makeSchema<T, M>(
   meta: () => M
 ): Schema<T, M> {
   return {
-    accepts: (v): v is T => isSuccess(validate(v, { earlyExit: true })),
+    accepts: (v, o): v is T => isSuccess(validate(v, o)),
     parse: (v, o) => {
-      const validation = validate(v, o);
-      if (isFailure(validation)) {
-        throw validation;
+      if (!getOption(o, "skipValidation")) {
+        const validation = validate(v, o);
+        if (isFailure(validation)) {
+          throw validation;
+        }
       }
       return v as T;
     },
@@ -95,7 +105,7 @@ export function refine<T, M>(
     if (isFailure(validation)) {
       return validation;
     }
-    return validate(v as T, o ?? defaultOptions) || undefined;
+    return validate(v as T, { ...defaultOptions, ...o }) || undefined;
   }, schema.meta);
 }
 
@@ -120,7 +130,7 @@ export function refineWithMetainformation<T, M, N>(
       if (isFailure(validation)) {
         return validation;
       }
-      return validate(v as T, o ?? defaultOptions) || undefined;
+      return validate(v as T, { ...defaultOptions, ...o }) || undefined;
     },
     () => ({ ...schema.meta(), ...metaExtension })
   );
@@ -187,6 +197,18 @@ export function transform<T, S, M>(
     accepts: (v): v is S => schema.accepts(v),
     parse: (v, o) => transformation(schema.parse(v, o)),
     validate: (v, o) => schema.validate(v, o) as ValidationResult<S>,
+    meta: () => schema.meta(),
+  };
+}
+
+export function options<T, M>(
+  schema: Schema<T, M>,
+  options: Partial<Options>
+): Schema<T, M> {
+  return {
+    accepts: (v): v is T => schema.accepts(v),
+    parse: (v, o) => schema.parse(v, { ...o, ...options }),
+    validate: (v, o) => schema.validate(v, { ...o, ...options }),
     meta: () => schema.meta(),
   };
 }

@@ -3,6 +3,7 @@
 
 import { literal } from "./literal";
 import { number } from "./number";
+import { defaultValue, optional } from "./optional";
 import { tuple } from "./tuple";
 import { translate } from "./validation";
 
@@ -32,4 +33,13 @@ it("validates with early exit", () => {
   expect(
     translate(schema.validate([Number.NaN, "b"], { earlyExit: true }))
   ).toEqual(["validation failed: isNan()"]);
+});
+
+it("parses", () => {
+  expect(
+    tuple(defaultValue(optional(number()), 21), literal("a")).parse([
+      undefined,
+      "a",
+    ])
+  ).toEqual([21, "a"]);
 });

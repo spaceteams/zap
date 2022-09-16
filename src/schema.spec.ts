@@ -4,7 +4,8 @@ import { nan, number } from "./number";
 import { object } from "./object";
 import { undefinedSchema } from "./optional";
 import { or } from "./or";
-import { coerce, narrow, refine, transform } from "./schema";
+import { coerce, narrow, options, refine, transform } from "./schema";
+import { string } from "./string";
 import { makeError, translate } from "./validation";
 
 describe("refine", () => {
@@ -41,6 +42,11 @@ describe("coerce", () => {
   it("parses", () => {
     expect(schema.parse("")).toEqual(0);
     expect(schema.parse("1")).toEqual(1);
+    expect(
+      object({
+        nested: schema,
+      }).parse({ nested: "1" })
+    ).toEqual({ nested: 1 });
   });
 });
 
@@ -70,5 +76,50 @@ describe("narrow", () => {
     expect(schema.parse(12)).toEqual(12);
     expect(schema.parse(undefined)).toEqual(undefined);
     expect(schema.parse(Number.NaN)).toEqual(undefined);
+  });
+});
+
+describe("options", () => {
+  it("sets strict", () => {
+    expect(
+      translate(
+        object({
+          outer: options(object({ a: string() }), { strict: true }),
+        }).validate({
+          outer: { a: "", add: "inner" },
+          add: "outer",
+        })
+      )
+    ).toEqual({ outer: "validation failed: additionalField(add)" });
+  });
+  it("sets earlyExit", () => {
+    expect(
+      translate(
+        object({
+          outer: options(object({ a: string(), b: string() }), {
+            earlyExit: true,
+          }),
+          second: number(),
+        }).validate({
+          outer: {
+            a: 1,
+            b: 2,
+          },
+        })
+      )
+    ).toEqual({
+      outer: { a: "value was of type number expected string" },
+      second: "value is required",
+    });
+  });
+  it("sets strip", () => {
+    expect(
+      object({
+        a: options(object({ b: string() }), { strip: false }),
+      }).parse({
+        a: { b: "", add: "inner" },
+        add: "outer",
+      })
+    ).toEqual({ a: { b: "", add: "inner" } });
   });
 });

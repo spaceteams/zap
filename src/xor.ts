@@ -7,12 +7,12 @@ export function xor<T extends Schema<unknown, unknown>[]>(
 ): Schema<Unionize<InferTypes<T>>, { type: "xor"; schemas: T }> {
   type V = ValidationResult<Unionize<InferTypes<T>>>;
   return makeSchema(
-    (v) => {
+    (v, o) => {
       let result: ValidationResult<unknown>;
       let hasSuccess = false;
       for (const schema of schemas) {
-        result = schema.validate(v);
-        if (isSuccess(schema.validate(v))) {
+        result = schema.validate(v, o);
+        if (isSuccess(result)) {
           if (hasSuccess) {
             return makeError("invalid_value", v, "xor") as V;
           } else {

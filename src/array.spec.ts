@@ -3,6 +3,8 @@
 
 import { array } from "./array";
 import { number } from "./number";
+import { optional } from "./optional";
+import { coerce } from "./schema";
 import { translate } from "./validation";
 
 const schema = array(number());
@@ -33,4 +35,9 @@ it("validates with early exit", () => {
   expect(
     translate(schema.validate([0, "string"], { earlyExit: true }))
   ).toEqual([undefined, "value was of type string expected number"]);
+});
+
+it("parses", () => {
+  const schema = array(coerce(number(), Number));
+  expect(schema.parse(["1", 1])).toEqual([1, 1]);
 });

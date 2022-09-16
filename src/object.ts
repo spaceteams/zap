@@ -33,10 +33,24 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
       return makeError("wrong_type", v, "null") as Validation<ResultT>;
     }
 
+    const record = v as { [k: string]: unknown };
+    if (getOption(o, "strict")) {
+      for (const key of Object.keys(record)) {
+        if (!Object.hasOwn(schema, key)) {
+          return makeError(
+            "invalid_value",
+            v,
+            "additionalField",
+            key
+          ) as Validation<ResultT>;
+        }
+      }
+    }
+
     const validation: { [key: string]: unknown } = {};
     for (const [key, inner] of Object.entries(schema)) {
       const innerValidation = (inner as Schema<unknown, unknown>).validate(
-        (v as { [k: string]: unknown })[key]
+        record[key]
       );
       if (isFailure(innerValidation)) {
         validation[key] = innerValidation;
@@ -51,19 +65,24 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
     return validation as Validation<ResultT>;
   };
   return {
-    accepts: (v): v is ResultT => isSuccess(validate(v, { earlyExit: true })),
+    accepts: (v, o): v is ResultT => isSuccess(validate(v, o)),
     validate,
     parse: (v, o) => {
-      const validation = validate(v, o);
-      if (isFailure(validation)) {
-        throw validation;
-      }
-      if (!getOption(o, "strip")) {
-        return v as ResultT;
+      if (!getOption(o, "skipValidation")) {
+        const validation = validate(v, o);
+        if (isFailure(validation)) {
+          throw validation;
+        }
       }
       const result: Partial<ResultT> = {};
-      for (const key of Object.keys(schema)) {
-        result[key] = (v as ResultT)[key as keyof ResultT];
+      for (const [key, inner] of Object.entries(schema)) {
+        result[key] = (inner as Schema<unknown, unknown>).parse(
+          (v as ResultT)[key as keyof ResultT],
+          { ...o, skipValidation: true }
+        );
+      }
+      if (!getOption(o, "strip")) {
+        return { ...(v as ResultT), ...result } as ResultT;
       }
       return result as ResultT;
     },
@@ -129,8 +148,8 @@ export function omit<
   }
 
   return makeSchema(
-    (v) => {
-      const validation = schema.validate(v);
+    (v, o) => {
+      const validation = schema.validate(v, o);
       if (validation === undefined) {
         return validation;
       }
@@ -172,8 +191,8 @@ export function pick<
   }
 
   return makeSchema(
-    (v) => {
-      const validation = schema.validate(v);
+    (v, o) => {
+      const validation = schema.validate(v, o);
       if (validation === undefined) {
         return validation;
       }
@@ -205,8 +224,8 @@ export function at<
   key: K
 ): Schema<T[K], ReturnType<M["schema"][K]["meta"]>> {
   return makeSchema(
-    (v) => {
-      const validation = schema.validate({ [key]: v });
+    (v, o) => {
+      const validation = schema.validate({ [key]: v }, o);
       if (validation === undefined) {
         return;
       }

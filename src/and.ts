@@ -1,5 +1,10 @@
-import { getOption, InferTypes, makeSchema, Schema } from "./schema";
-import { isFailure, Validation, ValidationResult } from "./validation";
+import { getOption, InferTypes, Schema } from "./schema";
+import {
+  isFailure,
+  isSuccess,
+  Validation,
+  ValidationResult,
+} from "./validation";
 
 export type Intersect<T extends [...unknown[]]> = T extends [
   infer Head,
@@ -32,17 +37,39 @@ export function mergeValidations<S, T>(
 export function and<T extends Schema<unknown, unknown>[]>(
   ...schemas: T
 ): Schema<Intersect<InferTypes<T>>, { type: "and"; schemas: T }> {
-  return makeSchema(
-    (v, o) => {
-      let result: ValidationResult<unknown>;
-      for (const schema of schemas) {
-        result = mergeValidations(result, schema.validate(v));
-        if (isFailure(result) && getOption(o, "earlyExit")) {
-          break;
+  type ResultT = Intersect<InferTypes<T>>;
+  const validate: Schema<ResultT, unknown>["validate"] = (v, o) => {
+    let result: ValidationResult<unknown>;
+    for (const schema of schemas) {
+      result = mergeValidations(result, schema.validate(v, o));
+      if (isFailure(result) && getOption(o, "earlyExit")) {
+        break;
+      }
+    }
+    return result as ValidationResult<Intersect<InferTypes<T>>>;
+  };
+  return {
+    accepts: (v, o): v is ResultT => isSuccess(validate(v, o)),
+    validate,
+    parse: (v, o) => {
+      if (!getOption(o, "skipValidation")) {
+        const validation = validate(v, o);
+        if (isFailure(validation)) {
+          throw validation;
         }
       }
-      return result as ValidationResult<Intersect<InferTypes<T>>>;
+      let result: Partial<ResultT> = {};
+      for (const schema of schemas) {
+        result = {
+          ...result,
+          ...(schema.parse(v, {
+            ...o,
+            skipValidation: true,
+          }) as Partial<ResultT>),
+        };
+      }
+      return result as ResultT;
     },
-    () => ({ type: "and", schemas })
-  );
+    meta: () => ({ type: "and", schemas }),
+  };
 }

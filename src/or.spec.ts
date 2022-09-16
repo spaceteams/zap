@@ -64,6 +64,19 @@ it("validates", () => {
   });
 });
 
+it("parses", () => {
+  expect(
+    schema.parse({
+      id: 12,
+      name: ["some", "string"],
+      nested: { user: "3" },
+    })
+  ).toEqual({
+    id: 12,
+    name: ["some", "string"],
+  });
+});
+
 it("builds metadata", () => {
   expect(schema.meta().type).toEqual("or");
   expect(schema.meta().schemas[0]).toEqual(Named);

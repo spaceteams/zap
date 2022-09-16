@@ -3,7 +3,7 @@ import { array } from "./array";
 import { fun } from "./fun";
 import { number } from "./number";
 import { object } from "./object";
-import { optional } from "./optional";
+import { defaultValue, optional } from "./optional";
 import { string } from "./string";
 import { translate } from "./validation";
 
@@ -14,7 +14,7 @@ const Named = object({
 });
 const Described = object({
   id: number(),
-  description: optional(string()),
+  description: defaultValue(optional(string()), "defaultValue"),
   nested: object({
     user: string(),
   }),
@@ -80,6 +80,21 @@ it("validates with early exit", () => {
     )
   ).toEqual({
     id: "value was of type string expected number",
+  });
+});
+
+it("parses", () => {
+  expect(
+    schema.parse({
+      id: 12,
+      name: ["some", "string"],
+      nested: { user: "3" },
+    })
+  ).toEqual({
+    id: 12,
+    name: ["some", "string"],
+    description: "defaultValue",
+    nested: { user: "3" },
   });
 });
 
