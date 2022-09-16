@@ -6,6 +6,7 @@ import { InferType } from "./schema";
 import { at, fromInstance, isInstance, object, omit, pick } from "./object";
 import { optional } from "./optional";
 import { string } from "./string";
+import { translate } from "./validation";
 
 const schema = object({
   id: number(),
@@ -51,6 +52,13 @@ it("accepts", () => {
   ).toBeFalsy();
 });
 
+it("validates", () => {
+  expect(translate(schema.validate(null))).toEqual("value is required");
+  expect(translate(schema.validate(1))).toEqual(
+    "value was of type number expected object"
+  );
+});
+
 it("builds metadata", () => {
   expect(schema.meta().type).toEqual("object");
   expect(Object.keys(schema.meta().schema)).toEqual([
@@ -71,21 +79,23 @@ it("validates", () => {
   ).toBeUndefined();
 
   expect(
-    schema.validate({ id: "", name: ["some", "string"], nested: {} })
+    translate(schema.validate({ id: "", name: ["some", "string"], nested: {} }))
   ).toEqual({
-    id: "value should be a number",
-    nested: { user: "value should be a string" },
+    id: "value was of type string expected number",
+    nested: { user: "value is required" },
   });
 });
 
 it("validates with early exit", () => {
   expect(
-    schema.validate(
-      { id: "", name: ["some", "string"], nested: {} },
-      { earlyExit: true }
+    translate(
+      schema.validate(
+        { id: "", name: ["some", "string"], nested: {} },
+        { earlyExit: true }
+      )
     )
   ).toEqual({
-    id: "value should be a number",
+    id: "value was of type string expected number",
   });
 });
 

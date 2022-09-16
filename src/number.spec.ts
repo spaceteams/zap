@@ -3,6 +3,7 @@
 
 import { integer, nan, negative, number, positive, multipleOf } from "./number";
 import { or } from "./or";
+import { translate } from "./validation";
 
 it("accepts", () => {
   expect(number().accepts(0)).toBeTruthy();
@@ -15,8 +16,10 @@ it("accepts", () => {
 
 it("validates", () => {
   expect(number().validate(0)).toBeUndefined();
-  expect(number().validate(undefined)).toEqual("value should be a number");
-  expect(number().validate(Number.NaN)).toEqual("value should not be NaN");
+  expect(translate(number().validate(undefined))).toEqual("value is required");
+  expect(translate(number().validate(Number.NaN))).toEqual(
+    "validation failed: isNan()"
+  );
 });
 
 describe("nan", () => {
@@ -29,7 +32,9 @@ describe("nan", () => {
   it("validates", () => {
     expect(nan().validate(Number.NaN)).toBeUndefined();
 
-    expect(nan().validate(0)).toEqual("value should be NaN");
+    expect(translate(nan().validate(0))).toEqual(
+      "value was of type number expected nan"
+    );
   });
 });
 
@@ -38,9 +43,15 @@ describe("positive", () => {
   it("validates", () => {
     expect(schema.validate(1)).toBeUndefined();
 
-    expect(schema.validate(0)).toEqual("value should be positive");
-    expect(schema.validate(-1)).toEqual("value should be positive");
-    expect(schema.validate(-0)).toEqual("value should be positive");
+    expect(translate(schema.validate(0))).toEqual(
+      "validation failed: positive()"
+    );
+    expect(translate(schema.validate(-1))).toEqual(
+      "validation failed: positive()"
+    );
+    expect(translate(schema.validate(-0))).toEqual(
+      "validation failed: positive()"
+    );
   });
 });
 
@@ -49,9 +60,15 @@ describe("negative", () => {
   it("validates", () => {
     expect(schema.validate(-1)).toBeUndefined();
 
-    expect(schema.validate(-0)).toEqual("value should be negative");
-    expect(schema.validate(1)).toEqual("value should be negative");
-    expect(schema.validate(0)).toEqual("value should be negative");
+    expect(translate(schema.validate(-0))).toEqual(
+      "validation failed: negative()"
+    );
+    expect(translate(schema.validate(1))).toEqual(
+      "validation failed: negative()"
+    );
+    expect(translate(schema.validate(0))).toEqual(
+      "validation failed: negative()"
+    );
   });
 });
 
@@ -60,9 +77,11 @@ describe("int", () => {
   it("validates", () => {
     expect(schema.validate(-1)).toBeUndefined();
 
-    expect(schema.validate(0.1)).toEqual("value should be an integer");
-    expect(schema.validate(Number.POSITIVE_INFINITY)).toEqual(
-      "value should be an integer"
+    expect(translate(schema.validate(0.1))).toEqual(
+      "value was of type number expected integer"
+    );
+    expect(translate(schema.validate(Number.POSITIVE_INFINITY))).toEqual(
+      "value was of type number expected integer"
     );
   });
 });
@@ -73,6 +92,8 @@ describe("multipleOf", () => {
     expect(schema.validate(-1)).toBeUndefined();
     expect(schema.validate(-1.2)).toBeUndefined();
 
-    expect(schema.validate(-1.21)).toEqual("value should be a multiple of 0.1");
+    expect(translate(schema.validate(-1.21))).toEqual(
+      "validation failed: multipleOf(0.1)"
+    );
   });
 });

@@ -1,5 +1,5 @@
 import { makeSchema, narrow, Schema } from "./schema";
-import { ValidationResult } from "./validation";
+import { makeError, ValidationResult } from "./validation";
 
 export function optional<T, M>(
   schema: Schema<T, M>
@@ -43,7 +43,7 @@ export function required<T, M>(
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
-        return "value should be present" as V;
+        return makeError("wrong_type", v, "undefined", "null") as V;
       }
       return schema.validate(v) as V;
     },
@@ -68,7 +68,7 @@ export function undefinedSchema(): Schema<undefined, { type: "undefined" }> {
   return makeSchema(
     (v) => {
       if (typeof v !== "undefined") {
-        return "value should be undefined";
+        return makeError("wrong_type", v, "undefined");
       }
     },
     () => ({ type: "undefined" })
@@ -78,7 +78,7 @@ export function nullSchema(): Schema<null, { type: "null" }> {
   return makeSchema(
     (v) => {
       if (typeof v !== null) {
-        return "value should be null";
+        return makeError("wrong_type", v, "null");
       }
     },
     () => ({ type: "null" })

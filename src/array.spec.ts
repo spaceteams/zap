@@ -3,6 +3,7 @@
 
 import { array } from "./array";
 import { number } from "./number";
+import { translate } from "./validation";
 
 const schema = array(number());
 
@@ -18,17 +19,18 @@ it("accepts", () => {
 
 it("validates", () => {
   expect(schema.validate([])).toBeUndefined();
-  expect(schema.validate([0, "string", Number.NaN])).toEqual([
+  expect(translate(schema.validate([0, "string", Number.NaN]))).toEqual([
     undefined,
-    "value should be a number",
-    "value should not be NaN",
+    "value was of type string expected number",
+    "validation failed: isNan()",
   ]);
-  expect(schema.validate({})).toEqual("value should be an array");
+  expect(translate(schema.validate({}))).toEqual(
+    "value was of type object expected array"
+  );
 });
 
 it("validates with early exit", () => {
-  expect(schema.validate([0, "string"], { earlyExit: true })).toEqual([
-    undefined,
-    "value should be a number",
-  ]);
+  expect(
+    translate(schema.validate([0, "string"], { earlyExit: true }))
+  ).toEqual([undefined, "value was of type string expected number"]);
 });

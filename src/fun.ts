@@ -1,4 +1,5 @@
 import { makeSchema, refineWithMetainformation, Schema } from "./schema";
+import { makeError } from "./validation";
 
 export type Procedure<Args extends unknown[], Result> = (
   ...args: Args
@@ -11,7 +12,7 @@ export function fun<Args extends unknown[], Result>(): Schema<
   return makeSchema(
     (v) => {
       if (typeof v !== "function") {
-        return "value should be a function";
+        return makeError("wrong_type", v, "function");
       }
     },
     () => ({ type: "function" })
@@ -26,7 +27,7 @@ export function arity<Args extends unknown[], M, Result>(
     schema,
     (v) => {
       if (v.length !== arity) {
-        return `function should have arity ${arity}`;
+        return makeError("invalid_value", v, "arity", arity);
       }
     },
     { arity }

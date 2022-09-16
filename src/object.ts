@@ -5,7 +5,7 @@ import {
   refineWithMetainformation,
   Schema,
 } from "./schema";
-import { isFailure, isSuccess, Validation } from "./validation";
+import { isFailure, isSuccess, makeError, Validation } from "./validation";
 
 type optionalKeys<T> = {
   [k in keyof T]-?: undefined extends T[k] ? k : never;
@@ -27,10 +27,10 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
 
   const validate: Schema<ResultT, unknown>["validate"] = (v, o) => {
     if (typeof v !== "object") {
-      return "value should be an object" as Validation<ResultT>;
+      return makeError("wrong_type", v, "object") as Validation<ResultT>;
     }
     if (v === null) {
-      return "value should not be null" as Validation<ResultT>;
+      return makeError("wrong_type", v, "null") as Validation<ResultT>;
     }
 
     const validation: { [key: string]: unknown } = {};
@@ -75,18 +75,14 @@ export function empty(): Schema<Record<string, never>, { type: "object" }> {
   return object({});
 }
 
-export function fromInstance<T>(
-  constructor: {
-    new (...args: unknown[]): T;
-  },
-  message?: string
-): Schema<T, { type: "object"; instance: string }> {
+export function fromInstance<T>(constructor: {
+  new (...args: unknown[]): T;
+}): Schema<T, { type: "object"; instance: string }> {
   return makeSchema(
     (v) => {
       const isValid = v instanceof constructor;
       if (!isValid) {
-        return (message ||
-          "value should be instanceof the given constructor") as Validation<T>;
+        return makeError("wrong_type", v, constructor) as Validation<T>;
       }
     },
     () => ({ type: "object", instance: constructor.name })
@@ -102,7 +98,7 @@ export function isInstance<T, M>(
     (v) => {
       const isValid = v instanceof constructor;
       if (!isValid) {
-        return "value should be instanceof the given constructor" as Validation<T>;
+        return makeError("wrong_type", v, constructor) as Validation<T>;
       }
     },
     { instance: constructor.name }

@@ -3,6 +3,7 @@
 
 import { number } from "./number";
 import { nullable, nullish, optional, required } from "./optional";
+import { translate } from "./validation";
 
 describe("optional", () => {
   const schema = optional(number());
@@ -17,7 +18,7 @@ describe("optional", () => {
   it("validates", () => {
     expect(schema.validate(undefined)).toBeUndefined();
 
-    expect(schema.validate(null)).toEqual("value should be a number");
+    expect(translate(schema.validate(null))).toEqual("value is required");
   });
 });
 
@@ -32,8 +33,8 @@ describe("required", () => {
   });
 
   it("validates", () => {
-    expect(schema.validate(undefined)).toEqual("value should be present");
-    expect(schema.validate(null)).toEqual("value should be present");
+    expect(translate(schema.validate(undefined))).toEqual("value is required");
+    expect(translate(schema.validate(null))).toEqual("value is required");
   });
 });
 
@@ -50,7 +51,7 @@ describe("nullable", () => {
   it("validates", () => {
     expect(schema.validate(null)).toBeUndefined();
 
-    expect(schema.validate(undefined)).toEqual("value should be a number");
+    expect(translate(schema.validate(undefined))).toEqual("value is required");
   });
 });
 

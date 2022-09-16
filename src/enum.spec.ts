@@ -1,4 +1,5 @@
 import { nativeEnum } from "./enum";
+import { translate } from "./validation";
 
 enum E {
   a,
@@ -28,5 +29,7 @@ it("accepts", () => {
 it("validates", () => {
   expect(schema.validate(E.a)).toBeUndefined();
 
-  expect(schema.validate("a")).toEqual("value should be a valid enum");
+  expect(translate(schema.validate("a"))).toEqual(
+    "validation failed: enum(0,12,c)"
+  );
 });

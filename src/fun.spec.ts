@@ -2,6 +2,7 @@
 /* eslint-disable unicorn/no-null */
 
 import { arity, fun } from "./fun";
+import { translate } from "./validation";
 
 const lazyString = fun<[], string>();
 const binaryPredicate = fun<[string, number], boolean>();
@@ -18,7 +19,9 @@ it("accepts", () => {
 it("validates", () => {
   expect(binaryPredicate.validate((_a, _b) => true)).toBeUndefined();
 
-  expect(binaryPredicate.validate(1)).toEqual("value should be a function");
+  expect(translate(binaryPredicate.validate(1))).toEqual(
+    "value was of type number expected function"
+  );
 });
 
 describe("arity", () => {
@@ -27,8 +30,8 @@ describe("arity", () => {
       arity(binaryPredicate, 2).validate((_a: number, _b: number) => true)
     ).toBeUndefined();
 
-    expect(arity(binaryPredicate, 2).validate((_a, _b, _c) => true)).toEqual(
-      "function should have arity 2"
-    );
+    expect(
+      translate(arity(binaryPredicate, 2).validate((_a, _b, _c) => true))
+    ).toEqual("validation failed: arity(2)");
   });
 });

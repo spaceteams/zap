@@ -1,13 +1,14 @@
 import { makeSchema, refineWithMetainformation, Schema } from "./schema";
+import { makeError } from "./validation";
 
 export function number(): Schema<number, { type: "number" }> {
   return makeSchema(
     (v) => {
       if (typeof v !== "number") {
-        return "value should be a number";
+        return makeError("wrong_type", v, "number");
       }
       if (Number.isNaN(v)) {
-        return "value should not be NaN";
+        return makeError("invalid_value", v, "isNan");
       }
     },
     () => ({ type: "number" })
@@ -17,7 +18,7 @@ export function nan(): Schema<number, { type: "nan" }> {
   return makeSchema(
     (v) => {
       if (!Number.isNaN(v)) {
-        return "value should be NaN";
+        return makeError("wrong_type", v, "nan");
       }
     },
     () => ({ type: "nan" })
@@ -28,7 +29,7 @@ export function positive<M>(schema: Schema<number, M>) {
     schema,
     (v) => {
       if (v <= 0) {
-        return "value should be positive";
+        return makeError("invalid_value", v, "positive");
       }
     },
     { exclusiveMinimum: 0 }
@@ -39,7 +40,7 @@ export function nonPositive<M>(schema: Schema<number, M>) {
     schema,
     (v) => {
       if (v <= 0) {
-        return "value should be non-positive";
+        return makeError("invalid_value", v, "nonPositive");
       }
     },
     { maximum: 0 }
@@ -50,7 +51,7 @@ export function negative<M>(schema: Schema<number, M>) {
     schema,
     (v) => {
       if (v >= 0) {
-        return "value should be negative";
+        return makeError("invalid_value", v, "negative");
       }
     },
     { minimum: 0 }
@@ -61,7 +62,7 @@ export function nonNegative<M>(schema: Schema<number, M>) {
     schema,
     (v) => {
       if (v < 0) {
-        return "value should be non-negative";
+        return makeError("invalid_value", v, "nonNegative");
       }
     },
     { exclusiveMaximum: 0 }
@@ -72,7 +73,7 @@ export function integer<M>(schema: Schema<number, M>) {
     schema,
     (v) => {
       if (!Number.isInteger(v)) {
-        return "value should be an integer";
+        return makeError("wrong_type", v, "integer");
       }
     },
     { type: "integer" as const }
@@ -94,7 +95,7 @@ export function multipleOf<M>(schema: Schema<number, M>, value: number) {
     schema,
     (v) => {
       if (floatSafeRemainder(v, value) > 0) {
-        return `value should be a multiple of ${value}`;
+        return makeError("invalid_value", v, "multipleOf", value);
       }
     },
     { multipleOf: value }
@@ -106,7 +107,7 @@ export function exclusiveMaximum<M>(schema: Schema<number, M>, value: number) {
     schema,
     (v) => {
       if (v >= value) {
-        return `value should be less than ${value}`;
+        return makeError("invalid_value", v, "exclusiveMaximum", value);
       }
     },
     { exclusiveMaximum: value }
@@ -117,7 +118,7 @@ export function exclusiveMinimum<M>(schema: Schema<number, M>, value: number) {
     schema,
     (v) => {
       if (v <= value) {
-        return `value should be greater than ${value}`;
+        return makeError("invalid_value", v, "exclusiveMinimum", value);
       }
     },
     { exclusiveMinimum: value }
@@ -128,7 +129,7 @@ export function maximum<M>(schema: Schema<number, M>, value: number) {
     schema,
     (v) => {
       if (v > value) {
-        return `value should be less than or equal ${value}`;
+        return makeError("invalid_value", v, "maximum", value);
       }
     },
     { maximum: value }
@@ -139,7 +140,7 @@ export function minimum<M>(schema: Schema<number, M>, value: number) {
     schema,
     (v) => {
       if (v < value) {
-        return `value should be greater than or equal ${value}`;
+        return makeError("invalid_value", v, "minimum", value);
       }
     },
     { minimum: value }

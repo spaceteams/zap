@@ -2,6 +2,7 @@ import { InferTypes, getOption, makeSchema, Schema } from "./schema";
 import {
   isFailure,
   isSuccess,
+  makeError,
   Validation,
   ValidationResult,
 } from "./validation";
@@ -13,10 +14,10 @@ export function tuple<T extends Schema<unknown, unknown>[]>(
   return makeSchema(
     (v, o) => {
       if (!Array.isArray(v)) {
-        return "value should be an array" as V;
+        return makeError("wrong_type", v, "array") as V;
       }
       if (schemas.length !== v.length) {
-        return `value should have length ${schemas.length}` as V;
+        return makeError("invalid_value", v, "length", schemas.length) as V;
       }
 
       const validations = [] as ValidationResult<unknown>[];

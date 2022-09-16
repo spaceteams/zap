@@ -2,6 +2,7 @@
 
 import { number } from "./number";
 import { record } from "./record";
+import { translate } from "./validation";
 
 const schema = record(number());
 
@@ -17,21 +18,23 @@ it("validates", () => {
   expect(schema.validate({ id: 12 })).toBeUndefined();
 
   expect(
-    schema.validate({ id: "", name: ["some", "string"], nested: {} })
+    translate(schema.validate({ id: "", name: ["some", "string"], nested: {} }))
   ).toEqual({
-    id: "value should be a number",
-    name: "value should be a number",
-    nested: "value should be a number",
+    id: "value was of type string expected number",
+    name: "value was of type array expected number",
+    nested: "value was of type object expected number",
   });
 });
 
 it("validates with early exit", () => {
   expect(
-    schema.validate(
-      { id: "", name: ["some", "string"], nested: {} },
-      { earlyExit: true }
+    translate(
+      schema.validate(
+        { id: "", name: ["some", "string"], nested: {} },
+        { earlyExit: true }
+      )
     )
   ).toEqual({
-    id: "value should be a number",
+    id: "value was of type string expected number",
   });
 });

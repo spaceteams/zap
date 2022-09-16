@@ -4,6 +4,7 @@ import { object } from "./object";
 import { optional } from "./optional";
 import { or } from "./or";
 import { string } from "./string";
+import { translate } from "./validation";
 
 const Named = object({
   id: number(),
@@ -56,10 +57,10 @@ it("validates", () => {
   ).toBeUndefined();
 
   expect(
-    schema.validate({ id: "", name: ["some", "string"], nested: {} })
+    translate(schema.validate({ id: "", name: ["some", "string"], nested: {} }))
   ).toEqual({
-    id: "value should be a number",
-    nested: { user: "value should be a string" },
+    id: "value was of type string expected number",
+    nested: { user: "value is required" },
   });
 });
 

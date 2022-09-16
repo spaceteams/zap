@@ -1,5 +1,5 @@
 import { getOption, makeSchema, Schema } from "./schema";
-import { isFailure, Validation } from "./validation";
+import { isFailure, makeError, Validation } from "./validation";
 
 export function record<T, M>(
   schema: Schema<T, M>
@@ -7,10 +7,10 @@ export function record<T, M>(
   return makeSchema(
     (v, o) => {
       if (typeof v !== "object") {
-        return "value should be an object";
+        return makeError("wrong_type", v, "object");
       }
       if (v === null) {
-        return "value should not be null";
+        return makeError("wrong_type", v, "null");
       }
       const validation: Validation<{ [key: string]: T }> = {};
       for (const [key, value] of Object.entries(v)) {

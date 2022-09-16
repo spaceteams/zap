@@ -4,6 +4,7 @@
 import { literal } from "./literal";
 import { number } from "./number";
 import { tuple } from "./tuple";
+import { translate } from "./validation";
 
 const schema = tuple(number(), literal("a"));
 
@@ -18,15 +19,17 @@ it("accepts", () => {
 it("validates", () => {
   expect(schema.validate([1, "a"])).toBeUndefined();
 
-  expect(schema.validate([Number.NaN, "b"])).toEqual([
-    "value should not be NaN",
-    "value should literally be a",
+  expect(translate(schema.validate([Number.NaN, "b"]))).toEqual([
+    "validation failed: isNan()",
+    "validation failed: literal(a)",
   ]);
-  expect(schema.validate(null)).toEqual("value should be an array");
-  expect(schema.validate([])).toEqual("value should have length 2");
+  expect(translate(schema.validate(null))).toEqual("value is required");
+  expect(translate(schema.validate([]))).toEqual(
+    "validation failed: length(2)"
+  );
 });
 it("validates with early exit", () => {
-  expect(schema.validate([Number.NaN, "b"], { earlyExit: true })).toEqual([
-    "value should not be NaN",
-  ]);
+  expect(
+    translate(schema.validate([Number.NaN, "b"], { earlyExit: true }))
+  ).toEqual(["validation failed: isNan()"]);
 });

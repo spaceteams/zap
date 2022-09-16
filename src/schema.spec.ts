@@ -5,18 +5,23 @@ import { object } from "./object";
 import { undefinedSchema } from "./optional";
 import { or } from "./or";
 import { coerce, narrow, refine, transform } from "./schema";
+import { makeError, translate } from "./validation";
 
 describe("refine", () => {
-  const schema = refine(number(), (v) =>
-    v % 2 === 0 ? undefined : "value should be an even number"
-  );
+  const schema = refine(number(), (v) => {
+    if (v % 2 !== 0) {
+      return makeError("invalid_value", v, "even");
+    }
+  });
 
   it("adds additional validation", () => {
     expect(schema.validate(12)).toBeUndefined();
-    expect(schema.validate(13)).toEqual("value should be an even number");
+    expect(translate(schema.validate(13))).toEqual("validation failed: even()");
   });
   it("only applies after basic validation passes", () => {
-    expect(schema.validate(Number.NaN)).toEqual("value should not be NaN");
+    expect(translate(schema.validate(Number.NaN))).toEqual(
+      "validation failed: isNan()"
+    );
   });
 });
 
@@ -29,7 +34,9 @@ describe("coerce", () => {
   });
   it("validates", () => {
     expect(schema.validate("")).toBeUndefined();
-    expect(schema.validate(undefined)).toEqual("value should not be NaN");
+    expect(translate(schema.validate(undefined))).toEqual(
+      "validation failed: isNan()"
+    );
   });
   it("parses", () => {
     expect(schema.parse("")).toEqual(0);

@@ -1,6 +1,7 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
 import { literal, literals } from "./literal";
+import { translate } from "./validation";
 
 describe("literal", () => {
   const schema = literal("a");
@@ -15,8 +16,12 @@ describe("literal", () => {
   it("validates", () => {
     expect(schema.validate("a")).toBeUndefined();
 
-    expect(schema.validate([])).toEqual("value is not a literal");
-    expect(schema.validate("d")).toEqual("value should literally be a");
+    expect(translate(schema.validate([]))).toEqual(
+      "value was of type array expected string or symbol or number"
+    );
+    expect(translate(schema.validate("d"))).toEqual(
+      "validation failed: literal(a)"
+    );
   });
 });
 
@@ -31,9 +36,11 @@ describe("literals", () => {
   it("validates", () => {
     expect(schema.validate("a")).toBeUndefined();
 
-    expect(schema.validate([])).toEqual("value is not a literal");
-    expect(schema.validate("d")).toEqual(
-      "value should literally be one of [a,b,c]"
+    expect(translate(schema.validate([]))).toEqual(
+      "value was of type array expected string or symbol or number"
+    );
+    expect(translate(schema.validate("d"))).toEqual(
+      "validation failed: literals(a,b,c)"
     );
   });
 });

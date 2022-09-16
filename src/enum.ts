@@ -1,4 +1,5 @@
 import { makeSchema, Schema } from "./schema";
+import { makeError } from "./validation";
 
 export type EnumLike = { [k: string]: string | number };
 
@@ -14,10 +15,10 @@ export function nativeEnum<T extends EnumLike>(
   return makeSchema(
     (v) => {
       if (typeof v !== "string" && typeof v !== "number") {
-        return "value should be string or number";
+        return makeError("wrong_type", v, "string", "number");
       }
       if (!entries.has(v)) {
-        return "value should be a valid enum";
+        return makeError("invalid_value", v, "enum", ...entries.values());
       }
     },
     () => ({ type: "enum", enum: e })

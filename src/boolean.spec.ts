@@ -2,6 +2,7 @@
 /* eslint-disable unicorn/no-null */
 
 import { boolean } from "./boolean";
+import { translate } from "./validation";
 
 it("accepts", () => {
   expect(boolean().accepts(true)).toBeTruthy();
@@ -12,5 +13,5 @@ it("accepts", () => {
 
 it("validates", () => {
   expect(boolean().validate(false)).toBeUndefined();
-  expect(boolean().validate(undefined)).toEqual("value should be a boolean");
+  expect(translate(boolean().validate(undefined))).toEqual("value is required");
 });

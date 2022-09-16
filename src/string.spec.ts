@@ -12,5 +12,9 @@ it("accepts", () => {
 
 it("validates", () => {
   expect(string().validate("")).toBeUndefined();
-  expect(string().validate(undefined)).toEqual("value should be a string");
+  expect(string().validate(undefined)).toMatchObject({
+    message: "wrong_type",
+    value: undefined,
+    args: ["string"],
+  });
 });

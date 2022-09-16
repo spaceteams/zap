@@ -5,7 +5,12 @@ import {
   refineWithMetainformation,
   Schema,
 } from "./schema";
-import { isFailure, isSuccess, ValidationResult } from "./validation";
+import {
+  isFailure,
+  isSuccess,
+  makeError,
+  ValidationResult,
+} from "./validation";
 
 export function array<T, M>(
   schema: Schema<T, M>
@@ -13,7 +18,7 @@ export function array<T, M>(
   return makeSchema(
     (v, o) => {
       if (!Array.isArray(v)) {
-        return "value should be an array";
+        return makeError("wrong_type", v, "array");
       }
 
       const validations: ValidationResult<T[]> = [];
@@ -38,7 +43,7 @@ export function minItems<T, M>(schema: Schema<T[], M>, minItems: number) {
     schema,
     (v) => {
       if (v.length < minItems) {
-        return `value should contain at least ${minItems} items`;
+        return makeError("invalid_value", v, "minItems", minItems);
       }
     },
     { minItems }
@@ -49,7 +54,7 @@ export function maxItems<T, M>(schema: Schema<T[], M>, maxItems: number) {
     schema,
     (v) => {
       if (v.length > maxItems) {
-        return `value should contain at most ${maxItems} items`;
+        return makeError("invalid_value", v, "maxItems", maxItems);
       }
     },
     { maxItems }
@@ -60,7 +65,7 @@ export function items<T, M>(schema: Schema<T[], M>, items: number) {
     schema,
     (v) => {
       if (v.length === items) {
-        return `value should contain exactly ${items} items`;
+        return makeError("invalid_value", v, "items", items);
       }
     },
     { minItems: items, maxItems: items }
@@ -79,7 +84,7 @@ export function uniqueItems<T, M>(schema: Schema<T[], M>) {
         return false;
       });
       if (hasDuplicates) {
-        return "value should only contain unique items";
+        return makeError("invalid_value", v, "uniqueItems");
       }
     },
     { uniqueItems: true }
@@ -92,7 +97,7 @@ export function includes<T, M>(
 ) {
   return refine(schema, (v) => {
     if (!v.includes(element, fromIndex)) {
-      return "value should contain given element";
+      return makeError("invalid_value", v, "includes", element, fromIndex);
     }
   });
 }

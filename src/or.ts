@@ -17,7 +17,7 @@ export function or<T extends Schema<unknown, unknown>[]>(
       for (const schema of schemas) {
         result = schema.validate(v);
         if (isSuccess(schema.validate(v))) {
-          break;
+          return;
         }
       }
       return result as ValidationResult<Unionize<InferTypes<T>>>;
