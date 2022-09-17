@@ -14,6 +14,14 @@ describe("refine", () => {
       return makeError("invalid_value", v, "even");
     }
   });
+  const builderSchema = refine(number(), (v, { add }) => {
+    if (v % 2 !== 0) {
+      add(makeError("invalid_value", v, "even"));
+    }
+  });
+  const inlineSchema = refine(object({ a: string() }), (v, { errorIf }) => ({
+    a: errorIf(v.a.length > 0, "invalid_value", "not empty"),
+  }));
 
   it("adds additional validation", () => {
     expect(schema.validate(12)).toBeUndefined();
@@ -21,8 +29,24 @@ describe("refine", () => {
   });
   it("only applies after basic validation passes", () => {
     expect(translate(schema.validate(Number.NaN))).toEqual(
-      "validation failed: isNan()"
+      "validation failed: isNaN()"
     );
+  });
+
+  it("supports a builder-approach", () => {
+    expect(translate(builderSchema.validate(13))).toEqual(
+      "validation failed: even()"
+    );
+  });
+
+  it("supports inline-style", () => {
+    expect(translate(inlineSchema.validate({ a: "a" }))).toEqual({
+      a: "validation failed: not empty()",
+    });
+  });
+
+  it("simplifies result", () => {
+    expect(inlineSchema.validate({ a: "" })).toBeUndefined();
   });
 });
 
@@ -36,7 +60,7 @@ describe("coerce", () => {
   it("validates", () => {
     expect(schema.validate("")).toBeUndefined();
     expect(translate(schema.validate(undefined))).toEqual(
-      "validation failed: isNan()"
+      "validation failed: isNaN()"
     );
   });
   it("parses", () => {

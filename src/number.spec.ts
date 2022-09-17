@@ -18,7 +18,7 @@ it("validates", () => {
   expect(number().validate(0)).toBeUndefined();
   expect(translate(number().validate(undefined))).toEqual("value is required");
   expect(translate(number().validate(Number.NaN))).toEqual(
-    "validation failed: isNan()"
+    "validation failed: isNaN()"
   );
 });
 

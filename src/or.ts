@@ -16,7 +16,7 @@ export function or<T extends Schema<unknown, unknown>[]>(
     let result: ValidationResult<unknown>;
     for (const schema of schemas) {
       result = schema.validate(v, o);
-      if (isSuccess(schema.validate(v, o))) {
+      if (isSuccess(result)) {
         return;
       }
     }
@@ -31,7 +31,7 @@ export function or<T extends Schema<unknown, unknown>[]>(
       let successSchema: Schema<unknown, unknown> | undefined;
       for (const schema of schemas) {
         validation = schema.validate(v, o);
-        if (isSuccess(schema.validate(v, o))) {
+        if (isSuccess(validation)) {
           successSchema = schema;
           break;
         }
@@ -39,7 +39,7 @@ export function or<T extends Schema<unknown, unknown>[]>(
       if (successSchema === undefined) {
         throw validation;
       }
-      return successSchema.parse(v, o) as ResultT;
+      return successSchema.parse(v, { ...o, skipValidation: true }) as ResultT;
     },
     meta: () => ({ type: "or", schemas }),
   };

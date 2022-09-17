@@ -21,7 +21,7 @@ it("validates", () => {
   expect(schema.validate([1, "a"])).toBeUndefined();
 
   expect(translate(schema.validate([Number.NaN, "b"]))).toEqual([
-    "validation failed: isNan()",
+    "validation failed: isNaN()",
     "validation failed: literal(a)",
   ]);
   expect(translate(schema.validate(null))).toEqual("value is required");
@@ -32,7 +32,7 @@ it("validates", () => {
 it("validates with early exit", () => {
   expect(
     translate(schema.validate([Number.NaN, "b"], { earlyExit: true }))
-  ).toEqual(["validation failed: isNan()"]);
+  ).toEqual(["validation failed: isNaN()"]);
 });
 
 it("parses", () => {

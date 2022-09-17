@@ -8,7 +8,7 @@ export function number(): Schema<number, { type: "number" }> {
         return makeError("wrong_type", v, "number");
       }
       if (Number.isNaN(v)) {
-        return makeError("invalid_value", v, "isNan");
+        return makeError("invalid_value", v, "isNaN");
       }
     },
     () => ({ type: "number" })
@@ -96,6 +96,17 @@ export function multipleOf<M>(schema: Schema<number, M>, value: number) {
     (v) => {
       if (floatSafeRemainder(v, value) > 0) {
         return makeError("invalid_value", v, "multipleOf", value);
+      }
+    },
+    { multipleOf: value }
+  );
+}
+export function equals<M>(schema: Schema<number, M>, value: number) {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      if (v !== value) {
+        return makeError("invalid_value", v, "equals", value);
       }
     },
     { multipleOf: value }

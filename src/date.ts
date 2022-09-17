@@ -1,9 +1,25 @@
 import { fromInstance } from "./object";
-import { refineWithMetainformation, Schema } from "./schema";
+import { coerce, refine, refineWithMetainformation, Schema } from "./schema";
 import { makeError } from "./validation";
 
 export function date(): Schema<Date, { type: "object"; instance: string }> {
-  return fromInstance(Date);
+  return refine(fromInstance(Date), (d) => {
+    if (Number.isNaN(d)) {
+      return makeError("invalid_value", d, "isNaN");
+    }
+  });
+}
+
+export function coercedDate(): Schema<
+  Date,
+  { type: "object"; instance: string }
+> {
+  return coerce(date(), (v) => {
+    if (typeof v === "string" || typeof v === "number") {
+      return new Date(v);
+    }
+    return v;
+  });
 }
 
 export function before<M>(schema: Schema<Date, M>, value: Date) {

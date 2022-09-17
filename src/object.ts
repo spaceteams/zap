@@ -82,7 +82,7 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
         );
       }
       if (!getOption(o, "strip")) {
-        return { ...(v as ResultT), ...result } as ResultT;
+        return Object.assign(result, v) as ResultT;
       }
       return result as ResultT;
     },

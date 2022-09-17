@@ -1,4 +1,13 @@
-import { isFailure, isSuccess, ValidationResult } from "./validation";
+import {
+  isFailure,
+  isSuccess,
+  makeGenericError,
+  mergeValidations,
+  simplifyValidation,
+  ValidationError,
+  ValidationMessageCode,
+  ValidationResult,
+} from "./validation";
 
 export type ValidationOptions = { earlyExit: boolean; strict: boolean };
 export type ParsingOptions = { strip: boolean; skipValidation: boolean };
@@ -54,7 +63,8 @@ export interface Schema<T, M> {
  */
 export function makeSchema<T, M>(
   validate: Schema<T, M>["validate"],
-  meta: () => M
+  meta: () => M,
+  parseAfterValidation: (v: T, options?: Partial<Options>) => T = (v) => v
 ): Schema<T, M> {
   return {
     accepts: (v, o): v is T => isSuccess(validate(v, o)),
@@ -65,7 +75,7 @@ export function makeSchema<T, M>(
           throw validation;
         }
       }
-      return v as T;
+      return parseAfterValidation(v as T, { ...o, skipValidation: true });
     },
     validate,
     meta,
@@ -84,7 +94,7 @@ export function makeSchema<T, M>(
  * const refined = refine(userSchema, ({id}) => {
  *   if (id > 42) {
  *     return {
- *       name: "id is too high for this user",
+ *       name: makeError("invalid_value", v, "idTooHigh")
  *     };
  *   }
  * });
@@ -92,20 +102,57 @@ export function makeSchema<T, M>(
  * will validate the id and write it as a validation
  * error of the name.
  *
+ * A context object is passed into the validate function that
+ * contains the current ValidationOptions and a builder
+ * function to add validations. The refine method uses
+ * `mergeValidations` to return a combined validation object.
+ *
+ * You can even construct a  validation result that may contain
+ * successful validations and return it like this
+ *
+ * ```
+ * const refined = refine(userSchema, ({id}, {invalidIf}) => ({
+ *   id: id < name.length ? makeError("invalid_value", v, "idTooShort") : undefined,
+ *   name: invalidIf(id > 42, "invalid_value", "idTooHigh"),
+ * });
+ * ```
+ *
+ * The refine method uses `simplifyValidation` to strip all successful
+ * validations.
+ *
  * @param schema the base schema
  * @param validate the additional validation function
  * @returns the refined schema
  */
 export function refine<T, M>(
   schema: Schema<T, M>,
-  validate: (v: T, o: ValidationOptions) => ValidationResult<T> | void
+  validate: (
+    v: T,
+    ctx: {
+      add: (v: ValidationResult<Partial<T>>) => void;
+      errorIf(
+        condition: boolean,
+        message: ValidationMessageCode | string,
+        ...args: unknown[]
+      ): ValidationError | undefined;
+      options: ValidationOptions;
+    }
+  ) => void | ValidationResult<T>
 ): Schema<T, M> {
   return makeSchema((v, o) => {
-    const validation = schema.validate(v, o);
+    let validation = schema.validate(v, o);
     if (isFailure(validation)) {
       return validation;
     }
-    return validate(v as T, { ...defaultOptions, ...o }) || undefined;
+    const refinedValidation = validate(v as T, {
+      add: (val) => {
+        validation = mergeValidations(validation, val);
+      },
+      errorIf: (condition, message, ...args) =>
+        condition ? makeGenericError(message, v, args) : undefined,
+      options: { ...defaultOptions, ...o },
+    });
+    return simplifyValidation(refinedValidation ?? validation);
   }, schema.meta);
 }
 

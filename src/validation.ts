@@ -1,10 +1,10 @@
-export type ValidationMessage = "wrong_type" | "invalid_value";
+export type ValidationMessageCode = "wrong_type" | "invalid_value";
 
 const validationErrorMarker = Symbol();
 
 export interface ValidationError {
   __marker: symbol;
-  message: ValidationMessage | string;
+  message: ValidationMessageCode | string;
   value: unknown;
   args?: unknown[];
 }
@@ -15,7 +15,7 @@ export function isValidationError(v: unknown): v is ValidationError {
   );
 }
 export function makeError(
-  message: ValidationMessage,
+  message: ValidationMessageCode,
   value: unknown,
   ...args: unknown[]
 ): ValidationError {
@@ -62,6 +62,76 @@ export function isFailure<T>(
   validation: ValidationResult<T>
 ): validation is Validation<T> {
   return validation !== undefined;
+}
+
+export function mergeValidations<S, T>(
+  left: ValidationResult<S>,
+  right: ValidationResult<T>
+): ValidationResult<S & T> {
+  if (isValidationError(left)) {
+    return left as Validation<S & T>;
+  }
+  if (isValidationError(right)) {
+    return right as Validation<S & T>;
+  }
+  if (Array.isArray(left)) {
+    if (Array.isArray(right)) {
+      return [...left, ...right] as Validation<S & T>;
+    }
+    return left as Validation<S & T>;
+  }
+  if (Array.isArray(right)) {
+    return right as Validation<S & T>;
+  }
+  if (typeof left === "object") {
+    if (typeof right === "object") {
+      const validation = {};
+      for (const key of Object.keys(left)) {
+        if (right[key] !== undefined) {
+          validation[key] = mergeValidations(left[key], right[key]);
+        } else {
+          validation[key] = left[key];
+        }
+      }
+      for (const key of Object.keys(right)) {
+        if (left[key] === undefined) {
+          validation[key] = right[key];
+        }
+      }
+      return validation as Validation<S & T>;
+    }
+    return left as Validation<S & T>;
+  }
+  return right as Validation<S & T>;
+}
+
+export function simplifyValidation<T>(
+  v: ValidationResult<T>
+): ValidationResult<T> {
+  if (isValidationError(v)) {
+    return v;
+  }
+  if (Array.isArray(v)) {
+    if (v.every((inner) => inner === undefined)) {
+      return undefined;
+    }
+    return v.map((inner) => simplifyValidation(inner)) as ValidationResult<T>;
+  }
+  if (typeof v === "object") {
+    for (const key of Object.keys(v)) {
+      const k = key as keyof typeof v;
+      v[k] = simplifyValidation(
+        v[k] as ValidationResult<unknown>
+      ) as Validation<T, ValidationError>[keyof Validation<T, ValidationError>];
+      if (v[k] === undefined) {
+        delete v[k];
+      }
+    }
+    if (Object.keys(v).length === 0) {
+      return undefined;
+    }
+    return v;
+  }
 }
 
 export function defaultTranslateError(validation: ValidationError) {

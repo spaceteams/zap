@@ -3,7 +3,6 @@
 
 import { array } from "./array";
 import { number } from "./number";
-import { optional } from "./optional";
 import { coerce } from "./schema";
 import { translate } from "./validation";
 
@@ -24,7 +23,7 @@ it("validates", () => {
   expect(translate(schema.validate([0, "string", Number.NaN]))).toEqual([
     undefined,
     "value was of type string expected number",
-    "validation failed: isNan()",
+    "validation failed: isNaN()",
   ]);
   expect(translate(schema.validate({}))).toEqual(
     "value was of type object expected array"

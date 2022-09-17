@@ -1,4 +1,10 @@
-import { getOption, refine, refineWithMetainformation, Schema } from "./schema";
+import {
+  getOption,
+  makeSchema,
+  refine,
+  refineWithMetainformation,
+  Schema,
+} from "./schema";
 import {
   isFailure,
   isSuccess,
@@ -9,39 +15,29 @@ import {
 export function array<T, M>(
   schema: Schema<T, M>
 ): Schema<T[], { type: "array"; schema: Schema<T, M> }> {
-  const validate: Schema<T[], unknown>["validate"] = (v, o) => {
-    if (!Array.isArray(v)) {
-      return makeError("wrong_type", v, "array");
-    }
-
-    const validations: ValidationResult<T[]> = [];
-    for (const value of v) {
-      const validation = schema.validate(value, o);
-      validations.push(validation);
-
-      if (getOption(o, "earlyExit") && isFailure(validation)) {
-        return validations;
+  return makeSchema(
+    (v, o) => {
+      if (!Array.isArray(v)) {
+        return makeError("wrong_type", v, "array");
       }
-    }
-    if (validations.every((v) => isSuccess(v))) {
-      return;
-    }
-    return validations;
-  };
-  return {
-    accepts: (v, o): v is T[] => isSuccess(validate(v, o)),
-    validate,
-    parse: (v, o) => {
-      if (!getOption(o, "skipValidation")) {
-        const validation = validate(v, o);
-        if (isFailure(validation)) {
-          throw validation;
+
+      const validations: ValidationResult<T[]> = [];
+      for (const value of v) {
+        const validation = schema.validate(value, o);
+        validations.push(validation);
+
+        if (getOption(o, "earlyExit") && isFailure(validation)) {
+          return validations;
         }
       }
-      return (v as T[]).map((item) => schema.parse(item));
+      if (validations.every((v) => isSuccess(v))) {
+        return;
+      }
+      return validations;
     },
-    meta: () => ({ type: "array", schema }),
-  };
+    () => ({ type: "array", schema }),
+    (v, o) => v.map((item) => schema.parse(item, o))
+  );
 }
 export function minItems<T, M>(schema: Schema<T[], M>, minItems: number) {
   return refineWithMetainformation(
