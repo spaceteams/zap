@@ -2,7 +2,7 @@ import { Unionize } from "../utility";
 import { makeSchema, Schema } from "../schema";
 import { makeIssue, Validation } from "../validation";
 
-export type Literal = number | string | boolean;
+export type Literal = number | string | boolean | symbol;
 
 export function literal<T extends Literal>(
   literal: T

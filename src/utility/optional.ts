@@ -10,7 +10,8 @@ export function optional<T, M>(
         return schema.validate(v);
       }
     },
-    () => ({ ...schema.meta(), required: false })
+    () => ({ ...schema.meta(), required: false }),
+    (v, o) => schema.parse(v, o)
   );
 }
 export function nullable<T, M>(schema: Schema<T, M>): Schema<T | null, M> {
@@ -20,7 +21,8 @@ export function nullable<T, M>(schema: Schema<T, M>): Schema<T | null, M> {
         return schema.validate(v);
       }
     },
-    () => ({ ...schema.meta() })
+    () => ({ ...schema.meta() }),
+    (v, o) => schema.parse(v, o)
   );
 }
 export function nullish<T, M>(
@@ -32,7 +34,8 @@ export function nullish<T, M>(
         return schema.validate(v);
       }
     },
-    () => ({ ...schema.meta(), required: false })
+    () => ({ ...schema.meta(), required: false }),
+    (v, o) => schema.parse(v, o)
   );
 }
 
@@ -47,7 +50,8 @@ export function required<T, M>(
       }
       return schema.validate(v) as V;
     },
-    () => ({ ...schema.meta(), required: true })
+    () => ({ ...schema.meta(), required: true }),
+    (v, o) => schema.parse(v, o) as T
   );
 }
 

@@ -4,6 +4,7 @@
 import { number } from "../simple/number";
 import { nullable, nullish, optional, required } from "./optional";
 import { translate } from "../validation";
+import { coercedDate } from "../simple";
 
 describe("optional", () => {
   const schema = optional(number());
@@ -20,6 +21,10 @@ describe("optional", () => {
 
     expect(translate(schema.validate(null))).toEqual("value is required");
   });
+
+  it("parses", () => {
+    expect(optional(coercedDate()).parse(42)).toEqual(new Date(42));
+  });
 });
 
 describe("required", () => {
@@ -35,6 +40,10 @@ describe("required", () => {
   it("validates", () => {
     expect(translate(schema.validate(undefined))).toEqual("value is required");
     expect(translate(schema.validate(null))).toEqual("value is required");
+  });
+
+  it("parses", () => {
+    expect(required(optional(coercedDate())).parse(42)).toEqual(new Date(42));
   });
 });
 
@@ -53,6 +62,10 @@ describe("nullable", () => {
 
     expect(translate(schema.validate(undefined))).toEqual("value is required");
   });
+
+  it("parses", () => {
+    expect(nullable(coercedDate()).parse(42)).toEqual(new Date(42));
+  });
 });
 
 describe("nullish", () => {
@@ -67,5 +80,9 @@ describe("nullish", () => {
   it("validates", () => {
     expect(schema.validate(undefined)).toBeUndefined();
     expect(schema.validate(null)).toBeUndefined();
+  });
+
+  it("parses", () => {
+    expect(nullish(coercedDate()).parse(42)).toEqual(new Date(42));
   });
 });

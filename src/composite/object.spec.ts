@@ -3,8 +3,16 @@
 import { array } from "./array";
 import { number } from "../simple/number";
 import { InferType } from "../schema";
-import { at, fromInstance, isInstance, object, omit, pick } from "./object";
-import { optional } from "../utility/optional";
+import {
+  at,
+  fromInstance,
+  isInstance,
+  object,
+  omit,
+  pick,
+  keys,
+} from "./object";
+import { defaultValue, optional } from "../utility/optional";
 import { string } from "../simple/string";
 import { translate } from "../validation";
 
@@ -57,19 +65,6 @@ it("validates", () => {
   expect(translate(schema.validate(1))).toEqual(
     "value was of type number expected object"
   );
-});
-
-it("builds metadata", () => {
-  expect(schema.meta().type).toEqual("object");
-  expect(Object.keys(schema.meta().schema)).toEqual([
-    "id",
-    "name",
-    "description",
-    "nested",
-  ]);
-});
-
-it("validates", () => {
   expect(
     schema.validate({
       id: 12,
@@ -113,6 +108,22 @@ it("validates with strict", () => {
       )
     )
   ).toEqual("additionalField(additional)");
+});
+
+it("builds metadata", () => {
+  expect(schema.meta().type).toEqual("object");
+  expect(Object.keys(schema.meta().schema)).toEqual([
+    "id",
+    "name",
+    "description",
+    "nested",
+  ]);
+});
+
+it("parses", () => {
+  expect(object({ a: defaultValue(optional(number()), 12) }).parse({})).toEqual(
+    { a: 12 }
+  );
 });
 
 it("parses with stripping", () => {
@@ -207,5 +218,21 @@ describe("at", () => {
 
   it("builds metadata", () => {
     expect(at(schema, "id").meta().type).toEqual("number");
+  });
+});
+
+describe("keys", () => {
+  it("accepts", () => {
+    expect(keys(schema).accepts("id")).toBeTruthy();
+  });
+
+  it("builds metadata", () => {
+    expect(keys(schema).meta().type).toEqual("literals");
+    expect(keys(schema).meta().literals).toEqual([
+      "id",
+      "name",
+      "description",
+      "nested",
+    ]);
   });
 });

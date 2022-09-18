@@ -22,7 +22,7 @@ const g = new ConversionGraph({ v1, v2, v3 });
 g.addTransformation("v1", "v2", (v) => ({ value: v, unit: "m" }));
 g.addTransformation("v2", "v3", ({ value, unit }) => ({
   value,
-  unit: unit ? unit : "m",
+  unit: unit === "" ? "m" : unit,
 }));
 
 g.addTransformation("v2", "v1", ({ value }) => value);

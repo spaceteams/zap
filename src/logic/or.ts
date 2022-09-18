@@ -6,6 +6,7 @@ export function or<T extends Schema<unknown, unknown>[]>(
   ...schemas: T
 ): Schema<Unionize<InferTypes<T>>, { type: "or"; schemas: T }> {
   type ResultT = Unionize<InferTypes<T>>;
+  type V = ValidationResult<ResultT>;
   const validate: Schema<ResultT, unknown>["validate"] = (v, o) => {
     let result: ValidationResult<unknown>;
     for (const schema of schemas) {
@@ -14,7 +15,7 @@ export function or<T extends Schema<unknown, unknown>[]>(
         return;
       }
     }
-    return result as ValidationResult<ResultT>;
+    return result as V;
   };
 
   return {

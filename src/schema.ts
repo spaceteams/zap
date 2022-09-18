@@ -9,8 +9,34 @@ import {
   ValidationResult,
 } from "./validation";
 
-export type ValidationOptions = { earlyExit: boolean; strict: boolean };
-export type ParsingOptions = { strip: boolean; skipValidation: boolean };
+export interface ValidationOptions {
+  /**
+   * Stop validation on the first issue.
+   * default: false
+   */
+  earlyExit: boolean;
+  /**
+   * Validate in strict mode:
+   *  - Objects may not have additional fields
+   * default: false
+   */
+  strict: boolean;
+}
+export interface ParsingOptions {
+  /**
+   * Parse in strip mode:
+   *  - Objects will not contain additional fields
+   * default: true
+   */
+  strip: boolean;
+  /**
+   * Do not validate the object before parsing.
+   * Note that some validation may still be needed to parse the value.
+   * default: false
+   */
+  skipValidation: boolean;
+}
+
 export type Options = ParsingOptions & ValidationOptions;
 export const defaultOptions: Options = {
   earlyExit: false,
@@ -44,8 +70,7 @@ export interface Schema<T, M> {
     options?: Partial<ValidationOptions>
   ) => ValidationResult<T>;
   /**
-   * validates a value and returns it
-   * the result can be additionally be coerced
+   * parses a value after validating it
    * @param v the value to be parsed
    * @throws Validation<T> if validation of v fails
    */
@@ -139,23 +164,16 @@ export function refine<T, M>(
     }
   ) => void | ValidationResult<T>
 ): Schema<T, M> {
-  return makeSchema((v, o) => {
-    let validation = schema.validate(v, o);
-    if (isFailure(validation)) {
-      return validation;
-    }
-    const refinedValidation = validate(v as T, {
-      add: (val) => {
-        validation = mergeValidations(validation, val);
-      },
-      issueIf: (condition, message, ...args) =>
-        condition ? makeGenericIssue(message, v, ...args) : undefined,
-      options: { ...defaultOptions, ...o },
-    });
-    return simplifyValidation(refinedValidation ?? validation);
-  }, schema.meta);
+  return refineWithMetainformation(schema, validate, schema.meta);
 }
 
+/**
+ * Modify a schema by extending its meta informations.
+ *
+ * @param schema the base schema
+ * @param metaExtension the additional meta fields
+ * @returns the modified schema
+ */
 export function withMetaInformation<T, M, N>(
   schema: Schema<T, M>,
   metaExtension: N
@@ -166,18 +184,45 @@ export function withMetaInformation<T, M, N>(
   }));
 }
 
+/**
+ * Like refine but also extends the meta information.
+ *
+ * @param schema the base schema
+ * @param validate the additional validation function
+ * @param metaExtension the additional meta fields
+ * @returns the modified schema
+ */
 export function refineWithMetainformation<T, M, N>(
   schema: Schema<T, M>,
-  validate: (v: T, o: ValidationOptions) => ValidationResult<T> | void,
+  validate: (
+    v: T,
+    ctx: {
+      add: (v: ValidationResult<Partial<T>>) => void;
+      issueIf(
+        condition: boolean,
+        message: ValidationIssueCode | string,
+        ...args: unknown[]
+      ): ValidationIssue | undefined;
+      options: ValidationOptions;
+    }
+  ) => void | ValidationResult<T>,
   metaExtension: N
 ): Schema<T, Omit<M, keyof N> & N> {
   return makeSchema(
     (v, o) => {
-      const validation = schema.validate(v, o);
+      let validation = schema.validate(v, o);
       if (isFailure(validation)) {
         return validation;
       }
-      return validate(v as T, { ...defaultOptions, ...o }) || undefined;
+      const refinedValidation = validate(v as T, {
+        add: (val) => {
+          validation = mergeValidations(validation, val);
+        },
+        issueIf: (condition, message, ...args) =>
+          condition ? makeGenericIssue(message, v, ...args) : undefined,
+        options: { ...defaultOptions, ...o },
+      });
+      return simplifyValidation(refinedValidation ?? validation);
     },
     () => ({ ...schema.meta(), ...metaExtension })
   );
@@ -192,14 +237,12 @@ export function refineWithMetainformation<T, M, N>(
  * ```
  * will result in a schema that will accept numbers,
  * string, boolean etc... through native js coercion.
- * It will not accept ['a'] however, because that will coerce
- * into NaN which is not acceptable for number().
  *
  * This method is especially useful for parsing Timestamps
- * into date, number or string schemas. Using coercion, you can
- * avoid DTO objects and manual transformations in simple
- * use-cases. The more demanding use-cases might justify
- * @see conversion-graph.ts
+ * into date, number or string schemas. @see coercedDate.
+ * Using coercion, you can avoid DTO objects and manual
+ * transformations in simple use-cases. The more demanding
+ * use-cases might justify @see conversion-graph.ts
  *
  * @param schema the base schema to coerce values into
  * @param coercion the coercion function
@@ -248,6 +291,13 @@ export function transform<T, S, M>(
   };
 }
 
+/**
+ * Set option overrides for a schema.
+ *
+ * @param schema the nested schema
+ * @param options the options
+ * @returns the modified schema
+ */
 export function options<T, M>(
   schema: Schema<T, M>,
   options: Partial<Options>

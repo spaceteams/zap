@@ -16,6 +16,7 @@ export function lazy<T, M>(schema: () => Schema<T, M>): Schema<T, M> {
   const memo = memoize(schema);
   return makeSchema(
     (v, o) => memo().validate(v, o),
-    () => memo().meta()
+    () => memo().meta(),
+    (v, o) => memo().parse(v, o)
   );
 }

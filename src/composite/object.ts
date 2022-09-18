@@ -5,14 +5,13 @@ import {
   refineWithMetainformation,
   Schema,
 } from "../schema";
-import { isFailure, isSuccess, makeIssue, Validation } from "../validation";
+import { literals } from "../simple/literal";
+import { isFailure, makeIssue, Validation } from "../validation";
 
 type optionalKeys<T> = {
   [k in keyof T]-?: undefined extends T[k] ? k : never;
 }[keyof T];
-type requiredKeys<T> = {
-  [k in keyof T]: undefined extends T[k] ? never : k;
-}[keyof T];
+type requiredKeys<T> = Exclude<keyof T, optionalKeys<T>>;
 export type fixPartialKeys<T> = optionalKeys<T> extends never
   ? T
   : { [k in requiredKeys<T>]: T[k] } & { [k in optionalKeys<T>]?: T[k] };
@@ -25,64 +24,56 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
 > {
   type ResultT = fixPartialKeys<{ [K in keyof T]: InferType<T[K]> }>;
 
-  const validate: Schema<ResultT, unknown>["validate"] = (v, o) => {
-    if (typeof v !== "object") {
-      return makeIssue("wrong_type", v, "object") as Validation<ResultT>;
-    }
-    if (v === null) {
-      return makeIssue("wrong_type", v, "null") as Validation<ResultT>;
-    }
+  return makeSchema(
+    (v, o) => {
+      if (typeof v !== "object") {
+        return makeIssue("wrong_type", v, "object") as Validation<ResultT>;
+      }
+      if (v === null) {
+        return makeIssue("wrong_type", v, "null") as Validation<ResultT>;
+      }
 
-    const record = v as { [k: string]: unknown };
-    if (getOption(o, "strict")) {
-      for (const key of Object.keys(record)) {
-        if (!Object.hasOwn(schema, key)) {
-          return makeIssue("additionalField", v, key) as Validation<ResultT>;
+      const record = v as { [k: string]: unknown };
+      if (getOption(o, "strict")) {
+        for (const key of Object.keys(record)) {
+          if (!Object.hasOwn(schema, key)) {
+            return makeIssue("additionalField", v, key) as Validation<ResultT>;
+          }
         }
       }
-    }
 
-    const validation: { [key: string]: unknown } = {};
-    for (const [key, inner] of Object.entries(schema)) {
-      const innerValidation = (inner as Schema<unknown, unknown>).validate(
-        record[key]
-      );
-      if (isFailure(innerValidation)) {
-        validation[key] = innerValidation;
-        if (getOption(o, "earlyExit")) {
-          return validation as Validation<ResultT>;
+      const validation: { [key: string]: unknown } = {};
+      for (const [key, inner] of Object.entries(schema)) {
+        const innerValidation = (inner as Schema<unknown, unknown>).validate(
+          record[key]
+        );
+        if (isFailure(innerValidation)) {
+          validation[key] = innerValidation;
+          if (getOption(o, "earlyExit")) {
+            return validation as Validation<ResultT>;
+          }
         }
       }
-    }
-    if (Object.keys(validation).length === 0) {
-      return;
-    }
-    return validation as Validation<ResultT>;
-  };
-  return {
-    accepts: (v, o): v is ResultT => isSuccess(validate(v, o)),
-    validate,
-    parse: (v, o) => {
-      if (!getOption(o, "skipValidation")) {
-        const validation = validate(v, o);
-        if (isFailure(validation)) {
-          throw validation;
-        }
+      if (Object.keys(validation).length === 0) {
+        return;
       }
+      return validation as Validation<ResultT>;
+    },
+    () => ({ type: "object", schema }),
+    (v, o) => {
       const result: Partial<ResultT> = {};
       for (const [key, inner] of Object.entries(schema)) {
         result[key] = (inner as Schema<unknown, unknown>).parse(
-          (v as ResultT)[key as keyof ResultT],
-          { ...o, skipValidation: true }
+          v[key as keyof ResultT],
+          o
         );
       }
       if (!getOption(o, "strip")) {
         return Object.assign(result, v) as ResultT;
       }
       return result as ResultT;
-    },
-    meta: () => ({ type: "object", schema }),
-  };
+    }
+  );
 }
 
 export function empty(): Schema<Record<string, never>, { type: "object" }> {
@@ -228,4 +219,13 @@ export function at<
     },
     () => schema.meta().schema[key].meta() as ReturnType<M["schema"][K]["meta"]>
   );
+}
+
+export function keys<
+  T,
+  M extends { schema: { [K in keyof T]: Schema<unknown, unknown> } }
+>(
+  schema: Schema<T, M>
+): Schema<keyof T, { type: "literals"; literals: (keyof T)[] }> {
+  return literals(...(Object.keys(schema.meta().schema) as (keyof T)[]));
 }

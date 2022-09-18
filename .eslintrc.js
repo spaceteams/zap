@@ -7,10 +7,7 @@ module.exports = {
     module: true,
   },
   root: true,
-  extends: [
-    "eslint:recommended",
-    "plugin:unicorn/recommended",
-  ],
+  extends: ["eslint:recommended", "plugin:unicorn/recommended"],
   parser: "@babel/eslint-parser",
   parserOptions: {
     ecmaVersion: 6,

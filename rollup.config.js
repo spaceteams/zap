@@ -1,4 +1,5 @@
 import dts from "rollup-plugin-dts";
+import resolve from "rollup-plugin-node-resolve";
 
 export default [
   {
@@ -8,6 +9,7 @@ export default [
       format: "cjs",
       sourcemap: true,
     },
+    plugins: [resolve()],
   },
   {
     input: "build/index.d.ts",

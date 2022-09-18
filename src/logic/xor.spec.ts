@@ -1,7 +1,7 @@
 import { array } from "../composite/array";
 import { number } from "../simple/number";
 import { object } from "../composite/object";
-import { optional } from "../utility/optional";
+import { defaultValue, optional } from "../utility/optional";
 import { xor } from "./xor";
 import { string } from "../simple/string";
 import { translate } from "../validation";
@@ -11,7 +11,7 @@ const Named = object({
   name: array(string()),
 });
 const Described = object({
-  description: optional(string()),
+  description: defaultValue(optional(string()), "default"),
   nested: object({
     user: string(),
   }),
@@ -63,6 +63,17 @@ it("validates", () => {
     translate(schema.validate({ id: "", name: ["some", "string"], nested: {} }))
   ).toEqual({
     nested: { user: "value is required" },
+  });
+});
+
+it("parses", () => {
+  expect(
+    schema.parse({
+      nested: { user: "name" },
+    })
+  ).toEqual({
+    description: "default",
+    nested: { user: "name" },
   });
 });
 

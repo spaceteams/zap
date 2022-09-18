@@ -20,3 +20,7 @@ it("accepts", () => {
 it("validates", () => {
   expect(translate(schema.validate({ a: 2 }))).toEqual("not");
 });
+
+it("parses (by returning its input)", () => {
+  expect(schema.meta().schemas[0].parse({ a: 2.1 })).toEqual({ a: 2.1 });
+});
