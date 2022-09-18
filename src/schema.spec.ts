@@ -1,47 +1,43 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
-import { nan, number } from "./number";
-import { object } from "./object";
-import { undefinedSchema } from "./optional";
-import { or } from "./or";
+import { nan, number } from "./simple/number";
+import { object } from "./composite/object";
+import { undefinedSchema } from "./utility/optional";
+import { or } from "./logic/or";
 import { coerce, narrow, options, refine, transform } from "./schema";
-import { string } from "./string";
-import { makeError, translate } from "./validation";
+import { string } from "./simple/string";
+import { makeGenericIssue, translate } from "./validation";
 
 describe("refine", () => {
   const schema = refine(number(), (v) => {
     if (v % 2 !== 0) {
-      return makeError("invalid_value", v, "even");
+      return makeGenericIssue("even", v);
     }
   });
   const builderSchema = refine(number(), (v, { add }) => {
     if (v % 2 !== 0) {
-      add(makeError("invalid_value", v, "even"));
+      add(makeGenericIssue("even", v));
     }
   });
-  const inlineSchema = refine(object({ a: string() }), (v, { errorIf }) => ({
-    a: errorIf(v.a.length > 0, "invalid_value", "not empty"),
+  const inlineSchema = refine(object({ a: string() }), (v, { issueIf }) => ({
+    a: issueIf(v.a.length > 0, "a must be empty"),
   }));
 
   it("adds additional validation", () => {
     expect(schema.validate(12)).toBeUndefined();
-    expect(translate(schema.validate(13))).toEqual("validation failed: even()");
+    expect(translate(schema.validate(13))).toEqual("even");
   });
   it("only applies after basic validation passes", () => {
-    expect(translate(schema.validate(Number.NaN))).toEqual(
-      "validation failed: isNaN()"
-    );
+    expect(translate(schema.validate(Number.NaN))).toEqual("isNaN");
   });
 
   it("supports a builder-approach", () => {
-    expect(translate(builderSchema.validate(13))).toEqual(
-      "validation failed: even()"
-    );
+    expect(translate(builderSchema.validate(13))).toEqual("even");
   });
 
   it("supports inline-style", () => {
     expect(translate(inlineSchema.validate({ a: "a" }))).toEqual({
-      a: "validation failed: not empty()",
+      a: "a must be empty",
     });
   });
 
@@ -59,9 +55,7 @@ describe("coerce", () => {
   });
   it("validates", () => {
     expect(schema.validate("")).toBeUndefined();
-    expect(translate(schema.validate(undefined))).toEqual(
-      "validation failed: isNaN()"
-    );
+    expect(translate(schema.validate(undefined))).toEqual("isNaN");
   });
   it("parses", () => {
     expect(schema.parse("")).toEqual(0);
@@ -114,7 +108,7 @@ describe("options", () => {
           add: "outer",
         })
       )
-    ).toEqual({ outer: "validation failed: additionalField(add)" });
+    ).toEqual({ outer: "additionalField(add)" });
   });
   it("sets earlyExit", () => {
     expect(

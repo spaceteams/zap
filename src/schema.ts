@@ -1,11 +1,11 @@
 import {
   isFailure,
   isSuccess,
-  makeGenericError,
+  makeGenericIssue,
   mergeValidations,
   simplifyValidation,
-  ValidationError,
-  ValidationMessageCode,
+  ValidationIssue,
+  ValidationIssueCode,
   ValidationResult,
 } from "./validation";
 
@@ -92,9 +92,9 @@ export function makeSchema<T, M>(
  *   name: string()
  * });
  * const refined = refine(userSchema, ({id}) => {
- *   if (id > 42) {
+ *   if (id > name.length) {
  *     return {
- *       name: makeError("invalid_value", v, "idTooHigh")
+ *       name: makeGenericIssue("id too high!!", v)
  *     };
  *   }
  * });
@@ -112,8 +112,8 @@ export function makeSchema<T, M>(
  *
  * ```
  * const refined = refine(userSchema, ({id}, {invalidIf}) => ({
- *   id: id < name.length ? makeError("invalid_value", v, "idTooShort") : undefined,
- *   name: invalidIf(id > 42, "invalid_value", "idTooHigh"),
+ *   id: id < name.length ? makeIssue("invalid_value", v, "idTooShort") : undefined,
+ *   name: issueIf(id > name.length, "id too high!!"),
  * });
  * ```
  *
@@ -130,11 +130,11 @@ export function refine<T, M>(
     v: T,
     ctx: {
       add: (v: ValidationResult<Partial<T>>) => void;
-      errorIf(
+      issueIf(
         condition: boolean,
-        message: ValidationMessageCode | string,
+        message: ValidationIssueCode | string,
         ...args: unknown[]
-      ): ValidationError | undefined;
+      ): ValidationIssue | undefined;
       options: ValidationOptions;
     }
   ) => void | ValidationResult<T>
@@ -148,8 +148,8 @@ export function refine<T, M>(
       add: (val) => {
         validation = mergeValidations(validation, val);
       },
-      errorIf: (condition, message, ...args) =>
-        condition ? makeGenericError(message, v, args) : undefined,
+      issueIf: (condition, message, ...args) =>
+        condition ? makeGenericIssue(message, v, ...args) : undefined,
       options: { ...defaultOptions, ...o },
     });
     return simplifyValidation(refinedValidation ?? validation);

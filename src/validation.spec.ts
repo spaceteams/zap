@@ -1,6 +1,6 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
-import { makeError, mergeValidations } from "./validation";
+import { makeIssue, mergeValidations } from "./validation";
 
 type S = {
   array: string[];
@@ -12,7 +12,7 @@ type T = {
   nestedArray: { field: string }[];
   nestedObject: { field: string; field2: number };
 };
-const error = makeError("invalid_value", undefined);
+const error = makeIssue("additionalField", undefined);
 
 describe("mergeValidations", () => {
   it("returns right if left is success", () => {
@@ -24,6 +24,11 @@ describe("mergeValidations", () => {
     );
   });
   it("merges arrays", () => {
+    expect(
+      mergeValidations<S, T>({ array: [error] }, { array: [error] })
+    ).toEqual({ array: [error, error] });
+  });
+  it("merges objects", () => {
     expect(
       mergeValidations<S, T>({ array: [error] }, { array: [error] })
     ).toEqual({ array: [error, error] });

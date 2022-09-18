@@ -1,24 +1,63 @@
-export type ValidationMessageCode = "wrong_type" | "invalid_value";
+export type ValidationIssueCode =
+  | "wrong_type"
+  // array
+  | "includes"
+  | "items"
+  | "maxItems"
+  | "minItems"
+  | "uniqueItems"
+  // string
+  | "minLength"
+  | "maxLength"
+  | "length"
+  | "pattern"
+  | "startsWith"
+  | "endsWith"
+  // number
+  | "isNaN"
+  | "positive"
+  | "nonPositive"
+  | "negative"
+  | "nonNegative"
+  | "multipleOf"
+  | "exclusiveMaximum"
+  | "exclusiveMinimum"
+  | "maximum"
+  | "minimum"
+  // object
+  | "additionalField"
+  // fun
+  | "arity"
+  // enum
+  | "enum"
+  // date
+  | "before"
+  | "after"
+  // literal/s
+  | "literal"
+  // logic
+  | "xor"
+  | "not";
 
 const validationErrorMarker = Symbol();
 
-export interface ValidationError {
+export interface ValidationIssue {
   __marker: symbol;
-  message: ValidationMessageCode | string;
+  message: ValidationIssueCode | string;
   value: unknown;
   args?: unknown[];
 }
-export function isValidationError(v: unknown): v is ValidationError {
+export function isValidationError(v: unknown): v is ValidationIssue {
   return (
     typeof v === "object" &&
     (v as Record<string, unknown>)["__marker"] == validationErrorMarker
   );
 }
-export function makeError(
-  message: ValidationMessageCode,
+export function makeIssue(
+  message: ValidationIssueCode,
   value: unknown,
   ...args: unknown[]
-): ValidationError {
+): ValidationIssue {
   return {
     __marker: validationErrorMarker,
     message,
@@ -26,11 +65,11 @@ export function makeError(
     args: args.length > 0 ? args : undefined,
   };
 }
-export function makeGenericError(
+export function makeGenericIssue(
   message: string,
   value: unknown,
   ...args: unknown[]
-): ValidationError {
+): ValidationIssue {
   return {
     __marker: validationErrorMarker,
     message,
@@ -39,7 +78,7 @@ export function makeGenericError(
   };
 }
 
-export type Validation<T, E = ValidationError> = T extends {
+export type Validation<T, E = ValidationIssue> = T extends {
   [key: string]: unknown;
 }
   ?
@@ -51,7 +90,7 @@ export type Validation<T, E = ValidationError> = T extends {
   ? (Validation<T[number]> | undefined)[] | E
   : E;
 
-export type ValidationResult<T, E = ValidationError> =
+export type ValidationResult<T, E = ValidationIssue> =
   | Validation<T, E>
   | undefined;
 
@@ -122,7 +161,7 @@ export function simplifyValidation<T>(
       const k = key as keyof typeof v;
       v[k] = simplifyValidation(
         v[k] as ValidationResult<unknown>
-      ) as Validation<T, ValidationError>[keyof Validation<T, ValidationError>];
+      ) as Validation<T, ValidationIssue>[keyof Validation<T, ValidationIssue>];
       if (v[k] === undefined) {
         delete v[k];
       }
@@ -134,12 +173,8 @@ export function simplifyValidation<T>(
   }
 }
 
-export function defaultTranslateError(validation: ValidationError) {
+export function defaultTranslateError(validation: ValidationIssue) {
   switch (validation.message) {
-    case "invalid_value": {
-      const [head, ...tail] = validation.args ?? [];
-      return `validation failed: ${String(head)}(${(tail ?? []).join(",")})`;
-    }
     case "wrong_type": {
       if (
         typeof validation.value === "undefined" ||
@@ -151,14 +186,19 @@ export function defaultTranslateError(validation: ValidationError) {
         Array.isArray(validation.value) ? "array" : typeof validation.value
       } expected ${(validation.args ?? []).join(" or ")}`;
     }
+    default: {
+      if (validation.args && validation.args.length > 0) {
+        return `${validation.message}(${validation.args.join(",")})`;
+      }
+      return validation.message;
+    }
   }
-  return validation.message;
 }
 
 export function translate<T>(
-  validation: ValidationResult<T, ValidationError>,
+  validation: ValidationResult<T, ValidationIssue>,
   translateError: (
-    validation: ValidationError
+    validation: ValidationIssue
   ) => string = defaultTranslateError
 ): ValidationResult<T, string> {
   if (validation === undefined) {
@@ -173,7 +213,7 @@ export function translate<T>(
   const result = {};
   for (const [key, value] of Object.entries(validation)) {
     result[key] = translate(
-      value as ValidationResult<unknown, ValidationError>
+      value as ValidationResult<unknown, ValidationIssue>
     );
   }
   return result as Validation<T, string>;
