@@ -1,7 +1,8 @@
 import {
   isFailure,
   isSuccess,
-  makeGenericIssue,
+  isValidationError,
+  makeIssue,
   mergeValidations,
   simplifyValidation,
   ValidationIssue,
@@ -92,7 +93,8 @@ export function makeSchema<T, M>(
   parseAfterValidation: (v: T, options?: Partial<Options>) => T = (v) => v
 ): Schema<T, M> {
   return {
-    accepts: (v, o): v is T => isSuccess(validate(v, o)),
+    accepts: (v, o): v is T =>
+      isSuccess(validate(v, { ...o, earlyExit: true })),
     parse: (v, o) => {
       if (!getOption(o, "skipValidation")) {
         const validation = validate(v, o);
@@ -107,6 +109,50 @@ export function makeSchema<T, M>(
   };
 }
 
+export interface SafeParseResult<T, In = unknown> {
+  originalValue: In;
+  parsedValue: T | undefined;
+  validation: ValidationResult<T>;
+  parsingError: Error | undefined;
+}
+
+/**
+ * Parses a value with all effects catched into a result structure.
+ * @param schema the schema
+ * @param v the value to be parsed
+ * @param options the options used for parsing
+ * @returns the result object
+ */
+export function safeParse<T, M, In = unknown>(
+  schema: Schema<T, M>,
+  v: In,
+  options: Partial<Options> = {}
+): SafeParseResult<T, In> {
+  const result = {
+    originalValue: v,
+    validation: undefined,
+    parsedValue: undefined,
+    parsingError: undefined,
+  };
+  try {
+    return {
+      ...result,
+      parsedValue: schema.parse(v, options),
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      return {
+        ...result,
+        parsingError: error,
+      };
+    }
+    return {
+      ...result,
+      validation: error as ValidationResult<T>,
+    };
+  }
+}
+
 /**
  * Refines a schema further.
  *
@@ -119,7 +165,7 @@ export function makeSchema<T, M>(
  * const refined = refine(userSchema, ({id}) => {
  *   if (id > name.length) {
  *     return {
- *       name: makeGenericIssue("id too high!!", v)
+ *       name: makeIssue("id too high!!", v)
  *     };
  *   }
  * });
@@ -219,7 +265,7 @@ export function refineWithMetainformation<T, M, N>(
           validation = mergeValidations(validation, val);
         },
         issueIf: (condition, message, ...args) =>
-          condition ? makeGenericIssue(message, v, ...args) : undefined,
+          condition ? makeIssue(message, v, ...args) : undefined,
         options: { ...defaultOptions, ...o },
       });
       return simplifyValidation(refinedValidation ?? validation);

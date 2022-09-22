@@ -54,19 +54,7 @@ export function isValidationError(v: unknown): v is ValidationIssue {
   );
 }
 export function makeIssue(
-  message: ValidationIssueCode,
-  value: unknown,
-  ...args: unknown[]
-): ValidationIssue {
-  return {
-    __marker: validationErrorMarker,
-    message,
-    value,
-    args: args.length > 0 ? args : undefined,
-  };
-}
-export function makeGenericIssue(
-  message: string,
+  message: ValidationIssueCode | string,
   value: unknown,
   ...args: unknown[]
 ): ValidationIssue {

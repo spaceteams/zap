@@ -6,17 +6,17 @@ import { undefinedSchema } from "./utility/optional";
 import { or } from "./logic/or";
 import { coerce, narrow, options, refine, transform } from "./schema";
 import { string } from "./simple/string";
-import { makeGenericIssue, translate } from "./validation";
+import { makeIssue, translate } from "./validation";
 
 describe("refine", () => {
   const schema = refine(number(), (v) => {
     if (v % 2 !== 0) {
-      return makeGenericIssue("even", v);
+      return makeIssue("even", v);
     }
   });
   const builderSchema = refine(number(), (v, { add }) => {
     if (v % 2 !== 0) {
-      add(makeGenericIssue("even", v));
+      add(makeIssue("even", v));
     }
   });
   const inlineSchema = refine(object({ a: string() }), (v, { issueIf }) => ({
