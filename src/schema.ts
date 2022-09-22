@@ -1,7 +1,6 @@
 import {
   isFailure,
   isSuccess,
-  isValidationError,
   makeIssue,
   mergeValidations,
   simplifyValidation,
@@ -275,14 +274,17 @@ export function refineWithMetainformation<T, M, N>(
 }
 
 /**
- * Preprocesses data before parsing (aka coercion).
+ * Preprocesses data before parsing or validation (aka coercion).
+ *
+ * Note that coercion done for accepting!
  *
  * For example
  * ```
  * coerce(number(), Number)
  * ```
- * will result in a schema that will accept numbers,
- * string, boolean etc... through native js coercion.
+ * will result in a schema that will validate numbers,
+ * string, boolean etc... through native js coercion. It will
+ * still act as a typeguard for numbers only.
  *
  * This method is especially useful for parsing Timestamps
  * into date, number or string schemas. @see coercedDate.
@@ -299,7 +301,7 @@ export function coerce<T, M>(
   coercion: (v: unknown) => unknown
 ): Schema<T, M> {
   return {
-    accepts: (v): v is T => schema.accepts(coercion(v)),
+    accepts: (v): v is T => schema.accepts(v),
     parse: (v, o) => schema.parse(coercion(v), o),
     validate: (v, o) => schema.validate(coercion(v), o),
     meta: () => schema.meta(),
@@ -309,7 +311,7 @@ export function coerce<T, M>(
 /**
  * Transforms the parse result with an arbitrary transformation.
  *
- * Use this function with caution and prefer @see narrow():
+ * Use this function with caution:
  * ```
  * const boxedNumber = object({ v: number() })
  * const unboxedNumber = transform(boxedNumber, ({ v }) => v);
@@ -319,7 +321,7 @@ export function coerce<T, M>(
  * ```
  * const fixedSchema = or(unboxedNumber, number())
  * ```
- * or perhaps you want to @see conversion-graph.ts
+ * You should prefer @see narrow() or perhaps you want to @see conversion-graph.ts
  *
  * @param schema the source schema
  * @param transformation the transformation function
@@ -335,6 +337,22 @@ export function transform<T, S, M>(
     validate: (v, o) => schema.validate(v, o) as ValidationResult<S>,
     meta: () => schema.meta(),
   };
+}
+
+/**
+ * Narrows the type using a projection function.
+ *
+ * This is a general case of @see defaultValue().
+ *
+ * @param schema the source schema
+ * @param projection the projection function
+ * @returns a schema that parses T into S and accepts T as S
+ */
+export function narrow<T, S extends T, M>(
+  schema: Schema<T, M>,
+  projection: (v: T) => S
+): Schema<S, M> {
+  return transform(schema, projection);
 }
 
 /**
@@ -354,22 +372,6 @@ export function options<T, M>(
     validate: (v, o) => schema.validate(v, { ...o, ...options }),
     meta: () => schema.meta(),
   };
-}
-
-/**
- * Narrows the type using a projection function.
- *
- * This is a general case of @see defaultValue().
- *
- * @param schema the source schema
- * @param projection the projection function
- * @returns a schema that parses T into S and accepts T as S
- */
-export function narrow<T, S extends T, M>(
-  schema: Schema<T, M>,
-  projection: (v: T) => S
-): Schema<S, M> {
-  return transform(schema, projection);
 }
 
 /**

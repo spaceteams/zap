@@ -49,8 +49,9 @@ describe("refine", () => {
 describe("coerce", () => {
   const schema = coerce(number(), Number);
 
-  it("accepts", () => {
-    expect(schema.accepts("")).toBeTruthy();
+  it("accepts (without coercion)", () => {
+    expect(schema.accepts(1)).toBeTruthy();
+    expect(schema.accepts("")).toBeFalsy();
     expect(schema.accepts(undefined)).toBeFalsy();
   });
   it("validates", () => {
