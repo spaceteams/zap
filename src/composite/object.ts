@@ -20,7 +20,11 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
   schema: T
 ): Schema<
   fixPartialKeys<{ [K in keyof T]: InferType<T[K]> }>,
-  { type: "object"; schema: { [K in keyof T]: T[K] } }
+  {
+    type: "object";
+    schema: { [K in keyof T]: T[K] };
+    additionalProperties: true;
+  }
 > {
   type ResultT = fixPartialKeys<{ [K in keyof T]: InferType<T[K]> }>;
 
@@ -34,14 +38,6 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
       }
 
       const record = v as { [k: string]: unknown };
-      if (getOption(o, "strict")) {
-        for (const key of Object.keys(record)) {
-          if (!Object.hasOwn(schema, key)) {
-            return makeIssue("additionalField", v, key) as Validation<ResultT>;
-          }
-        }
-      }
-
       const validation: { [key: string]: unknown } = {};
       for (const [key, inner] of Object.entries(schema)) {
         const innerValidation = (inner as Schema<unknown, unknown>).validate(
@@ -59,7 +55,7 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
       }
       return validation as Validation<ResultT>;
     },
-    () => ({ type: "object", schema }),
+    () => ({ type: "object", schema, additionalProperties: true }),
     (v, o) => {
       const result: Partial<ResultT> = {};
       for (const [key, inner] of Object.entries(schema)) {
@@ -69,10 +65,39 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
         );
       }
       if (!getOption(o, "strip")) {
-        return Object.assign(result, v) as ResultT;
+        for (const [key, inner] of Object.entries(v)) {
+          if (!(key in result)) {
+            result[key] = inner;
+          }
+        }
       }
       return result as ResultT;
     }
+  );
+}
+
+export function strict<
+  T extends { [K in keyof T]: unknown },
+  M extends {
+    additionalProperties: unknown;
+    schema: { [K in keyof T]: Schema<unknown, unknown> };
+  }
+>(
+  schema: Schema<T, M>
+): Schema<
+  T,
+  Omit<M, "additionalProperties"> & { additionalProperties: false }
+> {
+  return refineWithMetainformation(
+    schema,
+    (v) => {
+      for (const key of Object.keys(v)) {
+        if (!Object.hasOwn(schema.meta().schema, key)) {
+          return makeIssue("additionalProperty", v, key) as Validation<T>;
+        }
+      }
+    },
+    { additionalProperties: false }
   );
 }
 

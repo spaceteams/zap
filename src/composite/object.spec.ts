@@ -11,6 +11,7 @@ import {
   omit,
   pick,
   keys,
+  strict,
 } from "./object";
 import { defaultValue, optional } from "../utility/optional";
 import { string } from "../simple/string";
@@ -47,7 +48,7 @@ it("accepts", () => {
     schema.accepts({
       id: 12,
       name: ["some", "string"],
-      nested: { user: "3", additionalFields: true },
+      nested: { user: "3", additional: true },
     })
   ).toBeTruthy();
 
@@ -94,24 +95,9 @@ it("validates with early exit", () => {
   });
 });
 
-it("validates with strict", () => {
-  expect(
-    translate(
-      schema.validate(
-        {
-          id: 12,
-          name: ["first", "last"],
-          nested: { user: "some user" },
-          additional: "add",
-        },
-        { strict: true }
-      )
-    )
-  ).toEqual("additionalField(additional)");
-});
-
 it("builds metadata", () => {
   expect(schema.meta().type).toEqual("object");
+  expect(schema.meta().additionalProperties).toBeTruthy();
   expect(Object.keys(schema.meta().schema)).toEqual([
     "id",
     "name",
@@ -154,6 +140,25 @@ it("parses with stripping", () => {
     name: ["first", "last"],
     nested: { user: "some user" },
     additional: "add",
+  });
+});
+
+describe("strict", () => {
+  it("validates", () => {
+    expect(
+      translate(
+        strict(schema).validate({
+          id: 12,
+          name: ["first", "last"],
+          nested: { user: "some user" },
+          additional: "add",
+        })
+      )
+    ).toEqual("additionalProperty(additional)");
+  });
+
+  it("builds metadata", () => {
+    expect(strict(schema).meta().additionalProperties).toBeFalsy();
   });
 });
 

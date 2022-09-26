@@ -1,5 +1,5 @@
 import { and, or } from "../logic";
-import { array, object, tuple } from "../composite";
+import { array, object, strict, tuple } from "../composite";
 import {
   boolean,
   literal,
@@ -110,6 +110,15 @@ describe("object", () => {
       )
     ).toMatchObject({
       required: ["a", "c"],
+    });
+  });
+
+  it("translates additionalProperties", () => {
+    expect(toJsonSchema(object({}))).toMatchObject({
+      additionalProperties: true,
+    });
+    expect(toJsonSchema(strict(object({})))).toMatchObject({
+      additionalProperties: false,
     });
   });
 });

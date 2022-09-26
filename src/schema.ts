@@ -15,17 +15,11 @@ export interface ValidationOptions {
    * default: false
    */
   earlyExit: boolean;
-  /**
-   * Validate in strict mode:
-   *  - Objects may not have additional fields
-   * default: false
-   */
-  strict: boolean;
 }
 export interface ParsingOptions {
   /**
    * Parse in strip mode:
-   *  - Objects will not contain additional fields
+   *  - Objects will not contain additional properties
    * default: true
    */
   strip: boolean;
@@ -41,7 +35,6 @@ export type Options = ParsingOptions & ValidationOptions;
 export const defaultOptions: Options = {
   earlyExit: false,
   strip: true,
-  strict: false,
   skipValidation: false,
 };
 
@@ -309,37 +302,6 @@ export function coerce<T, M>(
 }
 
 /**
- * Transforms the parse result with an arbitrary transformation.
- *
- * Use this function with caution:
- * ```
- * const boxedNumber = object({ v: number() })
- * const unboxedNumber = transform(boxedNumber, ({ v }) => v);
- * ```
- * `unboxedNumber` is of type Schema<S, M> but it will only accept values
- * that conform to `boxedNumber`. You can of course fix that with
- * ```
- * const fixedSchema = or(unboxedNumber, number())
- * ```
- * You should prefer @see narrow() or perhaps you want to @see conversion-graph.ts
- *
- * @param schema the source schema
- * @param transformation the transformation function
- * @returns a schema that parses T into S and accepts T as S
- */
-export function transform<T, S, M>(
-  schema: Schema<T, M>,
-  transformation: (v: T) => S
-): Schema<S, M> {
-  return {
-    accepts: (v): v is S => schema.accepts(v),
-    parse: (v, o) => transformation(schema.parse(v, o)),
-    validate: (v, o) => schema.validate(v, o) as ValidationResult<S>,
-    meta: () => schema.meta(),
-  };
-}
-
-/**
  * Narrows the type using a projection function.
  *
  * This is a general case of @see defaultValue().
@@ -352,7 +314,12 @@ export function narrow<T, S extends T, M>(
   schema: Schema<T, M>,
   projection: (v: T) => S
 ): Schema<S, M> {
-  return transform(schema, projection);
+  return {
+    accepts: (v): v is S => schema.accepts(v),
+    parse: (v, o) => projection(schema.parse(v, o)),
+    validate: (v, o) => schema.validate(v, o) as ValidationResult<S>,
+    meta: () => schema.meta(),
+  };
 }
 
 /**

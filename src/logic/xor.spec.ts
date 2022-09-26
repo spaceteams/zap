@@ -30,7 +30,7 @@ it("accepts", () => {
     schema.accepts({
       id: 12,
       name: ["some", "string"],
-      additionalFields: true,
+      additional: true,
     })
   ).toBeTruthy();
   expect(

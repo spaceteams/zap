@@ -25,7 +25,7 @@ export type ValidationIssueCode =
   | "maximum"
   | "minimum"
   // object
-  | "additionalField"
+  | "additionalProperty"
   // fun
   | "arity"
   // enum

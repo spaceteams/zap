@@ -4,7 +4,7 @@ import { nan, number } from "./simple/number";
 import { object } from "./composite/object";
 import { undefinedSchema } from "./utility/optional";
 import { or } from "./logic/or";
-import { coerce, narrow, options, refine, transform } from "./schema";
+import { coerce, narrow, options, refine } from "./schema";
 import { string } from "./simple/string";
 import { makeIssue, translate } from "./validation";
 
@@ -69,18 +69,6 @@ describe("coerce", () => {
   });
 });
 
-describe("transform", () => {
-  const schema = transform(object({ v: number() }), ({ v }) => v);
-
-  it("accepts", () => {
-    expect(schema.accepts({ v: 12 })).toBeTruthy();
-    expect(schema.accepts(12)).toBeFalsy();
-  });
-  it("parses", () => {
-    expect(schema.parse({ v: 12 })).toEqual(12);
-  });
-});
-
 describe("narrow", () => {
   const schema = narrow(or(number(), nan(), undefinedSchema()), (v) =>
     Number.isNaN(v) ? undefined : v
@@ -99,18 +87,6 @@ describe("narrow", () => {
 });
 
 describe("options", () => {
-  it("sets strict", () => {
-    expect(
-      translate(
-        object({
-          outer: options(object({ a: string() }), { strict: true }),
-        }).validate({
-          outer: { a: "", add: "inner" },
-          add: "outer",
-        })
-      )
-    ).toEqual({ outer: "additionalField(add)" });
-  });
   it("sets earlyExit", () => {
     expect(
       translate(
@@ -134,11 +110,28 @@ describe("options", () => {
   it("sets strip", () => {
     expect(
       object({
-        a: options(object({ b: string() }), { strip: false }),
+        // disable strip mode
+        a: options(
+          object({
+            // enable strip mode again
+            b: options(object({ c: string() }), { strip: true }),
+            // here strip is still disable
+            d: object({
+              e: number(),
+            }),
+          }),
+          { strip: false }
+        ),
       }).parse({
-        a: { b: "", add: "inner" },
+        a: {
+          b: { c: "string", add: "inner.inner" },
+          d: { e: 1, add: "more" },
+          add: "inner",
+        },
         add: "outer",
       })
-    ).toEqual({ a: { b: "", add: "inner" } });
+    ).toEqual({
+      a: { b: { c: "string" }, d: { e: 1, add: "more" }, add: "inner" },
+    });
   });
 });

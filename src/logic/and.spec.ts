@@ -34,7 +34,7 @@ it("accepts", () => {
     schema.accepts({
       id: 12,
       name: ["some", "string"],
-      nested: { user: "3", additionalFields: true },
+      nested: { user: "3", additional: true },
     })
   ).toBeTruthy();
 

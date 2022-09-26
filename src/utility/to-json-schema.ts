@@ -35,6 +35,7 @@ export function toJsonSchema<M extends { type: string }>(
       const objectMeta = meta as unknown as {
         type: "object";
         schema: { [key: string]: Schema<unknown, { type: string }> };
+        additionalProperties: boolean;
       };
       const required: string[] = [];
       const properties = {};
@@ -49,6 +50,7 @@ export function toJsonSchema<M extends { type: string }>(
         type: "object",
         properties,
         required,
+        additionalProperties: objectMeta.additionalProperties,
       };
     }
     case "array": {
