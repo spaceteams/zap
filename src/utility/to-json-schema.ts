@@ -26,11 +26,19 @@ export function toJsonSchema<M extends { type: string }>(
   const meta = schema.meta();
   switch (meta.type) {
     case "null":
-    case "number":
     case "boolean":
     case "string":
-    case "integer":
       return meta;
+    case "number": {
+      const { type, isInteger, ...rest } = meta as unknown as {
+        type: "number";
+        isInteger?: boolean;
+      };
+      return {
+        ...rest,
+        type: isInteger ? "integer" : type,
+      };
+    }
     case "object": {
       const objectMeta = meta as unknown as {
         type: "object";

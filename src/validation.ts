@@ -15,6 +15,7 @@ export type ValidationIssueCode =
   | "endsWith"
   // number
   | "isNaN"
+  | "integer"
   | "positive"
   | "nonPositive"
   | "negative"
@@ -53,8 +54,20 @@ export function isValidationError(v: unknown): v is ValidationIssue {
     (v as Record<string, unknown>)["__marker"] == validationErrorMarker
   );
 }
+export function makeGenericIssue(
+  message: string,
+  value: unknown,
+  ...args: unknown[]
+): ValidationIssue {
+  return {
+    __marker: validationErrorMarker,
+    message,
+    value,
+    args: args.length > 0 ? args : undefined,
+  };
+}
 export function makeIssue(
-  message: ValidationIssueCode | string,
+  message: ValidationIssueCode,
   value: unknown,
   ...args: unknown[]
 ): ValidationIssue {

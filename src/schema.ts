@@ -1,11 +1,10 @@
 import {
   isFailure,
   isSuccess,
-  makeIssue,
+  makeGenericIssue,
   mergeValidations,
   simplifyValidation,
   ValidationIssue,
-  ValidationIssueCode,
   ValidationResult,
 } from "./validation";
 
@@ -145,6 +144,16 @@ export function safeParse<T, M, In = unknown>(
   }
 }
 
+export interface RefineContext<O> {
+  add: (v: ValidationResult<Partial<O>>) => void;
+  issueIf(
+    condition: boolean,
+    message: string,
+    ...args: unknown[]
+  ): ValidationIssue | undefined;
+  options: ValidationOptions;
+}
+
 /**
  * Refines a schema further.
  *
@@ -187,21 +196,10 @@ export function safeParse<T, M, In = unknown>(
  * @param validate the additional validation function
  * @returns the refined schema
  */
-export function refine<T, M>(
+export function refine<T, M, O extends T = T>(
   schema: Schema<T, M>,
-  validate: (
-    v: T,
-    ctx: {
-      add: (v: ValidationResult<Partial<T>>) => void;
-      issueIf(
-        condition: boolean,
-        message: ValidationIssueCode | string,
-        ...args: unknown[]
-      ): ValidationIssue | undefined;
-      options: ValidationOptions;
-    }
-  ) => void | ValidationResult<T>
-): Schema<T, M> {
+  validate: (v: T, ctx: RefineContext<O>) => void | ValidationResult<O>
+): Schema<O, M> {
   return refineWithMetainformation(schema, validate, schema.meta);
 }
 
@@ -230,34 +228,28 @@ export function withMetaInformation<T, M, N>(
  * @param metaExtension the additional meta fields
  * @returns the modified schema
  */
-export function refineWithMetainformation<T, M, N>(
+export function refineWithMetainformation<T, M, N, O extends T = T>(
   schema: Schema<T, M>,
-  validate: (
-    v: T,
-    ctx: {
-      add: (v: ValidationResult<Partial<T>>) => void;
-      issueIf(
-        condition: boolean,
-        message: ValidationIssueCode | string,
-        ...args: unknown[]
-      ): ValidationIssue | undefined;
-      options: ValidationOptions;
-    }
-  ) => void | ValidationResult<T>,
+  validate: (v: T, ctx: RefineContext<O>) => void | ValidationResult<O>,
   metaExtension: N
-): Schema<T, Omit<M, keyof N> & N> {
+): Schema<
+  O,
+  {
+    [P in Exclude<keyof M, keyof N>]: M[P];
+  } & N
+> {
   return makeSchema(
     (v, o) => {
       let validation = schema.validate(v, o);
       if (isFailure(validation)) {
-        return validation;
+        return validation as ValidationResult<O>;
       }
       const refinedValidation = validate(v as T, {
         add: (val) => {
           validation = mergeValidations(validation, val);
         },
         issueIf: (condition, message, ...args) =>
-          condition ? makeIssue(message, v, ...args) : undefined,
+          condition ? makeGenericIssue(message, v, ...args) : undefined,
         options: { ...defaultOptions, ...o },
       });
       return simplifyValidation(refinedValidation ?? validation);

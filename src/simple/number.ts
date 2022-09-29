@@ -73,10 +73,10 @@ export function integer<M>(schema: Schema<number, M>) {
     schema,
     (v) => {
       if (!Number.isInteger(v)) {
-        return makeIssue("wrong_type", v, "integer");
+        return makeIssue("integer", v);
       }
     },
-    { type: "integer" as const }
+    { isInteger: true }
   );
 }
 

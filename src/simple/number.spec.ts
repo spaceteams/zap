@@ -63,11 +63,9 @@ describe("int", () => {
   it("validates", () => {
     expect(schema.validate(-1)).toBeUndefined();
 
-    expect(translate(schema.validate(0.1))).toEqual(
-      "value was of type number expected integer"
-    );
+    expect(translate(schema.validate(0.1))).toEqual("integer");
     expect(translate(schema.validate(Number.POSITIVE_INFINITY))).toEqual(
-      "value was of type number expected integer"
+      "integer"
     );
   });
 });

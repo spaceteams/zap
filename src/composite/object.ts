@@ -82,12 +82,7 @@ export function strict<
     additionalProperties: unknown;
     schema: { [K in keyof T]: Schema<unknown, unknown> };
   }
->(
-  schema: Schema<T, M>
-): Schema<
-  T,
-  Omit<M, "additionalProperties"> & { additionalProperties: false }
-> {
+>(schema: Schema<T, M>) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -97,7 +92,7 @@ export function strict<
         }
       }
     },
-    { additionalProperties: false }
+    { additionalProperties: false as const }
   );
 }
 

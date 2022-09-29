@@ -53,17 +53,14 @@ it("translates types", () => {
 
 describe("number", () => {
   it("translates validations", () => {
-    expect(
-      toJsonSchema(
-        multipleOf(
-          exclusiveMaximum(
-            maximum(exclusiveMinimum(minimum(number(), 1), 2), 3),
-            4
-          ),
-          5
-        )
-      )
-    ).toEqual({
+    const veryRefinedNumber = multipleOf(
+      exclusiveMaximum(
+        maximum(exclusiveMinimum(minimum(number(), 1), 2), 3),
+        4
+      ),
+      5
+    );
+    expect(toJsonSchema(veryRefinedNumber)).toEqual({
       type: "number",
       minimum: 1,
       exclusiveMinimum: 2,

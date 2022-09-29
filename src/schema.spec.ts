@@ -2,21 +2,21 @@
 
 import { nan, number } from "./simple/number";
 import { object } from "./composite/object";
-import { undefinedSchema } from "./utility/optional";
+import { optional, undefinedSchema } from "./utility/optional";
 import { or } from "./logic/or";
-import { coerce, narrow, options, refine } from "./schema";
+import { coerce, narrow, options, refine, RefineContext } from "./schema";
 import { string } from "./simple/string";
-import { makeIssue, translate } from "./validation";
+import { makeGenericIssue, translate } from "./validation";
 
 describe("refine", () => {
   const schema = refine(number(), (v) => {
     if (v % 2 !== 0) {
-      return makeIssue("even", v);
+      return makeGenericIssue("even", v);
     }
   });
   const builderSchema = refine(number(), (v, { add }) => {
     if (v % 2 !== 0) {
-      add(makeIssue("even", v));
+      add(makeGenericIssue("even", v));
     }
   });
   const inlineSchema = refine(object({ a: string() }), (v, { issueIf }) => ({
@@ -43,6 +43,24 @@ describe("refine", () => {
 
   it("simplifies result", () => {
     expect(inlineSchema.validate({ a: "" })).toBeUndefined();
+  });
+
+  it("allows for type narrowing", () => {
+    const innerSchema = object({
+      a: optional(number()),
+      b: string(),
+    });
+    const typeNarrowed = refine(
+      innerSchema,
+      (v, ctx: RefineContext<{ a: number; b: string }>) => {
+        if (!v.a) {
+          ctx.add({ b: makeGenericIssue("some_problem", v) });
+        }
+      }
+    );
+    expect(translate(typeNarrowed.validate({ b: "hello" }))).toEqual({
+      b: "some_problem",
+    });
   });
 });
 
