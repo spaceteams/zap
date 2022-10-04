@@ -13,12 +13,19 @@ import {
 } from "../validation";
 
 export function array<T, M>(
-  schema: Schema<T, M>
+  schema: Schema<T, M>,
+  issues?: Partial<{
+    required: string;
+    wrongType: string;
+  }>
 ): Schema<T[], { type: "array"; schema: Schema<T, M> }> {
   return makeSchema(
     (v, o) => {
+      if (typeof v === "undefined" || v === null) {
+        return makeIssue("required", issues?.required, v);
+      }
       if (!Array.isArray(v)) {
-        return makeIssue("wrong_type", v, "array");
+        return makeIssue("wrong_type", issues?.wrongType, v, "array");
       }
 
       const validations: ValidationResult<T[]> = [];
@@ -39,40 +46,52 @@ export function array<T, M>(
     (v, o) => v.map((item) => schema.parse(item, o))
   );
 }
-export function minItems<T, M>(schema: Schema<T[], M>, minItems: number) {
+export function minItems<T, M>(
+  schema: Schema<T[], M>,
+  minItems: number,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v.length < minItems) {
-        return makeIssue("minItems", v, minItems);
+        return makeIssue("minItems", issue, v, minItems);
       }
     },
     { minItems }
   );
 }
-export function maxItems<T, M>(schema: Schema<T[], M>, maxItems: number) {
+export function maxItems<T, M>(
+  schema: Schema<T[], M>,
+  maxItems: number,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v.length > maxItems) {
-        return makeIssue("maxItems", v, maxItems);
+        return makeIssue("maxItems", issue, v, maxItems);
       }
     },
     { maxItems }
   );
 }
-export function items<T, M>(schema: Schema<T[], M>, items: number) {
+export function items<T, M>(
+  schema: Schema<T[], M>,
+  items: number,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v.length === items) {
-        return makeIssue("items", v, items);
+        return makeIssue("items", issue, v, items);
       }
     },
     { minItems: items, maxItems: items }
   );
 }
-export function uniqueItems<T, M>(schema: Schema<T[], M>) {
+export function uniqueItems<T, M>(schema: Schema<T[], M>, issue?: string) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -85,7 +104,7 @@ export function uniqueItems<T, M>(schema: Schema<T[], M>) {
         return false;
       });
       if (hasDuplicates) {
-        return makeIssue("uniqueItems", v);
+        return makeIssue("uniqueItems", issue, v);
       }
     },
     { uniqueItems: true }
@@ -94,14 +113,15 @@ export function uniqueItems<T, M>(schema: Schema<T[], M>) {
 export function includes<T, M>(
   schema: Schema<T[], M>,
   element: T,
-  fromIndex: number
+  fromIndex: number,
+  issue?: string
 ) {
   return refine(schema, (v) => {
     if (!v.includes(element, fromIndex)) {
-      return makeIssue("includes", v, element, fromIndex);
+      return makeIssue("includes", issue, v, element, fromIndex);
     }
   });
 }
-export function nonEmptyArray<T, M>(schema: Schema<T[], M>) {
-  return minItems(schema, 1);
+export function nonEmptyArray<T, M>(schema: Schema<T[], M>, issue?: string) {
+  return minItems(schema, 1, issue);
 }

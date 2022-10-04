@@ -1,5 +1,12 @@
 import { and, or } from "../logic";
-import { array, object, strict, tuple } from "../composite";
+import {
+  array,
+  keyedRecord,
+  object,
+  record,
+  strict,
+  tuple,
+} from "../composite";
 import {
   boolean,
   literal,
@@ -76,6 +83,33 @@ describe("array", () => {
     expect(toJsonSchema(array(string()))).toMatchObject({
       items: {
         type: "string",
+      },
+    });
+  });
+});
+
+describe("record", () => {
+  it("translates regular record", () => {
+    expect(toJsonSchema(record(number()))).toMatchObject({
+      type: "object",
+      propertyNames: {
+        type: "string",
+      },
+      additionalProperties: {
+        type: "number",
+      },
+    });
+  });
+  it("translates keyed record", () => {
+    expect(
+      toJsonSchema(keyedRecord(literals("1", 1, "allowed key"), number()))
+    ).toMatchObject({
+      type: "object",
+      propertyNames: {
+        enum: ["1", 1, "allowed key"],
+      },
+      additionalProperties: {
+        type: "number",
       },
     });
   });

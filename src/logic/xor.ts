@@ -2,8 +2,15 @@ import { Unionize } from "../utility";
 import { InferTypes, Schema } from "../schema";
 import { isSuccess, makeIssue, ValidationResult } from "../validation";
 
-export function xor<T extends Schema<unknown, unknown>[]>(
+export function xor<T extends readonly Schema<unknown, unknown>[]>(
   ...schemas: T
+): Schema<Unionize<InferTypes<T>>, { type: "xor"; schemas: T }> {
+  return xorWithIssue(schemas);
+}
+
+export function xorWithIssue<T extends readonly Schema<unknown, unknown>[]>(
+  schemas: T,
+  issue?: string
 ): Schema<Unionize<InferTypes<T>>, { type: "xor"; schemas: T }> {
   type ResultT = Unionize<InferTypes<T>>;
   type V = ValidationResult<ResultT>;
@@ -14,7 +21,7 @@ export function xor<T extends Schema<unknown, unknown>[]>(
       result = schema.validate(v, o);
       if (isSuccess(result)) {
         if (hasSuccess) {
-          return makeIssue("xor", v) as V;
+          return makeIssue("xor", issue, v) as V;
         } else {
           hasSuccess = true;
         }
@@ -35,7 +42,7 @@ export function xor<T extends Schema<unknown, unknown>[]>(
         validation = schema.validate(v, o);
         if (isSuccess(validation)) {
           if (successSchema !== undefined) {
-            throw makeIssue("xor", v) as V;
+            throw makeIssue("xor", issue, v) as V;
           }
           successSchema = schema;
           break;

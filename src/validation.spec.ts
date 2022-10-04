@@ -12,7 +12,7 @@ type T = {
   nestedArray: { field: string }[];
   nestedObject: { field: string; field2: number };
 };
-const error = makeIssue("additionalProperty", undefined);
+const error = makeIssue("additionalProperty", undefined, undefined);
 
 describe("mergeValidations", () => {
   it("returns right if left is success", () => {

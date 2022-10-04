@@ -57,56 +57,52 @@ export function deepPartial<T, M extends { type: string }>(
 
   switch (meta.type) {
     case "object": {
+      const objectMeta = meta as unknown as {
+        schema?: Record<string, Schema<unknown, { type: string }>>;
+      };
       const partialSchema = {};
-      for (const [key, value] of Object.entries(
-        (
-          meta as unknown as {
-            schema?: Record<string, Schema<unknown, { type: string }>>;
-          }
-        ).schema || {}
-      )) {
+      for (const [key, value] of Object.entries(objectMeta.schema || {})) {
         partialSchema[key] = optional(deepPartial(value));
       }
-      const m = { ...meta };
-      delete m["schema"];
+      const { schema, ...rest } = objectMeta;
       return withMetaInformation(
         object(partialSchema),
-        m
+        rest
       ) as unknown as DeepPartialSchema<T, M>;
     }
     case "record": {
-      const partialSchema = deepPartial(
-        (meta as unknown as { schema: Schema<unknown, { type: string }> })
-          .schema
-      );
-      const m = { ...meta };
-      delete m["schema"];
+      const recordMeta = meta as unknown as {
+        schema: Schema<unknown, { type: string }>;
+      };
+      const partialSchema = deepPartial(recordMeta.schema);
+      const { schema, ...rest } = recordMeta;
       return withMetaInformation(
         record(optional(partialSchema)),
-        m
+        rest
       ) as unknown as DeepPartialSchema<T, M>;
     }
     case "array": {
-      const partialSchema = deepPartial(
-        (meta as unknown as { schema: Schema<unknown, { type: string }> })
-          .schema
-      );
-      const m = { ...meta };
-      delete m["schema"];
+      const arrayMeta = meta as unknown as {
+        schema: Schema<unknown, { type: string }>;
+      };
+      const partialSchema = deepPartial(arrayMeta.schema);
+      const { schema, ...rest } = arrayMeta;
       return withMetaInformation(
         array(optional(partialSchema)),
-        m
+        rest
       ) as unknown as DeepPartialSchema<T, M>;
     }
     case "tuple": {
-      const partialSchemas = (
-        meta as unknown as { schemas: Schema<unknown, { type: string }>[] }
-      ).schemas.map((s) => optional(deepPartial(s)));
-      const m = { ...meta };
-      delete m["schemas"];
+      const tupleMeta = meta as unknown as {
+        schemas: Schema<unknown, { type: string }>[];
+      };
+      const partialSchemas = tupleMeta.schemas.map((s) =>
+        optional(deepPartial(s))
+      );
+      const { schemas, ...rest } = tupleMeta;
       return withMetaInformation(
         tuple(...partialSchemas),
-        m
+        rest
       ) as unknown as DeepPartialSchema<T, M>;
     }
     default:

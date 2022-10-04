@@ -1,4 +1,4 @@
-export type Intersect<T extends [...unknown[]]> = T extends [
+export type Intersect<T extends readonly unknown[]> = T extends [
   infer Head,
   ...infer Tail
 ]

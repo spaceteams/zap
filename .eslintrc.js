@@ -43,7 +43,7 @@ module.exports = {
       rules: {
         "@typescript-eslint/no-unused-vars": [
           "error",
-          { argsIgnorePattern: "^_" },
+          { argsIgnorePattern: "^_", ignoreRestSiblings: true },
         ],
         "@typescript-eslint/explicit-module-boundary-types": 0,
         "@typescript-eslint/explicit-function-return-type": 0,

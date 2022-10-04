@@ -8,7 +8,7 @@ import { tuple } from "./tuple";
 import { translate } from "../validation";
 
 const schema = tuple(number(), literal("a"));
-
+schema.meta().schemas[1].meta();
 it("accepts", () => {
   expect(schema.accepts([1, "a"])).toBeTruthy();
 

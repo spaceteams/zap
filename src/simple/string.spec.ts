@@ -12,9 +12,9 @@ it("accepts", () => {
 
 it("validates", () => {
   expect(string().validate("")).toBeUndefined();
-  expect(string().validate(undefined)).toMatchObject({
-    message: "wrong_type",
+  expect(string({ required: "message" }).validate(undefined)).toMatchObject({
+    message: "message",
+    code: "required",
     value: undefined,
-    args: ["string"],
   });
 });

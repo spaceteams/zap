@@ -1,4 +1,6 @@
 export type ValidationIssueCode =
+  | "generic"
+  | "required"
   | "wrong_type"
   // array
   | "includes"
@@ -44,7 +46,8 @@ const validationErrorMarker = Symbol();
 
 export interface ValidationIssue {
   __marker: symbol;
-  message: ValidationIssueCode | string;
+  code: ValidationIssueCode;
+  message?: string;
   value: unknown;
   args?: unknown[];
 }
@@ -54,25 +57,15 @@ export function isValidationError(v: unknown): v is ValidationIssue {
     (v as Record<string, unknown>)["__marker"] == validationErrorMarker
   );
 }
-export function makeGenericIssue(
-  message: string,
-  value: unknown,
-  ...args: unknown[]
-): ValidationIssue {
-  return {
-    __marker: validationErrorMarker,
-    message,
-    value,
-    args: args.length > 0 ? args : undefined,
-  };
-}
 export function makeIssue(
-  message: ValidationIssueCode,
+  code: ValidationIssueCode,
+  message: string | undefined,
   value: unknown,
   ...args: unknown[]
 ): ValidationIssue {
   return {
     __marker: validationErrorMarker,
+    code,
     message,
     value,
     args: args.length > 0 ? args : undefined,
@@ -175,23 +168,23 @@ export function simplifyValidation<T>(
 }
 
 export function defaultTranslateError(validation: ValidationIssue) {
-  switch (validation.message) {
+  if (validation.message) {
+    return validation.message;
+  }
+  switch (validation.code) {
+    case "required": {
+      return "value is required";
+    }
     case "wrong_type": {
-      if (
-        typeof validation.value === "undefined" ||
-        validation.value === null
-      ) {
-        return "value is required";
-      }
       return `value was of type ${
         Array.isArray(validation.value) ? "array" : typeof validation.value
       } expected ${(validation.args ?? []).join(" or ")}`;
     }
     default: {
       if (validation.args && validation.args.length > 0) {
-        return `${validation.message}(${validation.args.join(",")})`;
+        return `${validation.code}(${validation.args.join(",")})`;
       }
-      return validation.message;
+      return validation.code;
     }
   }
 }

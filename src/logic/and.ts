@@ -2,7 +2,7 @@ import { getOption, InferTypes, makeSchema, Schema } from "../schema";
 import { Intersect } from "../utility";
 import { isFailure, mergeValidations, ValidationResult } from "../validation";
 
-export function and<T extends Schema<unknown, unknown>[]>(
+export function and<T extends readonly Schema<unknown, unknown>[]>(
   ...schemas: T
 ): Schema<Intersect<InferTypes<T>>, { type: "and"; schemas: T }> {
   type ResultT = Intersect<InferTypes<T>>;

@@ -1,7 +1,7 @@
 import {
   isFailure,
   isSuccess,
-  makeGenericIssue,
+  makeIssue,
   mergeValidations,
   simplifyValidation,
   ValidationIssue,
@@ -249,7 +249,7 @@ export function refineWithMetainformation<T, M, N, O extends T = T>(
           validation = mergeValidations(validation, val);
         },
         issueIf: (condition, message, ...args) =>
-          condition ? makeGenericIssue(message, v, ...args) : undefined,
+          condition ? makeIssue("generic", message, v, ...args) : undefined,
         options: { ...defaultOptions, ...o },
       });
       return simplifyValidation(refinedValidation ?? validation);
@@ -352,7 +352,7 @@ export type InferType<T> = T extends Schema<infer U, unknown> ? U : never;
 /**
  * Infers the result type of a tuple of Schemas. E.g. [Schema<A, M>, Schema<B, N>] to [A, B]
  */
-export type InferTypes<T extends [...unknown[]]> = T extends [
+export type InferTypes<T extends readonly unknown[]> = T extends [
   infer Head,
   ...infer Tail
 ]

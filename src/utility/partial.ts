@@ -39,54 +39,50 @@ export function partial<T, M extends { type: string }>(
   const meta = schema.meta();
   switch (meta.type) {
     case "object": {
+      const objectMeta = meta as unknown as {
+        schema?: Record<string, Schema<unknown, unknown>>;
+      };
       const partialSchema = {};
-      for (const [key, value] of Object.entries(
-        (
-          meta as unknown as {
-            schema?: Record<string, Schema<unknown, unknown>>;
-          }
-        ).schema ?? {}
-      )) {
+      for (const [key, value] of Object.entries(objectMeta.schema ?? {})) {
         partialSchema[key] = optional(value);
       }
-      const m = { ...meta };
-      delete m["schema"];
+      const { schema, ...rest } = objectMeta;
       return withMetaInformation(
         object(partialSchema),
-        m
+        rest
       ) as unknown as PartialSchema<T, M>;
     }
     case "record": {
-      const partialSchema = optional(
-        (meta as unknown as { schema: Schema<unknown, unknown> }).schema
-      );
-      const m = { ...meta };
-      delete m["schema"];
+      const recordMeta = meta as unknown as {
+        schema: Schema<unknown, { type: string }>;
+      };
+      const partialSchema = optional(recordMeta.schema);
+      const { schema, ...rest } = recordMeta;
       return withMetaInformation(
         record(partialSchema) as unknown as PartialSchema<T, M>,
-        m
+        rest
       );
     }
     case "array": {
-      const partialSchema = optional(
-        (meta as unknown as { schema: Schema<unknown, unknown> }).schema
-      );
-      const m = { ...meta };
-      delete m["schema"];
+      const arrayMeta = meta as unknown as {
+        schema: Schema<unknown, { type: string }>;
+      };
+      const partialSchema = optional(arrayMeta.schema);
+      const { schema, ...rest } = arrayMeta;
       return withMetaInformation(
         array(partialSchema) as unknown as PartialSchema<T, M>,
-        m
+        rest
       );
     }
     case "tuple": {
-      const partialSchemas = (
-        meta as unknown as { schemas: Schema<unknown, unknown>[] }
-      ).schemas.map((s) => optional(s));
-      const m = { ...meta };
-      delete m["schemas"];
+      const tupleMeta = meta as unknown as {
+        schemas: Schema<unknown, { type: string }>[];
+      };
+      const partialSchemas = tupleMeta.schemas.map((s) => optional(s));
+      const { schemas, ...rest } = tupleMeta;
       return withMetaInformation(
         tuple(...partialSchemas) as unknown as PartialSchema<T, M>,
-        m
+        rest
       );
     }
     default:

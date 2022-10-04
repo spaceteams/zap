@@ -39,6 +39,18 @@ export function toJsonSchema<M extends { type: string }>(
         type: isInteger ? "integer" : type,
       };
     }
+    case "record": {
+      const recordMeta = meta as unknown as {
+        type: "object";
+        schema: Schema<unknown, { type: string }>;
+        key: Schema<unknown, { type: string }>;
+      };
+      return {
+        type: "object",
+        propertyNames: toJsonSchema(recordMeta.key),
+        additionalProperties: toJsonSchema(recordMeta.schema),
+      };
+    }
     case "object": {
       const objectMeta = meta as unknown as {
         type: "object";

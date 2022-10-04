@@ -40,13 +40,14 @@ export function nullish<T, M>(
 }
 
 export function required<T, M>(
-  schema: Schema<T | undefined | null, M>
+  schema: Schema<T | undefined | null, M>,
+  issue?: string
 ): Schema<T, M & { required: true }> {
   type V = ValidationResult<T>;
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
-        return makeIssue("wrong_type", v, "undefined", "null") as V;
+        return makeIssue("required", issue, v) as V;
       }
       return schema.validate(v) as V;
     },
@@ -68,21 +69,23 @@ export function nullToUndefined<T, M>(
   return narrow(schema, (v) => v ?? undefined);
 }
 
-export function undefinedSchema(): Schema<undefined, { type: "undefined" }> {
+export function undefinedSchema(
+  issue?: string
+): Schema<undefined, { type: "undefined" }> {
   return makeSchema(
     (v) => {
       if (typeof v !== "undefined") {
-        return makeIssue("wrong_type", v, "undefined");
+        return makeIssue("wrong_type", issue, v, "undefined");
       }
     },
     () => ({ type: "undefined" })
   );
 }
-export function nullSchema(): Schema<null, { type: "null" }> {
+export function nullSchema(issue?: string): Schema<null, { type: "null" }> {
   return makeSchema(
     (v) => {
       if (typeof v !== null) {
-        return makeIssue("wrong_type", v, "null");
+        return makeIssue("wrong_type", issue, v, "null");
       }
     },
     () => ({ type: "null" })

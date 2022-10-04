@@ -1,4 +1,4 @@
-export type Unionize<T extends [...unknown[]]> = T extends [
+export type Unionize<T extends readonly unknown[]> = T extends [
   infer Head,
   ...infer Tail
 ]

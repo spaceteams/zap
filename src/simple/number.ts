@@ -1,79 +1,88 @@
 import { makeSchema, refineWithMetainformation, Schema } from "../schema";
 import { makeIssue } from "../validation";
 
-export function number(): Schema<number, { type: "number" }> {
+export function number(
+  issues?: Partial<{
+    required: string;
+    wrongType: string;
+    isNan: string;
+  }>
+): Schema<number, { type: "number" }> {
   return makeSchema(
     (v) => {
+      if (typeof v === "undefined" || v === null) {
+        return makeIssue("required", issues?.required, v);
+      }
       if (typeof v !== "number") {
-        return makeIssue("wrong_type", v, "number");
+        return makeIssue("wrong_type", issues?.wrongType, v, "number");
       }
       if (Number.isNaN(v)) {
-        return makeIssue("isNaN", v);
+        return makeIssue("isNaN", issues?.isNan, v);
       }
     },
     () => ({ type: "number" })
   );
 }
-export function nan(): Schema<number, { type: "nan" }> {
+export function nan(issue?: string): Schema<number, { type: "nan" }> {
   return makeSchema(
     (v) => {
       if (!Number.isNaN(v)) {
-        return makeIssue("wrong_type", v, "nan");
+        return makeIssue("wrong_type", issue, v, "nan");
       }
     },
     () => ({ type: "nan" })
   );
 }
-export function positive<M>(schema: Schema<number, M>) {
+export function positive<M>(schema: Schema<number, M>, issue?: string) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v <= 0) {
-        return makeIssue("positive", v);
+        return makeIssue("positive", issue, v);
       }
     },
     { exclusiveMinimum: 0 }
   );
 }
-export function nonPositive<M>(schema: Schema<number, M>) {
+export function nonPositive<M>(schema: Schema<number, M>, issue?: string) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v <= 0) {
-        return makeIssue("nonPositive", v);
+        return makeIssue("nonPositive", issue, v);
       }
     },
     { maximum: 0 }
   );
 }
-export function negative<M>(schema: Schema<number, M>) {
+export function negative<M>(schema: Schema<number, M>, issue?: string) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v >= 0) {
-        return makeIssue("negative", v);
+        return makeIssue("negative", issue, v);
       }
     },
     { minimum: 0 }
   );
 }
-export function nonNegative<M>(schema: Schema<number, M>) {
+export function nonNegative<M>(schema: Schema<number, M>, issue?: string) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v < 0) {
-        return makeIssue("nonNegative", v);
+        return makeIssue("nonNegative", issue, v);
       }
     },
     { exclusiveMaximum: 0 }
   );
 }
-export function integer<M>(schema: Schema<number, M>) {
+export function integer<M>(schema: Schema<number, M>, issue?: string) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (!Number.isInteger(v)) {
-        return makeIssue("integer", v);
+        return makeIssue("integer", issue, v);
       }
     },
     { isInteger: true }
@@ -90,57 +99,77 @@ function floatSafeRemainder(val: number, step: number) {
   return (((valInt % stepInt) + stepInt) % stepInt) / Math.pow(10, decCount);
 }
 
-export function multipleOf<M>(schema: Schema<number, M>, value: number) {
+export function multipleOf<M>(
+  schema: Schema<number, M>,
+  value: number,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (floatSafeRemainder(v, value) > 0) {
-        return makeIssue("multipleOf", v, value);
+        return makeIssue("multipleOf", issue, v, value);
       }
     },
     { multipleOf: value }
   );
 }
 
-export function exclusiveMaximum<M>(schema: Schema<number, M>, value: number) {
+export function exclusiveMaximum<M>(
+  schema: Schema<number, M>,
+  value: number,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v >= value) {
-        return makeIssue("exclusiveMaximum", v, value);
+        return makeIssue("exclusiveMaximum", issue, v, value);
       }
     },
     { exclusiveMaximum: value }
   );
 }
-export function exclusiveMinimum<M>(schema: Schema<number, M>, value: number) {
+export function exclusiveMinimum<M>(
+  schema: Schema<number, M>,
+  value: number,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v <= value) {
-        return makeIssue("exclusiveMinimum", v, value);
+        return makeIssue("exclusiveMinimum", issue, v, value);
       }
     },
     { exclusiveMinimum: value }
   );
 }
-export function maximum<M>(schema: Schema<number, M>, value: number) {
+export function maximum<M>(
+  schema: Schema<number, M>,
+  value: number,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v > value) {
-        return makeIssue("maximum", v, value);
+        return makeIssue("maximum", issue, v, value);
       }
     },
     { maximum: value }
   );
 }
-export function minimum<M>(schema: Schema<number, M>, value: number) {
+export function minimum<M>(
+  schema: Schema<number, M>,
+  value: number,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v < value) {
-        return makeIssue("minimum", v, value);
+        return makeIssue("minimum", issue, v, value);
       }
     },
     { minimum: value }
