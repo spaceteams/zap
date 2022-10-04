@@ -1,7 +1,7 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
-import { date, before, after } from "./date";
+import { date, before, after, coercedDate } from "./date";
 import { translate } from "../validation";
 
 it("accepts", () => {
@@ -33,5 +33,12 @@ describe("after", () => {
     expect(translate(schema.validate(new Date("2022-01-01")))).toEqual(
       "after(Sat Jan 01 2022 01:00:00 GMT+0100 (Central European Standard Time))"
     );
+  });
+});
+
+describe("coercedDate", () => {
+  const schema = coercedDate();
+  it("validates", () => {
+    expect(schema.validate("2023-01-01")).toBeUndefined();
   });
 });
