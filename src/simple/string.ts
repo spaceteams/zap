@@ -11,7 +11,7 @@ export function string(
     required: string;
     wrongType: string;
   }>
-): Schema<string, { type: "string" }> {
+): Schema<string, string, { type: "string" }> {
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
@@ -24,8 +24,8 @@ export function string(
     () => ({ type: "string" })
   );
 }
-export function minLength<M>(
-  schema: Schema<string, M>,
+export function minLength<O, M>(
+  schema: Schema<string, O, M>,
   minLength: number,
   issue?: string
 ) {
@@ -39,8 +39,8 @@ export function minLength<M>(
     { minLength }
   );
 }
-export function maxLength<M>(
-  schema: Schema<string, M>,
+export function maxLength<O, M>(
+  schema: Schema<string, O, M>,
   maxLength: number,
   issue?: string
 ) {
@@ -54,8 +54,8 @@ export function maxLength<M>(
     { maxLength }
   );
 }
-export function length<M>(
-  schema: Schema<string, M>,
+export function length<O, M>(
+  schema: Schema<string, O, M>,
   length: number,
   issue?: string
 ) {
@@ -69,11 +69,14 @@ export function length<M>(
     { minLength: length, maxLength: length }
   );
 }
-export function nonEmptyString<M>(schema: Schema<string, M>, issue?: string) {
+export function nonEmptyString<O, M>(
+  schema: Schema<string, O, M>,
+  issue?: string
+) {
   return minLength(schema, 1, issue);
 }
-export function pattern<M>(
-  schema: Schema<string, M>,
+export function pattern<O, M>(
+  schema: Schema<string, O, M>,
   pattern: RegExp,
   issue?: string
 ) {
@@ -87,8 +90,8 @@ export function pattern<M>(
     { pattern }
   );
 }
-export function startsWith<M>(
-  schema: Schema<string, M>,
+export function startsWith<O, M>(
+  schema: Schema<string, O, M>,
   searchString: string,
   position?: number,
   issue?: string
@@ -99,8 +102,8 @@ export function startsWith<M>(
     }
   });
 }
-export function endsWith<M>(
-  schema: Schema<string, M>,
+export function endsWith<O, M>(
+  schema: Schema<string, O, M>,
   searchString: string,
   position?: number,
   issue?: string

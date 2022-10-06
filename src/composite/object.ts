@@ -1,5 +1,6 @@
 import {
   getOption,
+  InferOutputType,
   InferType,
   makeSchema,
   refineWithMetainformation,
@@ -16,7 +17,9 @@ export type fixPartialKeys<T> = optionalKeys<T> extends never
   ? T
   : { [k in requiredKeys<T>]: T[k] } & { [k in optionalKeys<T>]?: T[k] };
 
-export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
+export function object<
+  T extends { [K in keyof T]: Schema<unknown, unknown, unknown> }
+>(
   schema: T,
   issues?: Partial<{
     required: string;
@@ -24,14 +27,16 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
   }>
 ): Schema<
   fixPartialKeys<{ [K in keyof T]: InferType<T[K]> }>,
+  fixPartialKeys<{ [K in keyof T]: InferOutputType<T[K]> }>,
   {
     type: "object";
     schema: { [K in keyof T]: T[K] };
     additionalProperties: true;
   }
 > {
-  type ResultT = fixPartialKeys<{ [K in keyof T]: InferType<T[K]> }>;
-  type V = Validation<ResultT>;
+  type ResultI = fixPartialKeys<{ [K in keyof T]: InferType<T[K]> }>;
+  type ResultO = fixPartialKeys<{ [K in keyof T]: InferOutputType<T[K]> }>;
+  type V = Validation<ResultI>;
   return makeSchema(
     (v, o) => {
       if (typeof v === "undefined" || v === null) {
@@ -44,9 +49,9 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
       const record = v as { [k: string]: unknown };
       const validation: { [key: string]: unknown } = {};
       for (const [key, inner] of Object.entries(schema)) {
-        const innerValidation = (inner as Schema<unknown, unknown>).validate(
-          record[key]
-        );
+        const innerValidation = (
+          inner as Schema<unknown, unknown, unknown>
+        ).validate(record[key]);
         if (isFailure(innerValidation)) {
           validation[key] = innerValidation;
           if (getOption(o, "earlyExit")) {
@@ -61,10 +66,10 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
     },
     () => ({ type: "object", schema, additionalProperties: true }),
     (v, o) => {
-      const result: Partial<ResultT> = {};
+      const result: Partial<ResultO> = {};
       for (const [key, inner] of Object.entries(schema)) {
-        result[key] = (inner as Schema<unknown, unknown>).parse(
-          v[key as keyof ResultT],
+        result[key] = (inner as Schema<unknown, unknown, unknown>).parse(
+          v[key as keyof ResultI],
           o
         );
       }
@@ -75,18 +80,19 @@ export function object<T extends { [K in keyof T]: Schema<unknown, unknown> }>(
           }
         }
       }
-      return result as ResultT;
+      return result as ResultO;
     }
   );
 }
 
 export function strict<
-  T extends { [K in keyof T]: unknown },
+  I extends { [K in keyof I]: unknown },
+  O,
   M extends {
     additionalProperties: unknown;
-    schema: { [K in keyof T]: Schema<unknown, unknown> };
+    schema: { [K in keyof I]: Schema<unknown, unknown, unknown> };
   }
->(schema: Schema<T, M>, issue?: string) {
+>(schema: Schema<I, O, M>, issue?: string) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -97,7 +103,7 @@ export function strict<
             issue,
             v,
             key
-          ) as Validation<T>;
+          ) as Validation<I>;
         }
       }
     },
@@ -105,7 +111,11 @@ export function strict<
   );
 }
 
-export function empty(): Schema<Record<string, never>, { type: "object" }> {
+export function empty(): Schema<
+  Record<string, never>,
+  Record<string, never>,
+  { type: "object" }
+> {
   return object({});
 }
 
@@ -117,7 +127,7 @@ export function fromInstance<T>(
     required: string;
     wrongType: string;
   }>
-): Schema<T, { type: "object"; instance: string }> {
+): Schema<T, T, { type: "object"; instance: string }> {
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
@@ -137,9 +147,9 @@ export function fromInstance<T>(
   );
 }
 
-export function isInstance<T, M>(
-  schema: Schema<T, M>,
-  constructor: { new (...args: unknown[]): T },
+export function isInstance<I, O, M>(
+  schema: Schema<I, O, M>,
+  constructor: { new (...args: unknown[]): I },
   issue?: string
 ) {
   return refineWithMetainformation(
@@ -147,7 +157,7 @@ export function isInstance<T, M>(
     (v) => {
       const isValid = v instanceof constructor;
       if (!isValid) {
-        return makeIssue("wrong_type", issue, v, constructor) as Validation<T>;
+        return makeIssue("wrong_type", issue, v, constructor) as Validation<I>;
       }
     },
     { instance: constructor.name }
@@ -155,15 +165,19 @@ export function isInstance<T, M>(
 }
 
 export function omit<
-  T,
-  M extends { schema: { [K in keyof T]: Schema<T[K], unknown> } },
-  K extends keyof T
+  I,
+  O,
+  M extends { schema: { [K in keyof I]: Schema<I[K], unknown, unknown> } },
+  K extends keyof I
 >(
-  schema: Schema<T, M>,
+  schema: Schema<I, O, M>,
   ...keys: K[]
 ): Schema<
   {
-    [Key in keyof T as Key extends K ? never : Key]: T[Key];
+    [Key in keyof I as Key extends K ? never : Key]: I[Key];
+  },
+  {
+    [Key in keyof O as Key extends K ? never : Key]: O[Key];
   },
   {
     type: "object";
@@ -203,14 +217,18 @@ export function omit<
 }
 
 export function pick<
-  T,
-  M extends { schema: { [K in keyof T]: Schema<T[K], unknown> } },
-  K extends keyof T
+  I,
+  O,
+  M extends { schema: { [K in keyof I]: Schema<I[K], unknown, unknown> } },
+  K extends keyof I
 >(
-  schema: Schema<T, M>,
+  schema: Schema<I, O, M>,
   ...keys: K[]
 ): Schema<
-  { [key in K]: T[key] },
+  { [key in K]: I[key] },
+  {
+    [Key in keyof O as Key extends K ? Key : never]: O[Key];
+  },
   { type: "object"; schema: { [key in K]: M["schema"][key] } }
 > {
   const filteredSchemas = {};
@@ -246,30 +264,32 @@ export function pick<
 }
 
 export function at<
-  T,
-  M extends { schema: { [K in keyof T]: Schema<T[K], unknown> } },
-  K extends keyof T
+  I,
+  O,
+  M extends { schema: { [K in keyof I]: Schema<I[K], unknown, unknown> } },
+  K extends keyof I
 >(
-  schema: Schema<T, M>,
+  schema: Schema<I, O, M>,
   key: K
-): Schema<T[K], ReturnType<M["schema"][K]["meta"]>> {
+): Schema<I[K], I[K], ReturnType<M["schema"][K]["meta"]>> {
   return makeSchema(
     (v, o) => {
       const validation = schema.validate({ [key]: v }, o);
       if (validation === undefined) {
         return;
       }
-      return validation[key as string] as Validation<T[K]>;
+      return validation[key as string] as Validation<I[K]>;
     },
     () => schema.meta().schema[key].meta() as ReturnType<M["schema"][K]["meta"]>
   );
 }
 
 export function keys<
-  T,
-  M extends { schema: { [K in keyof T]: Schema<unknown, unknown> } }
+  I,
+  O,
+  M extends { schema: { [K in keyof I]: Schema<unknown, unknown, unknown> } }
 >(
-  schema: Schema<T, M>
-): Schema<keyof T, { type: "literals"; literals: (keyof T)[] }> {
-  return literals(...(Object.keys(schema.meta().schema) as (keyof T)[]));
+  schema: Schema<I, O, M>
+): Schema<keyof I, keyof I, { type: "literals"; literals: (keyof I)[] }> {
+  return literals(...(Object.keys(schema.meta().schema) as (keyof I)[]));
 }

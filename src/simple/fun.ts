@@ -10,7 +10,11 @@ export function fun<Args extends unknown[], Result>(
     required: string;
     wrongType: string;
   }>
-): Schema<Procedure<Args, Result>, { type: "function" }> {
+): Schema<
+  Procedure<Args, Result>,
+  Procedure<Args, Result>,
+  { type: "function" }
+> {
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
@@ -24,8 +28,8 @@ export function fun<Args extends unknown[], Result>(
   );
 }
 
-export function arity<Args extends unknown[], M, Result>(
-  schema: Schema<Procedure<Args, Result>, M>,
+export function arity<Args extends unknown[], O, M, Result>(
+  schema: Schema<Procedure<Args, Result>, O, M>,
   arity: number,
   issue?: string
 ) {

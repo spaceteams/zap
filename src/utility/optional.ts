@@ -1,9 +1,9 @@
 import { makeSchema, narrow, Schema } from "../schema";
 import { makeIssue, ValidationResult } from "../validation";
 
-export function optional<T, M>(
-  schema: Schema<T, M>
-): Schema<T | undefined, { required: false } & M> {
+export function optional<I, O, M>(
+  schema: Schema<I, O, M>
+): Schema<I | undefined, O | undefined, { required: false } & M> {
   return makeSchema(
     (v) => {
       if (typeof v !== "undefined") {
@@ -14,7 +14,9 @@ export function optional<T, M>(
     (v, o) => schema.parse(v, o)
   );
 }
-export function nullable<T, M>(schema: Schema<T, M>): Schema<T | null, M> {
+export function nullable<I, O, M>(
+  schema: Schema<I, O, M>
+): Schema<I | null, O | null, M> {
   return makeSchema(
     (v) => {
       if (v !== null) {
@@ -22,12 +24,12 @@ export function nullable<T, M>(schema: Schema<T, M>): Schema<T | null, M> {
       }
     },
     () => ({ ...schema.meta() }),
-    (v, o) => schema.parse(v, o)
+    (v, o) => (v !== null ? schema.parse(v, o) : (v as null))
   );
 }
-export function nullish<T, M>(
-  schema: Schema<T, M>
-): Schema<T | undefined | null, { required: false } & M> {
+export function nullish<I, O, M>(
+  schema: Schema<I, O, M>
+): Schema<I | undefined | null, O | undefined | null, { required: false } & M> {
   return makeSchema(
     (v) => {
       if (typeof v !== "undefined" && v !== null) {
@@ -35,15 +37,18 @@ export function nullish<T, M>(
       }
     },
     () => ({ ...schema.meta(), required: false }),
-    (v, o) => schema.parse(v, o)
+    (v, o) =>
+      typeof v !== "undefined" && v !== null
+        ? schema.parse(v, o)
+        : (v as undefined | null)
   );
 }
 
-export function required<T, M>(
-  schema: Schema<T | undefined | null, M>,
+export function required<I, O, M>(
+  schema: Schema<I | undefined | null, O | undefined | null, M>,
   issue?: string
-): Schema<T, M & { required: true }> {
-  type V = ValidationResult<T>;
+): Schema<I, O, M & { required: true }> {
+  type V = ValidationResult<I>;
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
@@ -52,26 +57,26 @@ export function required<T, M>(
       return schema.validate(v) as V;
     },
     () => ({ ...schema.meta(), required: true }),
-    (v, o) => schema.parse(v, o) as T
+    (v, o) => schema.parse(v, o) as O
   );
 }
 
-export function defaultValue<T, M>(
-  schema: Schema<T | undefined | null, M>,
-  value: T
-): Schema<T, M> {
+export function defaultValue<I, O, M>(
+  schema: Schema<I | undefined | null, O | undefined | null, M>,
+  value: O
+): Schema<I | undefined | null, O, M> {
   return narrow(schema, (v) => v ?? value);
 }
 
-export function nullToUndefined<T, M>(
-  schema: Schema<T | undefined | null, M>
-): Schema<T | undefined, M> {
+export function nullToUndefined<I, O, M>(
+  schema: Schema<I | undefined | null, O | undefined | null, M>
+): Schema<I | undefined | null, O | undefined, M> {
   return narrow(schema, (v) => v ?? undefined);
 }
 
 export function undefinedSchema(
   issue?: string
-): Schema<undefined, { type: "undefined" }> {
+): Schema<undefined, undefined, { type: "undefined" }> {
   return makeSchema(
     (v) => {
       if (typeof v !== "undefined") {
@@ -81,7 +86,9 @@ export function undefinedSchema(
     () => ({ type: "undefined" })
   );
 }
-export function nullSchema(issue?: string): Schema<null, { type: "null" }> {
+export function nullSchema(
+  issue?: string
+): Schema<null, null, { type: "null" }> {
   return makeSchema(
     (v) => {
       if (typeof v !== null) {

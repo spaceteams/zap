@@ -52,15 +52,3 @@ describe("convert", () => {
     ).toEqual(undefined);
   });
 });
-
-describe("parse", () => {
-  it("parses values into a target schema", () => {
-    expect(g.parse("v2", 12)).toEqual({ value: 12, unit: "m" });
-  });
-  it("takes first viable source", () => {
-    expect(g.parse("v3", { value: 12, unit: "" })).toEqual({
-      value: 12,
-      unit: "m",
-    });
-  });
-});

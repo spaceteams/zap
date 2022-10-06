@@ -6,7 +6,7 @@ export function boolean(
     required: string;
     wrongType: string;
   }>
-): Schema<boolean, { type: "boolean" }> {
+): Schema<boolean, boolean, { type: "boolean" }> {
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {

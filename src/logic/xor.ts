@@ -1,20 +1,31 @@
 import { Unionize } from "../utility";
-import { InferTypes, Schema } from "../schema";
+import { InferOutputTypes, InferTypes, Schema } from "../schema";
 import { isSuccess, makeIssue, ValidationResult } from "../validation";
 
-export function xor<T extends readonly Schema<unknown, unknown>[]>(
+export function xor<T extends readonly Schema<unknown, unknown, unknown>[]>(
   ...schemas: T
-): Schema<Unionize<InferTypes<T>>, { type: "xor"; schemas: T }> {
+): Schema<
+  Unionize<InferTypes<T>>,
+  Unionize<InferOutputTypes<T>>,
+  { type: "xor"; schemas: T }
+> {
   return xorWithIssue(schemas);
 }
 
-export function xorWithIssue<T extends readonly Schema<unknown, unknown>[]>(
+export function xorWithIssue<
+  T extends readonly Schema<unknown, unknown, unknown>[]
+>(
   schemas: T,
   issue?: string
-): Schema<Unionize<InferTypes<T>>, { type: "xor"; schemas: T }> {
-  type ResultT = Unionize<InferTypes<T>>;
-  type V = ValidationResult<ResultT>;
-  const validate: Schema<ResultT, unknown>["validate"] = (v, o) => {
+): Schema<
+  Unionize<InferTypes<T>>,
+  Unionize<InferOutputTypes<T>>,
+  { type: "xor"; schemas: T }
+> {
+  type ResultI = Unionize<InferTypes<T>>;
+  type ResultO = Unionize<InferOutputTypes<T>>;
+  type V = ValidationResult<ResultI>;
+  const validate: Schema<ResultI, ResultO, unknown>["validate"] = (v, o) => {
     let result: ValidationResult<unknown>;
     let hasSuccess = false;
     for (const schema of schemas) {
@@ -37,7 +48,7 @@ export function xorWithIssue<T extends readonly Schema<unknown, unknown>[]>(
     validate,
     parse: (v, o) => {
       let validation: ValidationResult<unknown>;
-      let successSchema: Schema<unknown, unknown> | undefined;
+      let successSchema: Schema<unknown, unknown, unknown> | undefined;
       for (const schema of schemas) {
         validation = schema.validate(v, o);
         if (isSuccess(validation)) {
@@ -51,7 +62,7 @@ export function xorWithIssue<T extends readonly Schema<unknown, unknown>[]>(
       if (successSchema === undefined) {
         throw validation;
       }
-      return successSchema.parse(v, { ...o, skipValidation: true }) as ResultT;
+      return successSchema.parse(v, { ...o, skipValidation: true }) as ResultO;
     },
     meta: () => ({ type: "xor", schemas }),
   };

@@ -12,13 +12,13 @@ import {
   ValidationResult,
 } from "../validation";
 
-export function array<T, M>(
-  schema: Schema<T, M>,
+export function array<I, O, M>(
+  schema: Schema<I, O, M>,
   issues?: Partial<{
     required: string;
     wrongType: string;
   }>
-): Schema<T[], { type: "array"; schema: Schema<T, M> }> {
+): Schema<I[], O[], { type: "array"; schema: Schema<I, O, M> }> {
   return makeSchema(
     (v, o) => {
       if (typeof v === "undefined" || v === null) {
@@ -28,7 +28,7 @@ export function array<T, M>(
         return makeIssue("wrong_type", issues?.wrongType, v, "array");
       }
 
-      const validations: ValidationResult<T[]> = [];
+      const validations: ValidationResult<I[]> = [];
       for (const value of v) {
         const validation = schema.validate(value, o);
         validations.push(validation);
@@ -46,8 +46,8 @@ export function array<T, M>(
     (v, o) => v.map((item) => schema.parse(item, o))
   );
 }
-export function minItems<T, M>(
-  schema: Schema<T[], M>,
+export function minItems<I, O, M>(
+  schema: Schema<I[], O, M>,
   minItems: number,
   issue?: string
 ) {
@@ -61,8 +61,8 @@ export function minItems<T, M>(
     { minItems }
   );
 }
-export function maxItems<T, M>(
-  schema: Schema<T[], M>,
+export function maxItems<I, O, M>(
+  schema: Schema<I[], O, M>,
   maxItems: number,
   issue?: string
 ) {
@@ -76,8 +76,8 @@ export function maxItems<T, M>(
     { maxItems }
   );
 }
-export function items<T, M>(
-  schema: Schema<T[], M>,
+export function items<I, O, M>(
+  schema: Schema<I[], O, M>,
   items: number,
   issue?: string
 ) {
@@ -91,7 +91,10 @@ export function items<T, M>(
     { minItems: items, maxItems: items }
   );
 }
-export function uniqueItems<T, M>(schema: Schema<T[], M>, issue?: string) {
+export function uniqueItems<I, O, M>(
+  schema: Schema<I[], O, M>,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -110,9 +113,9 @@ export function uniqueItems<T, M>(schema: Schema<T[], M>, issue?: string) {
     { uniqueItems: true }
   );
 }
-export function includes<T, M>(
-  schema: Schema<T[], M>,
-  element: T,
+export function includes<I, O, M>(
+  schema: Schema<I[], O, M>,
+  element: I,
   fromIndex: number,
   issue?: string
 ) {
@@ -122,6 +125,9 @@ export function includes<T, M>(
     }
   });
 }
-export function nonEmptyArray<T, M>(schema: Schema<T[], M>, issue?: string) {
+export function nonEmptyArray<I, O, M>(
+  schema: Schema<I[], O, M>,
+  issue?: string
+) {
   return minItems(schema, 1, issue);
 }

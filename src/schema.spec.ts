@@ -2,11 +2,20 @@
 
 import { nan, number } from "./simple/number";
 import { object } from "./composite/object";
-import { optional, undefinedSchema } from "./utility/optional";
+import { undefinedSchema } from "./utility/optional";
 import { or } from "./logic/or";
-import { coerce, narrow, options, refine, RefineContext } from "./schema";
+import { coerce, narrow, options, refine, transform, validIf } from "./schema";
 import { string } from "./simple/string";
 import { makeIssue, translate } from "./validation";
+
+describe("validIf", () => {
+  const schema = validIf(number(), (v) => v % 2 === 0, "even");
+
+  it("adds additional validation", () => {
+    expect(schema.validate(12)).toBeUndefined();
+    expect(translate(schema.validate(13))).toEqual("even");
+  });
+});
 
 describe("refine", () => {
   const schema = refine(number(), (v) => {
@@ -19,8 +28,8 @@ describe("refine", () => {
       add(makeIssue("generic", "even", v));
     }
   });
-  const inlineSchema = refine(object({ a: string() }), (v, { issueIf }) => ({
-    a: issueIf(v.a.length > 0, "a must be empty"),
+  const inlineSchema = refine(object({ a: string() }), (v, { validIf }) => ({
+    a: validIf(v.a.length === 0, "a must be empty"),
   }));
 
   it("adds additional validation", () => {
@@ -43,24 +52,6 @@ describe("refine", () => {
 
   it("simplifies result", () => {
     expect(inlineSchema.validate({ a: "" })).toBeUndefined();
-  });
-
-  it("allows for type narrowing", () => {
-    const innerSchema = object({
-      a: optional(number()),
-      b: string(),
-    });
-    const typeNarrowed = refine(
-      innerSchema,
-      (v, ctx: RefineContext<{ a: number; b: string }>) => {
-        if (!v.a) {
-          ctx.add({ b: makeIssue("generic", "some_problem", v) });
-        }
-      }
-    );
-    expect(translate(typeNarrowed.validate({ b: "hello" }))).toEqual({
-      b: "some_problem",
-    });
   });
 });
 
@@ -101,6 +92,33 @@ describe("narrow", () => {
     expect(schema.parse(12)).toEqual(12);
     expect(schema.parse(undefined)).toEqual(undefined);
     expect(schema.parse(Number.NaN)).toEqual(undefined);
+  });
+});
+
+describe("transform", () => {
+  const transformRefineTransform = transform(
+    refine(
+      object({
+        age: transform(number(), (v) => ({ boxed: v })),
+      }),
+      (u, { validIf }) => ({
+        age: validIf(u.age >= 18, "should be at least 18"),
+      })
+    ),
+    (v) => v.age.boxed
+  );
+
+  it("accepts", () => {
+    expect(transformRefineTransform.accepts({ age: 21 })).toBeTruthy();
+    expect(transformRefineTransform.accepts({ age: 12 })).toBeFalsy();
+  });
+  it("validates", () => {
+    expect(translate(transformRefineTransform.validate({ age: 12 }))).toEqual({
+      age: "should be at least 18",
+    });
+  });
+  it("parses", () => {
+    expect(transformRefineTransform.parse({ age: 21 })).toEqual(21);
   });
 });
 

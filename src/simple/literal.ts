@@ -11,7 +11,7 @@ export function literal<T extends Literal>(
     wrongType: string;
     literal: string;
   }>
-): Schema<typeof literal, { type: "literal"; literal: T }> {
+): Schema<typeof literal, typeof literal, { type: "literal"; literal: T }> {
   type V = Validation<typeof literal>;
   return makeSchema(
     (v) => {
@@ -42,7 +42,7 @@ export function literal<T extends Literal>(
 
 export function literals<T extends Literal[]>(
   ...literals: T
-): Schema<Unionize<T>, { type: "literals"; literals: T }> {
+): Schema<Unionize<T>, Unionize<T>, { type: "literals"; literals: T }> {
   return literalsWithIssues(literals);
 }
 
@@ -53,7 +53,7 @@ export function literalsWithIssues<T extends readonly Literal[]>(
     wrongType: string;
     literal: string;
   }>
-): Schema<Unionize<T>, { type: "literals"; literals: T }> {
+): Schema<Unionize<T>, Unionize<T>, { type: "literals"; literals: T }> {
   type V = Validation<Unionize<T>>;
   return makeSchema(
     (v) => {

@@ -7,7 +7,7 @@ export function number(
     wrongType: string;
     isNan: string;
   }>
-): Schema<number, { type: "number" }> {
+): Schema<number, number, { type: "number" }> {
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
@@ -23,7 +23,7 @@ export function number(
     () => ({ type: "number" })
   );
 }
-export function nan(issue?: string): Schema<number, { type: "nan" }> {
+export function nan(issue?: string): Schema<number, number, { type: "nan" }> {
   return makeSchema(
     (v) => {
       if (!Number.isNaN(v)) {
@@ -33,7 +33,7 @@ export function nan(issue?: string): Schema<number, { type: "nan" }> {
     () => ({ type: "nan" })
   );
 }
-export function positive<M>(schema: Schema<number, M>, issue?: string) {
+export function positive<O, M>(schema: Schema<number, O, M>, issue?: string) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -44,7 +44,10 @@ export function positive<M>(schema: Schema<number, M>, issue?: string) {
     { exclusiveMinimum: 0 }
   );
 }
-export function nonPositive<M>(schema: Schema<number, M>, issue?: string) {
+export function nonPositive<O, M>(
+  schema: Schema<number, O, M>,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -55,7 +58,7 @@ export function nonPositive<M>(schema: Schema<number, M>, issue?: string) {
     { maximum: 0 }
   );
 }
-export function negative<M>(schema: Schema<number, M>, issue?: string) {
+export function negative<O, M>(schema: Schema<number, O, M>, issue?: string) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -66,7 +69,10 @@ export function negative<M>(schema: Schema<number, M>, issue?: string) {
     { minimum: 0 }
   );
 }
-export function nonNegative<M>(schema: Schema<number, M>, issue?: string) {
+export function nonNegative<O, M>(
+  schema: Schema<number, O, M>,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -77,7 +83,7 @@ export function nonNegative<M>(schema: Schema<number, M>, issue?: string) {
     { exclusiveMaximum: 0 }
   );
 }
-export function integer<M>(schema: Schema<number, M>, issue?: string) {
+export function integer<O, M>(schema: Schema<number, O, M>, issue?: string) {
   return refineWithMetainformation(
     schema,
     (v) => {
@@ -99,8 +105,8 @@ function floatSafeRemainder(val: number, step: number) {
   return (((valInt % stepInt) + stepInt) % stepInt) / Math.pow(10, decCount);
 }
 
-export function multipleOf<M>(
-  schema: Schema<number, M>,
+export function multipleOf<O, M>(
+  schema: Schema<number, O, M>,
   value: number,
   issue?: string
 ) {
@@ -115,8 +121,8 @@ export function multipleOf<M>(
   );
 }
 
-export function exclusiveMaximum<M>(
-  schema: Schema<number, M>,
+export function exclusiveMaximum<O, M>(
+  schema: Schema<number, O, M>,
   value: number,
   issue?: string
 ) {
@@ -130,8 +136,8 @@ export function exclusiveMaximum<M>(
     { exclusiveMaximum: value }
   );
 }
-export function exclusiveMinimum<M>(
-  schema: Schema<number, M>,
+export function exclusiveMinimum<O, M>(
+  schema: Schema<number, O, M>,
   value: number,
   issue?: string
 ) {
@@ -145,8 +151,8 @@ export function exclusiveMinimum<M>(
     { exclusiveMinimum: value }
   );
 }
-export function maximum<M>(
-  schema: Schema<number, M>,
+export function maximum<O, M>(
+  schema: Schema<number, O, M>,
   value: number,
   issue?: string
 ) {
@@ -160,8 +166,8 @@ export function maximum<M>(
     { maximum: value }
   );
 }
-export function minimum<M>(
-  schema: Schema<number, M>,
+export function minimum<O, M>(
+  schema: Schema<number, O, M>,
   value: number,
   issue?: string
 ) {

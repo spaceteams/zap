@@ -1,13 +1,18 @@
-import { InferTypes, Schema } from "../schema";
+import { InferOutputTypes, InferTypes, Schema } from "../schema";
 import { isSuccess, ValidationResult } from "../validation";
 import { Unionize } from "../utility";
 
-export function or<T extends Schema<unknown, unknown>[]>(
+export function or<T extends Schema<unknown, unknown, unknown>[]>(
   ...schemas: T
-): Schema<Unionize<InferTypes<T>>, { type: "or"; schemas: T }> {
-  type ResultT = Unionize<InferTypes<T>>;
-  type V = ValidationResult<ResultT>;
-  const validate: Schema<ResultT, unknown>["validate"] = (v, o) => {
+): Schema<
+  Unionize<InferTypes<T>>,
+  Unionize<InferOutputTypes<T>>,
+  { type: "or"; schemas: T }
+> {
+  type ResultI = Unionize<InferTypes<T>>;
+  type ResultO = Unionize<InferOutputTypes<T>>;
+  type V = ValidationResult<ResultI>;
+  const validate: Schema<ResultI, ResultO, unknown>["validate"] = (v, o) => {
     let result: ValidationResult<unknown>;
     for (const schema of schemas) {
       result = schema.validate(v, o);
@@ -23,7 +28,7 @@ export function or<T extends Schema<unknown, unknown>[]>(
     validate,
     parse: (v, o) => {
       let validation: ValidationResult<unknown>;
-      let successSchema: Schema<unknown, unknown> | undefined;
+      let successSchema: Schema<unknown, unknown, unknown> | undefined;
       for (const schema of schemas) {
         validation = schema.validate(v, o);
         if (isSuccess(validation)) {
@@ -34,7 +39,7 @@ export function or<T extends Schema<unknown, unknown>[]>(
       if (successSchema === undefined) {
         throw validation;
       }
-      return successSchema.parse(v, { ...o, skipValidation: true }) as ResultT;
+      return successSchema.parse(v, { ...o, skipValidation: true }) as ResultO;
     },
     meta: () => ({ type: "or", schemas }),
   };

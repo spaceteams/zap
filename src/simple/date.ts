@@ -8,7 +8,7 @@ export function date(
     wrongType: string;
     isNan: string;
   }>
-): Schema<Date, { type: "object"; instance: string }> {
+): Schema<Date, Date, { type: "object"; instance: string }> {
   return refine(fromInstance(Date, issues), (d) => {
     if (Number.isNaN(d)) {
       return makeIssue("isNaN", issues?.isNan, d);
@@ -22,7 +22,7 @@ export function coercedDate(
     wrongType: string;
     isNan: string;
   }>
-): Schema<Date, { type: "object"; instance: string }> {
+): Schema<Date, Date, { type: "object"; instance: string }> {
   return coerce(date(issues), (v) => {
     if (typeof v === "string" || typeof v === "number") {
       return new Date(v);
@@ -31,8 +31,8 @@ export function coercedDate(
   });
 }
 
-export function before<M>(
-  schema: Schema<Date, M>,
+export function before<O, M>(
+  schema: Schema<Date, O, M>,
   value: Date,
   issue?: string
 ) {
@@ -46,7 +46,11 @@ export function before<M>(
     { max: value }
   );
 }
-export function after<M>(schema: Schema<Date, M>, value: Date, issue?: string) {
+export function after<O, M>(
+  schema: Schema<Date, O, M>,
+  value: Date,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {

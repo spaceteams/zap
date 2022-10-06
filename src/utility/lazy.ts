@@ -12,7 +12,7 @@ export function memoize<T>(provider: () => T): () => T {
   };
 }
 
-export function lazy<T, M>(schema: () => Schema<T, M>): Schema<T, M> {
+export function lazy<I, O, M>(schema: () => Schema<I, O, M>): Schema<I, O, M> {
   const memo = memoize(schema);
   return makeSchema(
     (v, o) => memo().validate(v, o),

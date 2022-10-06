@@ -12,7 +12,7 @@ const defaultHeader: Partial<JsonSchemaHeader> = {
 };
 
 export function toJsonSchema<M extends { type: string }>(
-  schema: Schema<unknown, M>,
+  schema: Schema<unknown, unknown, M>,
   header?: Partial<JsonSchemaHeader>
 ): Record<string, unknown> {
   if (header) {
@@ -42,8 +42,8 @@ export function toJsonSchema<M extends { type: string }>(
     case "record": {
       const recordMeta = meta as unknown as {
         type: "object";
-        schema: Schema<unknown, { type: string }>;
-        key: Schema<unknown, { type: string }>;
+        schema: Schema<unknown, unknown, { type: string }>;
+        key: Schema<unknown, unknown, { type: string }>;
       };
       return {
         type: "object",
@@ -54,7 +54,7 @@ export function toJsonSchema<M extends { type: string }>(
     case "object": {
       const objectMeta = meta as unknown as {
         type: "object";
-        schema: { [key: string]: Schema<unknown, { type: string }> };
+        schema: { [key: string]: Schema<unknown, unknown, { type: string }> };
         additionalProperties: boolean;
       };
       const required: string[] = [];
@@ -75,7 +75,7 @@ export function toJsonSchema<M extends { type: string }>(
     }
     case "array": {
       const arrayMeta = meta as unknown as {
-        schema: Schema<unknown, { type: string }>;
+        schema: Schema<unknown, unknown, { type: string }>;
       };
       return {
         type: "array",
@@ -84,7 +84,7 @@ export function toJsonSchema<M extends { type: string }>(
     }
     case "tuple": {
       const tupleMeta = meta as unknown as {
-        schemas: Schema<unknown, { type: string }>[];
+        schemas: Schema<unknown, unknown, { type: string }>[];
       };
       return {
         type: "array",
@@ -94,7 +94,7 @@ export function toJsonSchema<M extends { type: string }>(
     }
     case "or": {
       const tupleMeta = meta as unknown as {
-        schemas: Schema<unknown, { type: string }>[];
+        schemas: Schema<unknown, unknown, { type: string }>[];
       };
       return {
         anyOf: tupleMeta.schemas.map((s) => toJsonSchema(s)),
@@ -102,7 +102,7 @@ export function toJsonSchema<M extends { type: string }>(
     }
     case "and": {
       const tupleMeta = meta as unknown as {
-        schemas: Schema<unknown, { type: string }>[];
+        schemas: Schema<unknown, unknown, { type: string }>[];
       };
       return {
         allOf: tupleMeta.schemas.map((s) => toJsonSchema(s)),

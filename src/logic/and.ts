@@ -1,11 +1,22 @@
-import { getOption, InferTypes, makeSchema, Schema } from "../schema";
+import {
+  getOption,
+  InferTypes,
+  InferOutputTypes,
+  makeSchema,
+  Schema,
+} from "../schema";
 import { Intersect } from "../utility";
 import { isFailure, mergeValidations, ValidationResult } from "../validation";
 
-export function and<T extends readonly Schema<unknown, unknown>[]>(
+export function and<T extends readonly Schema<unknown, unknown, unknown>[]>(
   ...schemas: T
-): Schema<Intersect<InferTypes<T>>, { type: "and"; schemas: T }> {
-  type ResultT = Intersect<InferTypes<T>>;
+): Schema<
+  Intersect<InferTypes<T>>,
+  Intersect<InferOutputTypes<T>>,
+  { type: "and"; schemas: T }
+> {
+  type ResultI = Intersect<InferTypes<T>>;
+  type ResultO = Intersect<InferOutputTypes<T>>;
   return makeSchema(
     (v, o) => {
       let result: ValidationResult<unknown>;
@@ -15,15 +26,15 @@ export function and<T extends readonly Schema<unknown, unknown>[]>(
           break;
         }
       }
-      return result as ValidationResult<Intersect<InferTypes<T>>>;
+      return result as ValidationResult<ResultI>;
     },
     () => ({ type: "and", schemas }),
     (v, o) => {
-      const results: Partial<ResultT>[] = [];
+      const results: Partial<ResultO>[] = [];
       for (const schema of schemas) {
-        results.push(schema.parse(v, o) as Partial<ResultT>);
+        results.push(schema.parse(v, o) as Partial<ResultO>);
       }
-      return Object.assign({}, ...results) as ResultT;
+      return Object.assign({}, ...results) as ResultO;
     }
   );
 }

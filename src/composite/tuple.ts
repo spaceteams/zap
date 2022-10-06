@@ -1,4 +1,10 @@
-import { InferTypes, getOption, makeSchema, Schema } from "../schema";
+import {
+  InferTypes,
+  getOption,
+  makeSchema,
+  Schema,
+  InferOutputTypes,
+} from "../schema";
 import {
   isFailure,
   isSuccess,
@@ -7,22 +13,25 @@ import {
   ValidationResult,
 } from "../validation";
 
-export function tuple<T extends readonly Schema<unknown, unknown>[]>(
+export function tuple<T extends readonly Schema<unknown, unknown, unknown>[]>(
   ...schemas: T
-): Schema<InferTypes<T>, { type: "tuple"; schemas: T }> {
+): Schema<InferTypes<T>, InferOutputTypes<T>, { type: "tuple"; schemas: T }> {
   return tupleWithIssues(schemas);
 }
 
-export function tupleWithIssues<T extends readonly Schema<unknown, unknown>[]>(
+export function tupleWithIssues<
+  T extends readonly Schema<unknown, unknown, unknown>[]
+>(
   schemas: T,
   issues?: Partial<{
     required: string;
     wrongType: string;
     length: string;
   }>
-): Schema<InferTypes<T>, { type: "tuple"; schemas: T }> {
-  type ResultT = InferTypes<T>;
-  type V = Validation<ResultT>;
+): Schema<InferTypes<T>, InferOutputTypes<T>, { type: "tuple"; schemas: T }> {
+  type ResultI = InferTypes<T>;
+  type ResultO = InferOutputTypes<T>;
+  type V = Validation<ResultI>;
   return makeSchema(
     (v, o) => {
       if (typeof v === "undefined" || v === null) {
@@ -58,7 +67,7 @@ export function tupleWithIssues<T extends readonly Schema<unknown, unknown>[]>(
         result.push(schemas[i].parse(value, o));
         i++;
       }
-      return result as ResultT;
+      return result as ResultO;
     }
   );
 }

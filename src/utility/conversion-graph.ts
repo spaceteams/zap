@@ -18,7 +18,9 @@ export class ConversionGraph<T> {
   } = {};
 
   constructor(
-    protected readonly nodes: { [key in keyof T]: Schema<T[key], unknown> }
+    protected readonly nodes: {
+      [key in keyof T]: Schema<T[key], unknown, unknown>;
+    }
   ) {}
 
   firstNodeOf(value: unknown): keyof T | undefined {
@@ -99,16 +101,5 @@ export class ConversionGraph<T> {
   ): T[Target] | undefined {
     const transform = this.bfs(source, target);
     return transform && transform(v);
-  }
-
-  parse<Target extends keyof T>(
-    target: Target,
-    v: unknown
-  ): T[Target] | undefined {
-    const firstNode = this.firstNodeOf(v);
-    if (firstNode === undefined) {
-      return undefined;
-    }
-    return this.convert(firstNode, target, this.nodes[firstNode].parse(v));
   }
 }

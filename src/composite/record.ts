@@ -2,8 +2,8 @@ import { getOption, makeSchema, Schema } from "../schema";
 import { string } from "../simple";
 import { isFailure, makeIssue, ValidationResult } from "../validation";
 
-export function record<T, M>(
-  schema: Schema<T, M>,
+export function record<I, O, M>(
+  schema: Schema<I, O, M>,
   issues?: Partial<{
     required: string;
     wrongType: string;
@@ -12,19 +12,21 @@ export function record<T, M>(
   return keyedRecord(string(), schema, issues);
 }
 
-export function keyedRecord<K extends string | number | symbol, N, T, M>(
-  key: Schema<K, N>,
-  schema: Schema<T, M>,
+export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
+  key: Schema<K, K, N>,
+  schema: Schema<I, O, M>,
   issues?: Partial<{
     required: string;
     wrongType: string;
   }>
 ): Schema<
-  Record<K, T>,
-  { type: "record"; schema: Schema<T, M>; key: Schema<K, N> }
+  Record<K, I>,
+  Record<K, O>,
+  { type: "record"; schema: Schema<I, O, M>; key: Schema<K, K, N> }
 > {
-  type ResultT = Record<K, T>;
-  type V = ValidationResult<ResultT>;
+  type ResultI = Record<K, I>;
+  type ResultO = Record<K, O>;
+  type V = ValidationResult<ResultI>;
   return makeSchema(
     (v, o) => {
       if (typeof v === "undefined" || v === null) {
@@ -50,11 +52,11 @@ export function keyedRecord<K extends string | number | symbol, N, T, M>(
     },
     () => ({ type: "record", schema, key }),
     (v, o) => {
-      const result: Partial<ResultT> = {};
+      const result: Partial<ResultO> = {};
       for (const [key, value] of Object.entries(v)) {
         result[key] = schema.parse(value, o);
       }
-      return result as ResultT;
+      return result as ResultO;
     }
   );
 }

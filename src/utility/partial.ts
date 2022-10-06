@@ -2,12 +2,17 @@ import { array, object, record, tuple } from "../composite";
 import { optional } from "./optional";
 import {
   InferMetaType,
+  InferOutputType,
   InferType,
   Schema,
   withMetaInformation,
 } from "../schema";
 
-type WithMeta<T, M> = Schema<InferType<T>, InferMetaType<T> & M>;
+type WithMeta<T, M> = Schema<
+  InferType<T>,
+  InferOutputType<T>,
+  InferMetaType<T> & M
+>;
 type WithMetaT<T extends [...unknown[]], M> = T extends [
   infer Head,
   ...infer Tail
@@ -18,29 +23,30 @@ type WithMetaO<T, M> = {
   [K in keyof T]: WithMeta<T[K], M>;
 };
 
-type PartialSchema<T, M> = Schema<
-  Partial<T>,
-  M extends { schema: { [key: string]: Schema<unknown, unknown> } }
+type PartialSchema<I, O, M> = Schema<
+  Partial<I>,
+  Partial<O>,
+  M extends { schema: { [key: string]: Schema<unknown, unknown, unknown> } }
     ? Omit<M, "schema"> & {
         schema: WithMetaO<M["schema"], { required: false }>;
       }
-    : M extends { schemas: [...Schema<unknown, unknown>[]] }
+    : M extends { schemas: [...Schema<unknown, unknown, unknown>[]] }
     ? Omit<M, "schemas"> & {
         schemas: WithMetaT<M["schemas"], { required: false }>;
       }
-    : M extends { schema: Schema<unknown, unknown> }
+    : M extends { schema: Schema<unknown, unknown, unknown> }
     ? Omit<M, "schema"> & { schema: WithMeta<M["schema"], { required: false }> }
     : M
 >;
 
-export function partial<T, M extends { type: string }>(
-  schema: Schema<T, M>
-): PartialSchema<T, M> {
+export function partial<I, O, M extends { type: string }>(
+  schema: Schema<I, O, M>
+): PartialSchema<I, O, M> {
   const meta = schema.meta();
   switch (meta.type) {
     case "object": {
       const objectMeta = meta as unknown as {
-        schema?: Record<string, Schema<unknown, unknown>>;
+        schema?: Record<string, Schema<unknown, unknown, unknown>>;
       };
       const partialSchema = {};
       for (const [key, value] of Object.entries(objectMeta.schema ?? {})) {
@@ -50,42 +56,42 @@ export function partial<T, M extends { type: string }>(
       return withMetaInformation(
         object(partialSchema),
         rest
-      ) as unknown as PartialSchema<T, M>;
+      ) as unknown as PartialSchema<I, O, M>;
     }
     case "record": {
       const recordMeta = meta as unknown as {
-        schema: Schema<unknown, { type: string }>;
+        schema: Schema<unknown, unknown, { type: string }>;
       };
       const partialSchema = optional(recordMeta.schema);
       const { schema, ...rest } = recordMeta;
       return withMetaInformation(
-        record(partialSchema) as unknown as PartialSchema<T, M>,
+        record(partialSchema),
         rest
-      );
+      ) as unknown as PartialSchema<I, O, M>;
     }
     case "array": {
       const arrayMeta = meta as unknown as {
-        schema: Schema<unknown, { type: string }>;
+        schema: Schema<unknown, unknown, { type: string }>;
       };
       const partialSchema = optional(arrayMeta.schema);
       const { schema, ...rest } = arrayMeta;
       return withMetaInformation(
-        array(partialSchema) as unknown as PartialSchema<T, M>,
+        array(partialSchema),
         rest
-      );
+      ) as unknown as PartialSchema<I, O, M>;
     }
     case "tuple": {
       const tupleMeta = meta as unknown as {
-        schemas: Schema<unknown, { type: string }>[];
+        schemas: Schema<unknown, unknown, { type: string }>[];
       };
       const partialSchemas = tupleMeta.schemas.map((s) => optional(s));
       const { schemas, ...rest } = tupleMeta;
       return withMetaInformation(
-        tuple(...partialSchemas) as unknown as PartialSchema<T, M>,
+        tuple(...partialSchemas),
         rest
-      );
+      ) as unknown as PartialSchema<I, O, M>;
     }
     default:
-      return schema as unknown as PartialSchema<T, M>;
+      return schema as unknown as PartialSchema<I, O, M>;
   }
 }

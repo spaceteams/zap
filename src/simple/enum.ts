@@ -10,7 +10,7 @@ export function nativeEnum<T extends EnumLike>(
     wrongType: string;
     enum: string;
   }>
-): Schema<string | number, { type: "enum"; enum: T }> {
+): Schema<string | number, string | number, { type: "enum"; enum: T }> {
   const entries = new Set(
     Object.entries(e)
       .filter(([key]) => !Number.isInteger(Number(key)))

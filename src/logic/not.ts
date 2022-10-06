@@ -1,10 +1,10 @@
 import { makeSchema, Schema } from "../schema";
 import { isSuccess, makeIssue } from "../validation";
 
-export function not<T, M>(
-  schema: Schema<T, M>,
+export function not<I, O, M>(
+  schema: Schema<I, O, M>,
   issue?: string
-): Schema<unknown, { type: "not"; schema: Schema<T, M> }> {
+): Schema<unknown, unknown, { type: "not"; schema: Schema<I, O, M> }> {
   return makeSchema(
     (v, o) => {
       if (isSuccess(schema.validate(v, o))) {
