@@ -54,7 +54,7 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
     (v, o) => {
       const result: Partial<ResultO> = {};
       for (const [key, value] of Object.entries(v)) {
-        result[key] = schema.parse(value, o);
+        result[key] = schema.parse(value, o).parsedValue;
       }
       return result as ResultO;
     }

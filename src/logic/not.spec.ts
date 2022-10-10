@@ -22,5 +22,7 @@ it("validates", () => {
 });
 
 it("parses (by returning its input)", () => {
-  expect(schema.meta().schemas[0].parse({ a: 2.1 })).toEqual({ a: 2.1 });
+  expect(schema.meta().schemas[0].parse({ a: 2.1 }).parsedValue).toEqual({
+    a: 2.1,
+  });
 });

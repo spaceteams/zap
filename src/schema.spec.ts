@@ -68,12 +68,12 @@ describe("coerce", () => {
     expect(translate(schema.validate(undefined))).toEqual("isNaN");
   });
   it("parses", () => {
-    expect(schema.parse("")).toEqual(0);
-    expect(schema.parse("1")).toEqual(1);
+    expect(schema.parse("").parsedValue).toEqual(0);
+    expect(schema.parse("1").parsedValue).toEqual(1);
     expect(
       object({
         nested: schema,
-      }).parse({ nested: "1" })
+      }).parse({ nested: "1" }).parsedValue
     ).toEqual({ nested: 1 });
   });
 });
@@ -89,9 +89,9 @@ describe("narrow", () => {
     expect(schema.accepts(undefined)).toBeTruthy();
   });
   it("parses", () => {
-    expect(schema.parse(12)).toEqual(12);
-    expect(schema.parse(undefined)).toEqual(undefined);
-    expect(schema.parse(Number.NaN)).toEqual(undefined);
+    expect(schema.parse(12).parsedValue).toEqual(12);
+    expect(schema.parse(undefined).parsedValue).toEqual(undefined);
+    expect(schema.parse(Number.NaN).parsedValue).toEqual(undefined);
   });
 });
 
@@ -118,7 +118,7 @@ describe("transform", () => {
     });
   });
   it("parses", () => {
-    expect(transformRefineTransform.parse({ age: 21 })).toEqual(21);
+    expect(transformRefineTransform.parse({ age: 21 }).parsedValue).toEqual(21);
   });
 });
 
@@ -165,7 +165,7 @@ describe("options", () => {
           add: "inner",
         },
         add: "outer",
-      })
+      }).parsedValue
     ).toEqual({
       a: { b: { c: "string" }, d: { e: 1, add: "more" }, add: "inner" },
     });

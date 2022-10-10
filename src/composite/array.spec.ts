@@ -38,5 +38,5 @@ it("validates with early exit", () => {
 
 it("parses", () => {
   const schema = array(coerce(number(), Number));
-  expect(schema.parse(["1", 1])).toEqual([1, 1]);
+  expect(schema.parse(["1", 1]).parsedValue).toEqual([1, 1]);
 });

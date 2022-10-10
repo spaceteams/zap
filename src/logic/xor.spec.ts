@@ -70,7 +70,7 @@ it("parses", () => {
   expect(
     schema.parse({
       nested: { user: "name" },
-    })
+    }).parsedValue
   ).toEqual({
     description: "default",
     nested: { user: "name" },

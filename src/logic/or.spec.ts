@@ -70,7 +70,7 @@ it("parses", () => {
       id: 12,
       name: ["some", "string"],
       nested: { user: "3" },
-    })
+    }).parsedValue
   ).toEqual({
     id: 12,
     name: ["some", "string"],

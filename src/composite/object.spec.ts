@@ -107,9 +107,9 @@ it("builds metadata", () => {
 });
 
 it("parses", () => {
-  expect(object({ a: defaultValue(optional(number()), 12) }).parse({})).toEqual(
-    { a: 12 }
-  );
+  expect(
+    object({ a: defaultValue(optional(number()), 12) }).parse({}).parsedValue
+  ).toEqual({ a: 12 });
 });
 
 it("parses with stripping", () => {
@@ -119,7 +119,7 @@ it("parses with stripping", () => {
       name: ["first", "last"],
       nested: { user: "some user" },
       additional: "add",
-    })
+    }).parsedValue
   ).toEqual({
     id: 12,
     name: ["first", "last"],
@@ -134,7 +134,7 @@ it("parses with stripping", () => {
         additional: "add",
       },
       { strip: false }
-    )
+    ).parsedValue
   ).toEqual({
     id: 12,
     name: ["first", "last"],

@@ -38,6 +38,6 @@ it("parses", () => {
     tuple(defaultValue(optional(number()), 21), literal("a")).parse([
       undefined,
       "a",
-    ])
+    ]).parsedValue
   ).toEqual([21, "a"]);
 });

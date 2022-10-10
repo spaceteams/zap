@@ -11,7 +11,7 @@ export function optional<I, O, M>(
       }
     },
     () => ({ ...schema.meta(), required: false }),
-    (v, o) => schema.parse(v, o)
+    (v, o) => schema.parse(v, o).parsedValue
   );
 }
 export function nullable<I, O, M>(
@@ -24,7 +24,11 @@ export function nullable<I, O, M>(
       }
     },
     () => ({ ...schema.meta() }),
-    (v, o) => (v !== null ? schema.parse(v, o) : (v as null))
+    (v, o) => {
+      const result = v !== null ? schema.parse(v, o).parsedValue : undefined;
+      // eslint-disable-next-line unicorn/no-null
+      return result ?? null;
+    }
   );
 }
 export function nullish<I, O, M>(
@@ -39,7 +43,7 @@ export function nullish<I, O, M>(
     () => ({ ...schema.meta(), required: false }),
     (v, o) =>
       typeof v !== "undefined" && v !== null
-        ? schema.parse(v, o)
+        ? schema.parse(v, o).parsedValue
         : (v as undefined | null)
   );
 }
@@ -57,7 +61,7 @@ export function required<I, O, M>(
       return schema.validate(v) as V;
     },
     () => ({ ...schema.meta(), required: true }),
-    (v, o) => schema.parse(v, o) as O
+    (v, o) => schema.parse(v, o).parsedValue as O
   );
 }
 

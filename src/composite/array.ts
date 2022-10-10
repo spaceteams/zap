@@ -43,7 +43,7 @@ export function array<I, O, M>(
       return validations;
     },
     () => ({ type: "array", schema }),
-    (v, o) => v.map((item) => schema.parse(item, o))
+    (v, o) => v.map((item) => schema.parse(item, o).parsedValue) as O[]
   );
 }
 export function minItems<I, O, M>(

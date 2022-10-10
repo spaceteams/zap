@@ -71,7 +71,7 @@ export function object<
         result[key] = (inner as Schema<unknown, unknown, unknown>).parse(
           v[key as keyof ResultI],
           o
-        );
+        ).parsedValue;
       }
       if (!getOption(o, "strip")) {
         for (const [key, inner] of Object.entries(v)) {

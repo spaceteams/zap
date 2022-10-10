@@ -32,7 +32,7 @@ export function and<T extends readonly Schema<unknown, unknown, unknown>[]>(
     (v, o) => {
       const results: Partial<ResultO>[] = [];
       for (const schema of schemas) {
-        results.push(schema.parse(v, o) as Partial<ResultO>);
+        results.push(schema.parse(v, o).parsedValue as ResultO);
       }
       return Object.assign({}, ...results) as ResultO;
     }

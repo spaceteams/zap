@@ -64,7 +64,7 @@ export function tupleWithIssues<
       const result: unknown[] = [];
       let i = 0;
       for (const value of v) {
-        result.push(schemas[i].parse(value, o));
+        result.push(schemas[i].parse(value, o).parsedValue);
         i++;
       }
       return result as ResultO;

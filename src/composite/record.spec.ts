@@ -45,6 +45,6 @@ it("parses", () => {
     record(defaultValue(optional(number()), 42)).parse({
       id: 12,
       missing: undefined,
-    })
+    }).parsedValue
   ).toEqual({ id: 12, missing: 42 });
 });

@@ -23,7 +23,7 @@ describe("optional", () => {
   });
 
   it("parses", () => {
-    expect(optional(coercedDate()).parse(42)).toEqual(new Date(42));
+    expect(optional(coercedDate()).parse(42).parsedValue).toEqual(new Date(42));
   });
 });
 
@@ -43,7 +43,9 @@ describe("required", () => {
   });
 
   it("parses", () => {
-    expect(required(optional(coercedDate())).parse(42)).toEqual(new Date(42));
+    expect(required(optional(coercedDate())).parse(42).parsedValue).toEqual(
+      new Date(42)
+    );
   });
 });
 
@@ -64,7 +66,7 @@ describe("nullable", () => {
   });
 
   it("parses", () => {
-    expect(nullable(coercedDate()).parse(42)).toEqual(new Date(42));
+    expect(nullable(coercedDate()).parse(42).parsedValue).toEqual(new Date(42));
   });
 });
 
@@ -83,6 +85,6 @@ describe("nullish", () => {
   });
 
   it("parses", () => {
-    expect(nullish(coercedDate()).parse(42)).toEqual(new Date(42));
+    expect(nullish(coercedDate()).parse(42).parsedValue).toEqual(new Date(42));
   });
 });

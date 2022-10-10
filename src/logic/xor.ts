@@ -1,5 +1,5 @@
 import { Unionize } from "../utility";
-import { InferOutputTypes, InferTypes, Schema } from "../schema";
+import { InferOutputTypes, InferTypes, ParseResult, Schema } from "../schema";
 import { isSuccess, makeIssue, ValidationResult } from "../validation";
 
 export function xor<T extends readonly Schema<unknown, unknown, unknown>[]>(
@@ -62,7 +62,10 @@ export function xorWithIssue<
       if (successSchema === undefined) {
         throw validation;
       }
-      return successSchema.parse(v, { ...o, skipValidation: true }) as ResultO;
+      return successSchema.parse(v, {
+        ...o,
+        skipValidation: true,
+      }) as ParseResult<ResultI, ResultO>;
     },
     meta: () => ({ type: "xor", schemas }),
   };

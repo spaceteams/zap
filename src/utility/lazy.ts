@@ -17,6 +17,6 @@ export function lazy<I, O, M>(schema: () => Schema<I, O, M>): Schema<I, O, M> {
   return makeSchema(
     (v, o) => memo().validate(v, o),
     () => memo().meta(),
-    (v, o) => memo().parse(v, o)
+    (v, o) => memo().parse(v, o).parsedValue as O
   );
 }

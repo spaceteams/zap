@@ -43,6 +43,14 @@ export const getOption = (
 ) => o?.[key] ?? defaultOptions[key];
 
 /**
+ * Result of a parse
+ */
+export interface ParseResult<I, O> {
+  parsedValue?: O;
+  validation?: ValidationResult<I>;
+}
+
+/**
  * A Schema that can be used to typeguard and validate type I
  * and parse values into type O.
  * It also has a metadata type M that allows introspection.
@@ -56,11 +64,13 @@ export interface Schema<I, O, M> {
    * a typeguard of type I
    * this method is constructed by the makeSchema function
    * @param v the value to be checked
+   * @returns boolean indicating if v is I
    */
   accepts: (v: unknown, options?: Partial<ValidationOptions>) => v is I;
   /**
    * builds a validation object containing all validation errors of the object
    * @param v the value to be checked
+   * @returns the validation result
    */
   validate: (
     v: unknown,
@@ -69,9 +79,9 @@ export interface Schema<I, O, M> {
   /**
    * parses a value as type O after validating it as type I
    * @param v the value to be parsed
-   * @throws Validation<T> if validation of v fails
+   * @returns the parse result
    */
-  parse: (v: unknown, options?: Partial<Options>) => O;
+  parse: (v: unknown, options?: Partial<Options>) => ParseResult<I, O>;
   /**
    * returns the Meta Object
    */
@@ -96,58 +106,19 @@ export function makeSchema<I, O, M>(
       if (!getOption(o, "skipValidation")) {
         const validation = validate(v, o);
         if (isFailure(validation)) {
-          throw validation;
+          return { validation };
         }
       }
-      return parseAfterValidation(v as I, { ...o, skipValidation: true });
+      return {
+        parsedValue: parseAfterValidation(v as I, {
+          ...o,
+          skipValidation: true,
+        }),
+      };
     },
     validate,
     meta,
   };
-}
-
-export interface SafeParseResult<I, O, In = unknown> {
-  originalValue: In;
-  parsedValue: O | undefined;
-  validation: ValidationResult<I>;
-  parsingError: Error | undefined;
-}
-
-/**
- * Parses a value with all effects catched into a result structure.
- * @param schema the schema
- * @param v the value to be parsed
- * @param options the options used for parsing
- * @returns the result object
- */
-export function safeParse<I, O, M, In = unknown>(
-  schema: Schema<I, O, M>,
-  v: In,
-  options: Partial<Options> = {}
-): SafeParseResult<I, O, In> {
-  const result = {
-    originalValue: v,
-    validation: undefined,
-    parsedValue: undefined,
-    parsingError: undefined,
-  };
-  try {
-    return {
-      ...result,
-      parsedValue: schema.parse(v, options),
-    };
-  } catch (error) {
-    if (error instanceof Error) {
-      return {
-        ...result,
-        parsingError: error,
-      };
-    }
-    return {
-      ...result,
-      validation: error as ValidationResult<I>,
-    };
-  }
 }
 
 export interface RefineContext<O> {
@@ -283,7 +254,7 @@ export function refineWithMetainformation<I, O, M, N, P extends I = I>(
       return simplifyValidation(refinedValidation ?? validation);
     },
     () => ({ ...schema.meta(), ...metaExtension }),
-    (v, o) => schema.parse(v, o)
+    (v, o) => schema.parse(v, o).parsedValue as O
   );
 }
 
@@ -335,7 +306,15 @@ export function transform<I, O, P, M>(
 ): Schema<I, P, M> {
   return {
     accepts: (v): v is I => schema.accepts(v),
-    parse: (v, o) => transform(schema.parse(v, o)),
+    parse: (v, o) => {
+      const result = schema.parse(v, o);
+      return {
+        ...result,
+        parsedValue: isSuccess(result.validation)
+          ? transform(result.parsedValue as O)
+          : undefined,
+      };
+    },
     validate: (v, o) => schema.validate(v, o),
     meta: () => schema.meta(),
   };

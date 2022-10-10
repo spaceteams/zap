@@ -1,4 +1,4 @@
-import { InferOutputTypes, InferTypes, Schema } from "../schema";
+import { InferOutputTypes, InferTypes, ParseResult, Schema } from "../schema";
 import { isSuccess, ValidationResult } from "../validation";
 import { Unionize } from "../utility";
 
@@ -39,7 +39,10 @@ export function or<T extends Schema<unknown, unknown, unknown>[]>(
       if (successSchema === undefined) {
         throw validation;
       }
-      return successSchema.parse(v, { ...o, skipValidation: true }) as ResultO;
+      return successSchema.parse(v, {
+        ...o,
+        skipValidation: true,
+      }) as ParseResult<ResultI, ResultO>;
     },
     meta: () => ({ type: "or", schemas }),
   };
