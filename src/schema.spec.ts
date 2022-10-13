@@ -7,6 +7,7 @@ import { or } from "./logic/or";
 import { coerce, narrow, options, refine, transform, validIf } from "./schema";
 import { string } from "./simple/string";
 import { makeIssue, translate } from "./validation";
+import { array } from "./composite";
 
 describe("validIf", () => {
   const schema = validIf(number(), (v) => v % 2 === 0, "even");

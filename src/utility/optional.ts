@@ -49,10 +49,10 @@ export function nullish<I, O, M>(
 }
 
 export function required<I, O, M>(
-  schema: Schema<I | undefined | null, O | undefined | null, M>,
+  schema: Schema<I, O, M>,
   issue?: string
-): Schema<I, O, M & { required: true }> {
-  type V = ValidationResult<I>;
+): Schema<NonNullable<I>, NonNullable<O>, M & { required: true }> {
+  type V = ValidationResult<NonNullable<I>>;
   return makeSchema(
     (v, o) => {
       if (typeof v === "undefined" || v === null) {
@@ -61,15 +61,15 @@ export function required<I, O, M>(
       return schema.validate(v, o) as V;
     },
     () => ({ ...schema.meta(), required: true }),
-    (v, o) => schema.parse(v, o).parsedValue as O
+    (v, o) => schema.parse(v, o).parsedValue as NonNullable<O>
   );
 }
 
 export function defaultValue<I, O, M>(
-  schema: Schema<I | undefined | null, O | undefined | null, M>,
+  schema: Schema<I, O, M>,
   value: O
-): Schema<I | undefined | null, O, M> {
-  return narrow(schema, (v) => v ?? value);
+): Schema<I, NonNullable<O>, M> {
+  return narrow(schema, (v) => (v as NonNullable<O>) ?? value);
 }
 
 export function nullToUndefined<I, O, M>(

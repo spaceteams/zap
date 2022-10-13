@@ -1,7 +1,7 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
-import { string } from "./string";
+import { coercedString, string } from "./string";
 
 it("accepts", () => {
   expect(string().accepts("")).toBeTruthy();
@@ -16,5 +16,18 @@ it("validates", () => {
     message: "message",
     code: "required",
     value: undefined,
+  });
+});
+
+describe("coercedString", () => {
+  it("parses", () => {
+    expect(coercedString().parse("a").parsedValue).toEqual("a");
+    expect(coercedString().parse(undefined).parsedValue).toEqual("undefined");
+    expect(coercedString().parse(true).parsedValue).toEqual("true");
+    expect(coercedString().parse(false).parsedValue).toEqual("false");
+    expect(coercedString().parse(null).parsedValue).toEqual("null");
+    expect(coercedString().parse([1, "a", 2]).parsedValue).toEqual("1,a,2");
+    expect(coercedString().parse({}).parsedValue).toEqual("[object Object]");
+    expect(coercedString().parse(() => 1).parsedValue).toEqual("() => 1");
   });
 });

@@ -1,4 +1,4 @@
-import { makeSchema, Schema } from "../schema";
+import { coerce, makeSchema, Schema } from "../schema";
 import { makeIssue } from "../validation";
 
 export function boolean(
@@ -18,4 +18,8 @@ export function boolean(
     },
     () => ({ type: "boolean" })
   );
+}
+
+export function coercedBoolean() {
+  return coerce(boolean(), Boolean);
 }

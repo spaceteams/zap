@@ -137,11 +137,34 @@ The coerce function applies the `Date` only if the value is a string or a number
 
 ### Coerce
 
-By default, a schema will not try to convert values during the parse step. So a `date()` schema will only accept `Date` objects. The parse function will just return its inputs, it is the identity function. If you want to parse values like `1998-10-05` as dates however, you will need coercion.
+By default, a schema will not try to convert values during the parse step. In that case, the parse function will return its inputs without changing them. If you want to parse values like `1998-10-05` as dates however, you will need coercion.
 
-`coerce` takes a schema and a function `(v: unknown) => unknown` that may or may not convert the given value. Currently, this function is applied during parsing before the validation step and _again_ for the actual parsing. Coercion is not applied in `accepts` or `validate` so a `coercedDate()` will still accept only dates (it is a `Schema<Date>` after all!). You can override this behaviour with the `withCoercion` option.
+`coerce` takes a schema and a function `(v: unknown) => unknown` that may or may not convert the given value. Currently, this function is applied during `parse` before the validation step and _again_ for the actual parsing. Coercion is not applied in `accepts` or `validate` so a `coercedDate()` will still accept only dates (it is a `Schema<Date>` after all!). You can override this behaviour using the `withCoercion` option.
+
+The predefined coerced schemas are
+
+```
+coercedBoolean,
+coercedDate,
+coercedNumber,
+coercedString
+```
+
+They are implemented using the default coercion of javascript. Note that this comes with all the pitfalls and weirdnesses of javascript. For example `[]` is coerced to `0`, `''` and `true` with to coercedNumber, coercedString and coercedBoolean respectively.
 
 ### Transform and Narrow
+
+After you parsed a value, you might want to further transform it. For example the schema `defaultValue(optional(number()), 42)` will parse `undefined` to 42. This schema has type `Schema<number | undefined, number>` indicating that it will still accept `undefined` but will always parse to a number.
+
+The `defaultValue` function is implemented using `narrow()`. This function takes a schema and a projection function `(v: O) => P` where `P extends O`. This means that the narrowed type must still be assignable to the ouput type.
+
+If you need even more powerful transformations you can use `transform()`. This function takes a schema and an arbitrary transformation `(v: O) => P`. This is very similar to `narrow()` except for the missing contraint on `P`. With this function you can implement a schema like this
+
+```
+transform(array(number()), values => Math.max(...values))
+```
+
+This schema accepts an array of numbers and parses them into their maximum value. This schema has a type like `Schema<number[], number>`.
 
 ### Validation Result
 

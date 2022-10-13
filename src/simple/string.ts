@@ -1,4 +1,5 @@
 import {
+  coerce,
   makeSchema,
   refine,
   refineWithMetainformation,
@@ -24,6 +25,11 @@ export function string(
     () => ({ type: "string" })
   );
 }
+
+export function coercedString() {
+  return coerce(string(), String);
+}
+
 export function minLength<O, M>(
   schema: Schema<string, O, M>,
   minLength: number,

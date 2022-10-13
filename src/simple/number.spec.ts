@@ -1,7 +1,15 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
-import { integer, nan, negative, number, positive, multipleOf } from "./number";
+import {
+  integer,
+  nan,
+  negative,
+  number,
+  positive,
+  multipleOf,
+  coercedNumber,
+} from "./number";
 import { or } from "../logic/or";
 import { translate } from "../validation";
 
@@ -18,6 +26,21 @@ it("validates", () => {
   expect(number().validate(0)).toBeUndefined();
   expect(translate(number().validate(undefined))).toEqual("value is required");
   expect(translate(number().validate(Number.NaN))).toEqual("isNaN");
+});
+describe("coercedNumber", () => {
+  it("parses", () => {
+    expect(coercedNumber().parse(1).parsedValue).toEqual(1);
+    expect(coercedNumber().parse("1").parsedValue).toEqual(1);
+    expect(coercedNumber().parse(true).parsedValue).toEqual(1);
+    expect(coercedNumber().parse(false).parsedValue).toEqual(0);
+    expect(coercedNumber().parse(null).parsedValue).toEqual(0);
+    expect(coercedNumber().parse([]).parsedValue).toEqual(0);
+
+    expect(coercedNumber().parse(undefined).validation).toBeDefined();
+    expect(coercedNumber().parse([1, "a", 2]).validation).toBeDefined();
+    expect(coercedNumber().parse({}).validation).toBeDefined();
+    expect(coercedNumber().parse(() => 1).validation).toBeDefined();
+  });
 });
 
 describe("nan", () => {

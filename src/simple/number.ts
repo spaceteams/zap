@@ -1,4 +1,9 @@
-import { makeSchema, refineWithMetainformation, Schema } from "../schema";
+import {
+  coerce,
+  makeSchema,
+  refineWithMetainformation,
+  Schema,
+} from "../schema";
 import { makeIssue } from "../validation";
 
 export function number(
@@ -23,6 +28,17 @@ export function number(
     () => ({ type: "number" })
   );
 }
+
+export function coercedNumber(
+  issues?: Partial<{
+    required: string;
+    wrongType: string;
+    isNan: string;
+  }>
+) {
+  return coerce(number(issues), Number);
+}
+
 export function nan(issue?: string): Schema<number, number, { type: "nan" }> {
   return makeSchema(
     (v) => {
