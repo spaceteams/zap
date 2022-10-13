@@ -2,10 +2,12 @@
 
 import { number } from "../simple/number";
 import { defaultValue, optional } from "../utility/optional";
-import { record } from "./record";
+import { keyedRecord, record } from "./record";
 import { translate } from "../validation";
+import { minLength, string } from "../simple";
 
 const schema = record(number());
+const keyedSchema = keyedRecord(minLength(string(), 3), number());
 
 it("accepts", () => {
   expect(schema.accepts({})).toBeTruthy();
@@ -24,6 +26,12 @@ it("validates", () => {
     id: "value was of type string expected number",
     name: "value was of type array expected number",
     nested: "value was of type object expected number",
+  });
+
+  expect(
+    translate(keyedSchema.validate({ id: 1, name: 2, nested: 3 }))
+  ).toEqual({
+    id: "invalid key: minLength(3)",
   });
 });
 

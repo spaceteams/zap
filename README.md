@@ -188,9 +188,13 @@ This schema accepts an array of numbers and parses them into their maximum value
 
 ### Array
 
+### Map
+
 ### Object
 
 ### Record
+
+### Set
 
 ### Tuple
 

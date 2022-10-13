@@ -1,6 +1,11 @@
 import { getOption, makeSchema, Schema } from "../schema";
 import { string } from "../simple";
-import { isFailure, makeIssue, ValidationResult } from "../validation";
+import {
+  isFailure,
+  makeIssue,
+  Validation,
+  ValidationResult,
+} from "../validation";
 
 export function record<I, O, M>(
   schema: Schema<I, O, M>,
@@ -18,6 +23,7 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
   issues?: Partial<{
     required: string;
     wrongType: string;
+    invalidKey: string;
   }>
 ): Schema<
   Record<K, I>,
@@ -36,10 +42,23 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
         return makeIssue("wrong_type", issues?.wrongType, v, "object") as V;
       }
       const validation: { [key: string]: unknown } = {};
-      for (const [key, value] of Object.entries(v)) {
+      for (const [k, value] of Object.entries(v)) {
+        const keyValidation = key.validate(k, o);
+        if (isFailure(keyValidation)) {
+          validation[k] = makeIssue(
+            "invalid_key",
+            issues?.invalidKey,
+            value,
+            keyValidation
+          ) as Validation<I>;
+          if (getOption(o, "earlyExit")) {
+            return validation as V;
+          }
+        }
+
         const innerValidation = schema.validate(value, o);
         if (isFailure(innerValidation)) {
-          validation[key] = innerValidation;
+          validation[k] = innerValidation;
           if (getOption(o, "earlyExit")) {
             return validation as V;
           }
@@ -53,8 +72,9 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
     () => ({ type: "record", schema, key }),
     (v, o) => {
       const result: Partial<ResultO> = {};
-      for (const [key, value] of Object.entries(v)) {
-        result[key] = schema.parse(value, o).parsedValue;
+      for (const [k, value] of Object.entries(v)) {
+        const parsedKey = key.parse(k).parsedValue;
+        result[parsedKey as K] = schema.parse(value, o).parsedValue;
       }
       return result as ResultO;
     }

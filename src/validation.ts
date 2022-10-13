@@ -2,6 +2,7 @@ export type ValidationIssueCode =
   | "generic"
   | "required"
   | "wrong_type"
+  | "invalid_key"
   // array
   | "includes"
   | "items"
@@ -72,9 +73,13 @@ export function makeIssue(
   };
 }
 
-export type Validation<T, E = ValidationIssue> = T extends {
-  [key: string]: unknown;
-}
+export type Validation<T, E = ValidationIssue> = T extends Set<infer U>
+  ? Set<Validation<U>> | E
+  : T extends Map<infer K, infer U>
+  ? Map<K, Validation<U>> | E
+  : T extends {
+      [key: string]: unknown;
+    }
   ?
       | {
           [P in keyof T]?: Validation<T[P]>;
@@ -107,6 +112,8 @@ export function mergeValidations<S, T>(
   if (isValidationError(right)) {
     return right as Validation<S & T>;
   }
+
+  // Array
   if (Array.isArray(left)) {
     if (Array.isArray(right)) {
       return [...left, ...right] as Validation<S & T>;
@@ -116,9 +123,55 @@ export function mergeValidations<S, T>(
   if (Array.isArray(right)) {
     return right as Validation<S & T>;
   }
+
+  // Set
+  if (left instanceof Set) {
+    if (right instanceof Set) {
+      const validation = new Set();
+      for (const value of left.values()) {
+        validation.add(value);
+      }
+      for (const value of right.values()) {
+        validation.add(value);
+      }
+      return validation as Validation<S & T>;
+    }
+    return left as Validation<S & T>;
+  }
+  if (right instanceof Set) {
+    return right as Validation<S & T>;
+  }
+
+  // Map
+  if (left instanceof Map) {
+    if (right instanceof Map) {
+      const validation = new Map();
+
+      for (const key of left.keys()) {
+        if (right.has(key)) {
+          validation.set(key, mergeValidations(left.get(key), right.get(key)));
+        } else {
+          validation.set(key, left.get(key));
+        }
+      }
+      for (const key of right.keys()) {
+        if (!left.has(key)) {
+          validation.set(key, right.get(key));
+        }
+      }
+      return validation as Validation<S & T>;
+    }
+    return left as Validation<S & T>;
+  }
+  if (right instanceof Map) {
+    return right as Validation<S & T>;
+  }
+
+  // object
   if (typeof left === "object") {
     if (typeof right === "object") {
       const validation = {};
+
       for (const key of Object.keys(left)) {
         if (right[key] !== undefined) {
           validation[key] = mergeValidations(left[key], right[key]);
@@ -180,6 +233,14 @@ export function defaultTranslateError(validation: ValidationIssue) {
         Array.isArray(validation.value) ? "array" : typeof validation.value
       } expected ${(validation.args ?? []).join(" or ")}`;
     }
+    case "invalid_key": {
+      let innerError = "";
+      if (validation.args && validation.args.length > 0) {
+        const issue = validation.args[0] as ValidationIssue;
+        innerError = defaultTranslateError(issue);
+      }
+      return `invalid key: ${innerError}`;
+    }
     default: {
       if (validation.args && validation.args.length > 0) {
         return `${validation.code}(${validation.args.join(",")})`;
@@ -203,6 +264,25 @@ export function translate<T>(
   }
   if (Array.isArray(validation)) {
     return validation.map((v) => translate(v)) as Validation<T, string>;
+  }
+  if (validation instanceof Set) {
+    const result = new Set();
+    for (const value of validation) {
+      result.add(
+        translate(value as ValidationResult<unknown, ValidationIssue>)
+      );
+    }
+    return result as Validation<T, string>;
+  }
+  if (validation instanceof Map) {
+    const result = new Map();
+    for (const [key, value] of validation.entries()) {
+      result.set(
+        key,
+        translate(value as ValidationResult<unknown, ValidationIssue>)
+      );
+    }
+    return result as Validation<T, string>;
   }
   const result = {};
   for (const [key, value] of Object.entries(validation)) {
