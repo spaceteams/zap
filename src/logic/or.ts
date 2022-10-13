@@ -2,7 +2,7 @@ import { InferOutputTypes, InferTypes, ParseResult, Schema } from "../schema";
 import { isSuccess, ValidationResult } from "../validation";
 import { Unionize } from "../utility";
 
-export function or<T extends Schema<unknown, unknown, unknown>[]>(
+export function or<T extends Schema<unknown>[]>(
   ...schemas: T
 ): Schema<
   Unionize<InferTypes<T>>,
@@ -28,7 +28,7 @@ export function or<T extends Schema<unknown, unknown, unknown>[]>(
     validate,
     parse: (v, o) => {
       let validation: ValidationResult<unknown>;
-      let successSchema: Schema<unknown, unknown, unknown> | undefined;
+      let successSchema: Schema<unknown> | undefined;
       for (const schema of schemas) {
         validation = schema.validate(v, o);
         if (isSuccess(validation)) {

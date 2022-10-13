@@ -39,6 +39,13 @@ describe("after", () => {
 describe("coercedDate", () => {
   const schema = coercedDate();
   it("validates", () => {
-    expect(schema.validate("2023-01-01")).toBeUndefined();
+    expect(
+      schema.validate("2023-01-01", { withCoercion: true })
+    ).toBeUndefined();
+  });
+  it("parses", () => {
+    expect(schema.parse("2023-01-01").parsedValue).toEqual(
+      new Date("2023-01-01")
+    );
   });
 });

@@ -137,7 +137,11 @@ The coerce function applies the `Date` only if the value is a string or a number
 
 ### Coerce
 
-### Narrow
+By default, a schema will not try to convert values during the parse step. So a `date()` schema will only accept `Date` objects. The parse function will just return its inputs, it is the identity function. If you want to parse values like `1998-10-05` as dates however, you will need coercion.
+
+`coerce` takes a schema and a function `(v: unknown) => unknown` that may or may not convert the given value. Currently, this function is applied during parsing before the validation step and _again_ for the actual parsing. Coercion is not applied in `accepts` or `validate` so a `coercedDate()` will still accept only dates (it is a `Schema<Date>` after all!). You can override this behaviour with the `withCoercion` option.
+
+### Transform and Narrow
 
 ### Validation Result
 

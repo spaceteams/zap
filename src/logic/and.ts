@@ -8,7 +8,7 @@ import {
 import { Intersect } from "../utility";
 import { isFailure, mergeValidations, ValidationResult } from "../validation";
 
-export function and<T extends readonly Schema<unknown, unknown, unknown>[]>(
+export function and<T extends readonly Schema<unknown>[]>(
   ...schemas: T
 ): Schema<
   Intersect<InferTypes<T>>,

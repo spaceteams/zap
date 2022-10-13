@@ -2,7 +2,7 @@ import { Unionize } from "../utility";
 import { InferOutputTypes, InferTypes, ParseResult, Schema } from "../schema";
 import { isSuccess, makeIssue, ValidationResult } from "../validation";
 
-export function xor<T extends readonly Schema<unknown, unknown, unknown>[]>(
+export function xor<T extends readonly Schema<unknown>[]>(
   ...schemas: T
 ): Schema<
   Unionize<InferTypes<T>>,
@@ -12,9 +12,7 @@ export function xor<T extends readonly Schema<unknown, unknown, unknown>[]>(
   return xorWithIssue(schemas);
 }
 
-export function xorWithIssue<
-  T extends readonly Schema<unknown, unknown, unknown>[]
->(
+export function xorWithIssue<T extends readonly Schema<unknown>[]>(
   schemas: T,
   issue?: string
 ): Schema<
@@ -48,7 +46,7 @@ export function xorWithIssue<
     validate,
     parse: (v, o) => {
       let validation: ValidationResult<unknown>;
-      let successSchema: Schema<unknown, unknown, unknown> | undefined;
+      let successSchema: Schema<unknown> | undefined;
       for (const schema of schemas) {
         validation = schema.validate(v, o);
         if (isSuccess(validation)) {

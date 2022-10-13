@@ -14,6 +14,11 @@ export interface ValidationOptions {
    * default: false
    */
   earlyExit: boolean;
+  /**
+   * Use coercion to validate this value. This option has no effect during parsing.
+   * default: false
+   */
+  withCoercion: boolean;
 }
 export interface ParsingOptions {
   /**
@@ -32,6 +37,7 @@ export interface ParsingOptions {
 
 export type Options = ParsingOptions & ValidationOptions;
 export const defaultOptions: Options = {
+  withCoercion: false,
   earlyExit: false,
   strip: true,
   skipValidation: false,
@@ -59,7 +65,7 @@ export interface ParseResult<I, O> {
  * @param O the type this schema parses into
  * @param M the type containing meta information
  */
-export interface Schema<I, O, M> {
+export interface Schema<I, O = I, M = { type: string }> {
   /**
    * a typeguard of type I
    * this method is constructed by the makeSchema function
@@ -104,7 +110,7 @@ export function makeSchema<I, O, M>(
       isSuccess(validate(v, { ...o, earlyExit: true })),
     parse: (v, o) => {
       if (!getOption(o, "skipValidation")) {
-        const validation = validate(v, o);
+        const validation = validate(v, { ...o, withCoercion: true });
         if (isFailure(validation)) {
           return { validation };
         }
@@ -113,6 +119,7 @@ export function makeSchema<I, O, M>(
         parsedValue: parseAfterValidation(v as I, {
           ...o,
           skipValidation: true,
+          withCoercion: true,
         }),
       };
     },
@@ -288,7 +295,8 @@ export function coerce<I, O, M>(
   return {
     accepts: (v): v is I => schema.accepts(v),
     parse: (v, o) => schema.parse(coercion(v), o),
-    validate: (v, o) => schema.validate(coercion(v), o),
+    validate: (v, o) =>
+      schema.validate(getOption(o, "withCoercion") ? coercion(v) : v, o),
     meta: () => schema.meta(),
   };
 }

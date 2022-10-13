@@ -42,8 +42,8 @@ export function toJsonSchema<M extends { type: string }>(
     case "record": {
       const recordMeta = meta as unknown as {
         type: "object";
-        schema: Schema<unknown, unknown, { type: string }>;
-        key: Schema<unknown, unknown, { type: string }>;
+        schema: Schema<unknown>;
+        key: Schema<unknown>;
       };
       return {
         type: "object",
@@ -54,7 +54,7 @@ export function toJsonSchema<M extends { type: string }>(
     case "object": {
       const objectMeta = meta as unknown as {
         type: "object";
-        schema: { [key: string]: Schema<unknown, unknown, { type: string }> };
+        schema: { [key: string]: Schema<unknown> };
         additionalProperties: boolean;
       };
       const required: string[] = [];
@@ -74,18 +74,14 @@ export function toJsonSchema<M extends { type: string }>(
       };
     }
     case "array": {
-      const arrayMeta = meta as unknown as {
-        schema: Schema<unknown, unknown, { type: string }>;
-      };
+      const arrayMeta = meta as unknown as { schema: Schema<unknown> };
       return {
         type: "array",
         items: toJsonSchema(arrayMeta.schema),
       };
     }
     case "tuple": {
-      const tupleMeta = meta as unknown as {
-        schemas: Schema<unknown, unknown, { type: string }>[];
-      };
+      const tupleMeta = meta as unknown as { schemas: Schema<unknown>[] };
       return {
         type: "array",
         prefixItems: tupleMeta.schemas.map((s) => toJsonSchema(s)),
@@ -93,33 +89,25 @@ export function toJsonSchema<M extends { type: string }>(
       };
     }
     case "or": {
-      const tupleMeta = meta as unknown as {
-        schemas: Schema<unknown, unknown, { type: string }>[];
-      };
+      const tupleMeta = meta as unknown as { schemas: Schema<unknown>[] };
       return {
         anyOf: tupleMeta.schemas.map((s) => toJsonSchema(s)),
       };
     }
     case "and": {
-      const tupleMeta = meta as unknown as {
-        schemas: Schema<unknown, unknown, { type: string }>[];
-      };
+      const tupleMeta = meta as unknown as { schemas: Schema<unknown>[] };
       return {
         allOf: tupleMeta.schemas.map((s) => toJsonSchema(s)),
       };
     }
     case "literal": {
-      const literalMeta = meta as unknown as {
-        literal: Literal;
-      };
+      const literalMeta = meta as unknown as { literal: Literal };
       return {
         const: literalMeta.literal,
       };
     }
     case "literals": {
-      const literalsMeta = meta as unknown as {
-        literals: Literal[];
-      };
+      const literalsMeta = meta as unknown as { literals: Literal[] };
       return {
         enum: literalsMeta.literals,
       };

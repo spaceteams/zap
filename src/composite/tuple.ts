@@ -13,15 +13,13 @@ import {
   ValidationResult,
 } from "../validation";
 
-export function tuple<T extends readonly Schema<unknown, unknown, unknown>[]>(
+export function tuple<T extends readonly Schema<unknown>[]>(
   ...schemas: T
 ): Schema<InferTypes<T>, InferOutputTypes<T>, { type: "tuple"; schemas: T }> {
   return tupleWithIssues(schemas);
 }
 
-export function tupleWithIssues<
-  T extends readonly Schema<unknown, unknown, unknown>[]
->(
+export function tupleWithIssues<T extends readonly Schema<unknown>[]>(
   schemas: T,
   issues?: Partial<{
     required: string;

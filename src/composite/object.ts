@@ -49,9 +49,10 @@ export function object<
       const record = v as { [k: string]: unknown };
       const validation: { [key: string]: unknown } = {};
       for (const [key, inner] of Object.entries(schema)) {
-        const innerValidation = (
-          inner as Schema<unknown, unknown, unknown>
-        ).validate(record[key]);
+        const innerValidation = (inner as Schema<unknown>).validate(
+          record[key],
+          o
+        );
         if (isFailure(innerValidation)) {
           validation[key] = innerValidation;
           if (getOption(o, "earlyExit")) {
@@ -68,7 +69,7 @@ export function object<
     (v, o) => {
       const result: Partial<ResultO> = {};
       for (const [key, inner] of Object.entries(schema)) {
-        result[key] = (inner as Schema<unknown, unknown, unknown>).parse(
+        result[key] = (inner as Schema<unknown>).parse(
           v[key as keyof ResultI],
           o
         ).parsedValue;
@@ -90,7 +91,7 @@ export function strict<
   O,
   M extends {
     additionalProperties: unknown;
-    schema: { [K in keyof I]: Schema<unknown, unknown, unknown> };
+    schema: { [K in keyof I]: Schema<unknown> };
   }
 >(schema: Schema<I, O, M>, issue?: string) {
   return refineWithMetainformation(
@@ -266,7 +267,7 @@ export function pick<
 export function at<
   I,
   O,
-  M extends { schema: { [K in keyof I]: Schema<I[K], unknown, unknown> } },
+  M extends { schema: { [K in keyof I]: Schema<I[K]> } },
   K extends keyof I
 >(
   schema: Schema<I, O, M>,
@@ -287,7 +288,7 @@ export function at<
 export function keys<
   I,
   O,
-  M extends { schema: { [K in keyof I]: Schema<unknown, unknown, unknown> } }
+  M extends { schema: { [K in keyof I]: Schema<unknown> } }
 >(
   schema: Schema<I, O, M>
 ): Schema<keyof I, keyof I, { type: "literals"; literals: (keyof I)[] }> {

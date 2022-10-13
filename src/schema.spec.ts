@@ -64,8 +64,10 @@ describe("coerce", () => {
     expect(schema.accepts(undefined)).toBeFalsy();
   });
   it("validates", () => {
-    expect(schema.validate("")).toBeUndefined();
-    expect(translate(schema.validate(undefined))).toEqual("isNaN");
+    expect(schema.validate("", { withCoercion: true })).toBeUndefined();
+    expect(
+      translate(schema.validate(undefined, { withCoercion: true }))
+    ).toEqual("isNaN");
   });
   it("parses", () => {
     expect(schema.parse("").parsedValue).toEqual(0);

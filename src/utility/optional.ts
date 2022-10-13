@@ -5,9 +5,9 @@ export function optional<I, O, M>(
   schema: Schema<I, O, M>
 ): Schema<I | undefined, O | undefined, { required: false } & M> {
   return makeSchema(
-    (v) => {
+    (v, o) => {
       if (typeof v !== "undefined") {
-        return schema.validate(v);
+        return schema.validate(v, o);
       }
     },
     () => ({ ...schema.meta(), required: false }),
@@ -18,9 +18,9 @@ export function nullable<I, O, M>(
   schema: Schema<I, O, M>
 ): Schema<I | null, O | null, M> {
   return makeSchema(
-    (v) => {
+    (v, o) => {
       if (v !== null) {
-        return schema.validate(v);
+        return schema.validate(v, o);
       }
     },
     () => ({ ...schema.meta() }),
@@ -35,9 +35,9 @@ export function nullish<I, O, M>(
   schema: Schema<I, O, M>
 ): Schema<I | undefined | null, O | undefined | null, { required: false } & M> {
   return makeSchema(
-    (v) => {
+    (v, o) => {
       if (typeof v !== "undefined" && v !== null) {
-        return schema.validate(v);
+        return schema.validate(v, o);
       }
     },
     () => ({ ...schema.meta(), required: false }),
@@ -54,11 +54,11 @@ export function required<I, O, M>(
 ): Schema<I, O, M & { required: true }> {
   type V = ValidationResult<I>;
   return makeSchema(
-    (v) => {
+    (v, o) => {
       if (typeof v === "undefined" || v === null) {
         return makeIssue("required", issue, v) as V;
       }
-      return schema.validate(v) as V;
+      return schema.validate(v, o) as V;
     },
     () => ({ ...schema.meta(), required: true }),
     (v, o) => schema.parse(v, o).parsedValue as O

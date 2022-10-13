@@ -38,16 +38,16 @@ type WithDeepMetaO<T, M> = {
 };
 
 type DeepMeta<M> = M extends {
-  schema: { [key: string]: Schema<unknown, unknown, unknown> };
+  schema: { [key: string]: Schema<unknown> };
 }
   ? Omit<M, "schema"> & {
       schema: WithDeepMetaO<M["schema"], { required: false }>;
     }
-  : M extends { schemas: [...Schema<unknown, unknown, unknown>[]] }
+  : M extends { schemas: [...Schema<unknown>[]] }
   ? Omit<M, "schemas"> & {
       schemas: WithDeepMetaT<M["schemas"], { required: false }>;
     }
-  : M extends { schema: Schema<unknown, unknown, unknown> }
+  : M extends { schema: Schema<unknown> }
   ? Omit<M, "schema"> & {
       schema: WithDeepMeta<M["schema"], { required: false }>;
     }
@@ -67,7 +67,7 @@ export function deepPartial<I, O, M extends { type: string }>(
   switch (meta.type) {
     case "object": {
       const objectMeta = meta as unknown as {
-        schema?: Record<string, Schema<unknown, unknown, { type: string }>>;
+        schema?: Record<string, Schema<unknown>>;
       };
       const partialSchema = {};
       for (const [key, value] of Object.entries(objectMeta.schema || {})) {
@@ -80,9 +80,7 @@ export function deepPartial<I, O, M extends { type: string }>(
       ) as unknown as DeepPartialSchema<I, O, M>;
     }
     case "record": {
-      const recordMeta = meta as unknown as {
-        schema: Schema<unknown, unknown, { type: string }>;
-      };
+      const recordMeta = meta as unknown as { schema: Schema<unknown> };
       const partialSchema = deepPartial(recordMeta.schema);
       const { schema, ...rest } = recordMeta;
       return withMetaInformation(
@@ -91,9 +89,7 @@ export function deepPartial<I, O, M extends { type: string }>(
       ) as unknown as DeepPartialSchema<I, O, M>;
     }
     case "array": {
-      const arrayMeta = meta as unknown as {
-        schema: Schema<unknown, unknown, { type: string }>;
-      };
+      const arrayMeta = meta as unknown as { schema: Schema<unknown> };
       const partialSchema = deepPartial(arrayMeta.schema);
       const { schema, ...rest } = arrayMeta;
       return withMetaInformation(
@@ -102,9 +98,7 @@ export function deepPartial<I, O, M extends { type: string }>(
       ) as unknown as DeepPartialSchema<I, O, M>;
     }
     case "tuple": {
-      const tupleMeta = meta as unknown as {
-        schemas: Schema<unknown, unknown, { type: string }>[];
-      };
+      const tupleMeta = meta as unknown as { schemas: Schema<unknown>[] };
       const partialSchemas = tupleMeta.schemas.map((s) =>
         optional(deepPartial(s))
       );
