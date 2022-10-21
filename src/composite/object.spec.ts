@@ -4,7 +4,6 @@ import { array } from "./array";
 import { number } from "../simple/number";
 import { InferType } from "../schema";
 import {
-  at,
   fromInstance,
   isInstance,
   object,
@@ -212,17 +211,6 @@ describe("pick", () => {
     expect(Object.keys(pick(schema, "nested").meta().schema)).toEqual([
       "nested",
     ]);
-  });
-});
-
-describe("at", () => {
-  it("accepts", () => {
-    expect(at(schema, "nested").accepts({ user: "3" })).toBeTruthy();
-    expect(at(schema, "id").accepts(12)).toBeTruthy();
-  });
-
-  it("builds metadata", () => {
-    expect(at(schema, "id").meta().type).toEqual("number");
   });
 });
 

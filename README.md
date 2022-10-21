@@ -1,4 +1,12 @@
-# Lib Name Here
+# Prismo
+
+Prismo is a validation-first schema library with a functional Api.
+
+Some major features are
+
+- Flexible refinement and validation API
+- Transformation, Coercion and type narrowing
+- JSONSchema support
 
 # Table of Contents
 
@@ -11,10 +19,10 @@
 - [Core](#core)
 
   - [Schema](#schema)
+  - [Validation](#validation)
   - [Refine](#refine)
   - [Coerce](#coerce)
-  - [Narrow](#narrow)
-  - [Validation Result](#validation-result)
+  - [Transform and Narrow](#transform-and-narrow)
 
 - [Simple Schema Types](#simple-schema-types)
 
@@ -43,6 +51,7 @@
 - [Utility](#utility)
   - [Conversion Graph](#conversion-graph)
   - [Lazy](#lazy)
+  - [Optics](#optics)
   - [Optional, Required, Nullable & Nullish](#optional-required-nullable--nullish)
   - [Partial & DeepPartial](#partial--deeppartial)
   - [ToJsonSchema](#tojsonschema)
@@ -51,7 +60,7 @@
 
 ### Schema Definitions and Type Inference
 
-To get started you only need a few schema types and some utility functions. Have a look at this user type
+To get started you only need to know a few schema types and some utility functions. Have a look at this user schema
 
 ```ts
 const user = object({
@@ -61,7 +70,7 @@ const user = object({
 type User = InferType<typeof user>;
 ```
 
-This defines a schema `user` that has a required name and an optional age. If the age is present then it must be a number larger than zero.
+This defines a schema `user` that has a required name and an optional date of birth.
 
 We also infer the type of the Schema which is equivalent to
 
@@ -82,7 +91,7 @@ function processUser(value: unknown): string {
     // typescript infers value to be of type User
     return value.name;
   }
-  // value is of unknown type down here!
+  // in this branch value is of unknown type!
   return "not a user!";
 }
 ```
@@ -100,17 +109,17 @@ will print out
 { name: 'value was of type number expected string' }
 ```
 
-> For the sake of demonstration we use `translate()` to make the validation object more readable. Actually, `name` is not a string but an object containing more information about the validation error.
+> For the sake of demonstration we use `translate()` to make the validation object more readable. Actually, `name` is not a string but an object containing more information about the validation error such as an issue code, the actual value validated against, etc...
 
 ### Parsing and Coercion
 
-The schema type also has a parse function built in. This function will built a new object that conforms to the schema. By default however, the schema won't be able to convert types. For example
+The schema type also comes with a parse function. This function builds a new object that conforms to the schema. By default however, the schema won't be able to convert types. For example
 
 ```ts
 user.parse({ name: "Joe", dateOfBirth: "1999-01-01" });
 ```
 
-will throw a validation error because `"1999-01-01"` is a string and not a Date object. You can fix this problem like this
+will throw a validation error because `"1999-01-01"` is a string and not a Date object. You can fix this problem with _coercion_ like this
 
 ```ts
 const coercedDate = coerce(date(), (v) => {
@@ -133,11 +142,58 @@ The coerce function applies the `Date` only if the value is a string or a number
 
 ### Schema
 
+At the core of Prismo is the `schema` interface. All schema functions (like `object()`, `number()`, `string()`...) return an object that implements this schema. It is defined as
+
+```typescript
+export interface Schema<I, O = I, M = { type: string }> {
+  accepts: (v: unknown, options?: Partial<ValidationOptions>) => v is I;
+  validate: (
+    v: unknown,
+    options?: Partial<ValidationOptions>
+  ) => ValidationResult<I>;
+  parse: (v: unknown, options?: Partial<Options>) => ParseResult<I, O>;
+  meta: () => M;
+}
+```
+
+which is quite a handful.
+
+Since Prismo is a validation-first library, let us start with `accepts` and `validate`. Both get a value of unknown type and run validations on it. While `validate` builds a complete `ValidationResult` containing all found validation errors, `accepts` only returns a typeguard and is slightly more efficient thatn `validate`. The type of this validation is the first generic type `I`. If you don't care for the other two generic types you can write such a schema as `Schema<I>`. Both functions also accept a set of options. Tey currently include `earlyExit` (default false) which will stop validation on the first issue and `withCoercion` (default false) which will also coerce values on Validation (see [coerce](#coerce))
+
+Validation is great if you want to check if a value conforms to a schema, but sometimes you want to `coerce`, `tranform` a value or strip an object of additional fields. For these cases you want to call `parse()`. This function returns a Result of type
+
+```typescript
+type ParseResult<I, O> = {
+  parsedValue?: O;
+  validation?: ValidationResult<I>;
+};
+```
+
+`parsedValue` is defined if parsing was successful, otherwise `validation` contains the validation issues found. Note that `parse` has two generic types: `I` and `O`. The first is the type the Schema accepts. The second one is `O` the output type. By default it is equal to `I` but can be changed with `transform()` or `narrow()` (see [transform and narrow](#transform-and-narrow)). Like `validate` it accepts options, so you can configure the validation step and also `ParsingOptions` that control the parsing behaviour. There is `strip` (default true) that will remove all additional properties from objects and `skipValidation` (default false) if you do not want to validate, but directly run the parse step.
+
+The last method defined is `meta()`. It returns an object that describes the schema. For example `items(array(number()), 10).meta()` will return an object of type
+
+```typescript
+{
+  type: "array";
+  schema: Schema<number, number, { type: "number"; }>;
+} & {
+  minItems: number;
+  maxItems: number;
+}
+```
+
+You can use this object to traverse the schema tree (via the `schema` attribute, that is present because `array` contains another schema) or reflect on validation rules (for example `minItems` is set to `10` in the example). This object is used heavily in utility functions like [toJsonSchema()](#tojsonschema) or [partial()](#partial--deeppartial).
+
+To make traversing the meta object tree easier we have [Optics](#optics)
+
+### Validation
+
 ### Refine
 
 ### Coerce
 
-By default, a schema will not try to convert values during the parse step. In that case, the parse function will return its inputs without changing them. If you want to parse values like `1998-10-05` as dates however, you will need coercion.
+By default, a schema will not try to convert values during the parse step. In that case, the parse function will return its inputs without changing them. If you want to parse values like `"1998-10-05"` as dates however, you will need coercion.
 
 `coerce` takes a schema and a function `(v: unknown) => unknown` that may or may not convert the given value. Currently, this function is applied during `parse` before the validation step and _again_ for the actual parsing. Coercion is not applied in `accepts` or `validate` so a `coercedDate()` will still accept only dates (it is a `Schema<Date>` after all!). You can override this behaviour using the `withCoercion` option.
 
@@ -150,7 +206,7 @@ coercedNumber,
 coercedString
 ```
 
-They are implemented using the default coercion of javascript. Note that this comes with all the pitfalls and weirdnesses of javascript. For example `[]` is coerced to `0`, `''` and `true` with to coercedNumber, coercedString and coercedBoolean respectively.
+They are implemented using the default coercion of javascript. Note that this comes with all the pitfalls and weirdnesses of javascript. For example `[]` is coerced to `0`, `''` or `true` with to coercedNumber, coercedString and coercedBoolean respectively.
 
 ### Transform and Narrow
 
@@ -166,13 +222,24 @@ transform(array(number()), values => Math.max(...values))
 
 This schema accepts an array of numbers and parses them into their maximum value. This schema has a type like `Schema<number[], number>`.
 
-### Validation Result
-
 ## Simple Schema Types
 
 ### Boolean
 
+`boolean()` accepts boolean values. It is equivalent to `literals(true, false)` but creates slightly more precise validation issues.
+
+There is a `coercedBoolean` that uses standard JS coercion to boolean.
+
 ### Date
+
+`date()` validates `Date` objects and accepts only if they point to an actual time by validating them against `isNaN`.
+
+There is a `coercedDate` that uses the `Date` constructor if the value is `string` or `number`.
+
+#### Refinements
+
+`before` - accept dates before the given value  
+`after` - accept dates after the given value
 
 ### Enum
 
@@ -213,6 +280,8 @@ This schema accepts an array of numbers and parses them into their maximum value
 ### Conversion Graph
 
 ### Lazy
+
+### Optics
 
 ### Optional, Required, Nullable & Nullish
 

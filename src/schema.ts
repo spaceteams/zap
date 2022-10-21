@@ -51,10 +51,10 @@ export const getOption = (
 /**
  * Result of a parse
  */
-export interface ParseResult<I, O> {
+export type ParseResult<I, O> = {
   parsedValue?: O;
   validation?: ValidationResult<I>;
-}
+};
 
 /**
  * A Schema that can be used to typeguard and validate type I

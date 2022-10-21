@@ -264,27 +264,6 @@ export function pick<
   );
 }
 
-export function at<
-  I,
-  O,
-  M extends { schema: { [K in keyof I]: Schema<I[K]> } },
-  K extends keyof I
->(
-  schema: Schema<I, O, M>,
-  key: K
-): Schema<I[K], I[K], ReturnType<M["schema"][K]["meta"]>> {
-  return makeSchema(
-    (v, o) => {
-      const validation = schema.validate({ [key]: v }, o);
-      if (validation === undefined) {
-        return;
-      }
-      return validation[key as string] as Validation<I[K]>;
-    },
-    () => schema.meta().schema[key].meta() as ReturnType<M["schema"][K]["meta"]>
-  );
-}
-
 export function keys<
   I,
   O,
