@@ -31,7 +31,7 @@ it("validates", () => {
   expect(
     translate(keyedSchema.validate({ id: 1, name: 2, nested: 3 }))
   ).toEqual({
-    id: "invalid key: minLength(3)",
+    id: "invalid_key: minLength(3)",
   });
 });
 

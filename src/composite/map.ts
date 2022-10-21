@@ -1,7 +1,7 @@
 import { getOption, makeSchema, Schema } from "../schema";
 import {
   isFailure,
-  makeIssue,
+  ValidationIssue,
   Validation,
   ValidationResult,
 } from "../validation";
@@ -22,10 +22,10 @@ export function map<K extends string | number | symbol, N, I, O, M>(
   return makeSchema(
     (v, o) => {
       if (typeof v === "undefined" || v === null) {
-        return makeIssue("required", issues?.required, v);
+        return new ValidationIssue("required", issues?.required, v);
       }
       if (!(v instanceof Map)) {
-        return makeIssue("wrong_type", issues?.wrongType, v, "set");
+        return new ValidationIssue("wrong_type", issues?.wrongType, v, "set");
       }
       const validations: ValidationResult<Map<K, I>> = new Map();
       for (const [k, value] of v) {
@@ -33,7 +33,7 @@ export function map<K extends string | number | symbol, N, I, O, M>(
         if (isFailure(keyValidation)) {
           validations.set(
             k as K,
-            makeIssue(
+            new ValidationIssue(
               "invalid_key",
               issues?.invalidKey,
               value,

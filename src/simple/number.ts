@@ -4,7 +4,7 @@ import {
   refineWithMetainformation,
   Schema,
 } from "../schema";
-import { makeIssue } from "../validation";
+import { ValidationIssue } from "../validation";
 
 export function number(
   issues?: Partial<{
@@ -16,13 +16,18 @@ export function number(
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
-        return makeIssue("required", issues?.required, v);
+        return new ValidationIssue("required", issues?.required, v);
       }
       if (typeof v !== "number") {
-        return makeIssue("wrong_type", issues?.wrongType, v, "number");
+        return new ValidationIssue(
+          "wrong_type",
+          issues?.wrongType,
+          v,
+          "number"
+        );
       }
       if (Number.isNaN(v)) {
-        return makeIssue("isNaN", issues?.isNan, v);
+        return new ValidationIssue("isNaN", issues?.isNan, v);
       }
     },
     () => ({ type: "number" })
@@ -43,7 +48,7 @@ export function nan(issue?: string): Schema<number, number, { type: "nan" }> {
   return makeSchema(
     (v) => {
       if (!Number.isNaN(v)) {
-        return makeIssue("wrong_type", issue, v, "nan");
+        return new ValidationIssue("wrong_type", issue, v, "nan");
       }
     },
     () => ({ type: "nan" })
@@ -54,7 +59,7 @@ export function positive<O, M>(schema: Schema<number, O, M>, issue?: string) {
     schema,
     (v) => {
       if (v <= 0) {
-        return makeIssue("positive", issue, v);
+        return new ValidationIssue("positive", issue, v);
       }
     },
     { exclusiveMinimum: 0 }
@@ -68,7 +73,7 @@ export function nonPositive<O, M>(
     schema,
     (v) => {
       if (v <= 0) {
-        return makeIssue("nonPositive", issue, v);
+        return new ValidationIssue("nonPositive", issue, v);
       }
     },
     { maximum: 0 }
@@ -79,7 +84,7 @@ export function negative<O, M>(schema: Schema<number, O, M>, issue?: string) {
     schema,
     (v) => {
       if (v >= 0) {
-        return makeIssue("negative", issue, v);
+        return new ValidationIssue("negative", issue, v);
       }
     },
     { minimum: 0 }
@@ -93,7 +98,7 @@ export function nonNegative<O, M>(
     schema,
     (v) => {
       if (v < 0) {
-        return makeIssue("nonNegative", issue, v);
+        return new ValidationIssue("nonNegative", issue, v);
       }
     },
     { exclusiveMaximum: 0 }
@@ -104,7 +109,7 @@ export function integer<O, M>(schema: Schema<number, O, M>, issue?: string) {
     schema,
     (v) => {
       if (!Number.isInteger(v)) {
-        return makeIssue("integer", issue, v);
+        return new ValidationIssue("integer", issue, v);
       }
     },
     { isInteger: true }
@@ -130,7 +135,7 @@ export function multipleOf<O, M>(
     schema,
     (v) => {
       if (floatSafeRemainder(v, value) > 0) {
-        return makeIssue("multipleOf", issue, v, value);
+        return new ValidationIssue("multipleOf", issue, v, value);
       }
     },
     { multipleOf: value }
@@ -146,7 +151,7 @@ export function exclusiveMaximum<O, M>(
     schema,
     (v) => {
       if (v >= value) {
-        return makeIssue("exclusiveMaximum", issue, v, value);
+        return new ValidationIssue("exclusiveMaximum", issue, v, value);
       }
     },
     { exclusiveMaximum: value }
@@ -161,7 +166,7 @@ export function exclusiveMinimum<O, M>(
     schema,
     (v) => {
       if (v <= value) {
-        return makeIssue("exclusiveMinimum", issue, v, value);
+        return new ValidationIssue("exclusiveMinimum", issue, v, value);
       }
     },
     { exclusiveMinimum: value }
@@ -176,7 +181,7 @@ export function maximum<O, M>(
     schema,
     (v) => {
       if (v > value) {
-        return makeIssue("maximum", issue, v, value);
+        return new ValidationIssue("maximum", issue, v, value);
       }
     },
     { maximum: value }
@@ -191,7 +196,7 @@ export function minimum<O, M>(
     schema,
     (v) => {
       if (v < value) {
-        return makeIssue("minimum", issue, v, value);
+        return new ValidationIssue("minimum", issue, v, value);
       }
     },
     { minimum: value }

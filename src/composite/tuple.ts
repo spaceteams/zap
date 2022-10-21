@@ -8,7 +8,7 @@ import {
 import {
   isFailure,
   isSuccess,
-  makeIssue,
+  ValidationIssue,
   Validation,
   ValidationResult,
 } from "../validation";
@@ -33,13 +33,23 @@ export function tupleWithIssues<T extends readonly Schema<unknown>[]>(
   return makeSchema(
     (v, o) => {
       if (typeof v === "undefined" || v === null) {
-        return makeIssue("required", issues?.required, v) as V;
+        return new ValidationIssue("required", issues?.required, v) as V;
       }
       if (!Array.isArray(v)) {
-        return makeIssue("wrong_type", issues?.wrongType, v, "array") as V;
+        return new ValidationIssue(
+          "wrong_type",
+          issues?.wrongType,
+          v,
+          "array"
+        ) as V;
       }
       if (schemas.length !== v.length) {
-        return makeIssue("length", issues?.length, v, schemas.length) as V;
+        return new ValidationIssue(
+          "length",
+          issues?.length,
+          v,
+          schemas.length
+        ) as V;
       }
 
       const validations = [] as ValidationResult<unknown>[];

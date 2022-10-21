@@ -8,7 +8,7 @@ import {
 import {
   isFailure,
   isSuccess,
-  makeIssue,
+  ValidationIssue,
   ValidationResult,
 } from "../validation";
 
@@ -22,10 +22,10 @@ export function array<I, O, M>(
   return makeSchema(
     (v, o) => {
       if (typeof v === "undefined" || v === null) {
-        return makeIssue("required", issues?.required, v);
+        return new ValidationIssue("required", issues?.required, v);
       }
       if (!Array.isArray(v)) {
-        return makeIssue("wrong_type", issues?.wrongType, v, "array");
+        return new ValidationIssue("wrong_type", issues?.wrongType, v, "array");
       }
 
       const validations: ValidationResult<I[]> = [];
@@ -55,7 +55,7 @@ export function minItems<I, O, M>(
     schema,
     (v) => {
       if (v.length < minItems) {
-        return makeIssue("minItems", issue, v, minItems);
+        return new ValidationIssue("minItems", issue, v, minItems);
       }
     },
     { minItems }
@@ -70,7 +70,7 @@ export function maxItems<I, O, M>(
     schema,
     (v) => {
       if (v.length > maxItems) {
-        return makeIssue("maxItems", issue, v, maxItems);
+        return new ValidationIssue("maxItems", issue, v, maxItems);
       }
     },
     { maxItems }
@@ -85,7 +85,7 @@ export function items<I, O, M>(
     schema,
     (v) => {
       if (v.length === items) {
-        return makeIssue("items", issue, v, items);
+        return new ValidationIssue("items", issue, v, items);
       }
     },
     { minItems: items, maxItems: items }
@@ -107,7 +107,7 @@ export function uniqueItems<I, O, M>(
         return false;
       });
       if (hasDuplicates) {
-        return makeIssue("uniqueItems", issue, v);
+        return new ValidationIssue("uniqueItems", issue, v);
       }
     },
     { uniqueItems: true }
@@ -121,7 +121,7 @@ export function includes<I, O, M>(
 ) {
   return refine(schema, (v) => {
     if (!v.includes(element, fromIndex)) {
-      return makeIssue("includes", issue, v, element, fromIndex);
+      return new ValidationIssue("includes", issue, v, element, fromIndex);
     }
   });
 }

@@ -1,6 +1,6 @@
 import { fromInstance } from "../composite/object";
 import { coerce, refine, refineWithMetainformation, Schema } from "../schema";
-import { makeIssue } from "../validation";
+import { ValidationIssue } from "../validation";
 
 export function date(
   issues?: Partial<{
@@ -11,7 +11,7 @@ export function date(
 ): Schema<Date, Date, { type: "object"; instance: string }> {
   return refine(fromInstance(Date, issues), (d) => {
     if (Number.isNaN(d)) {
-      return makeIssue("isNaN", issues?.isNan, d);
+      return new ValidationIssue("isNaN", issues?.isNan, d);
     }
   });
 }
@@ -40,7 +40,7 @@ export function before<O, M>(
     schema,
     (v) => {
       if (v >= value) {
-        return makeIssue("before", issue, v, value);
+        return new ValidationIssue("before", issue, v, value);
       }
     },
     { max: value }
@@ -55,7 +55,7 @@ export function after<O, M>(
     schema,
     (v) => {
       if (v <= value) {
-        return makeIssue("after", issue, v, value);
+        return new ValidationIssue("after", issue, v, value);
       }
     },
     { min: value }

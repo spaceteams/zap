@@ -6,8 +6,7 @@ import { undefinedSchema } from "./utility/optional";
 import { or } from "./logic/or";
 import { coerce, narrow, options, refine, transform, validIf } from "./schema";
 import { string } from "./simple/string";
-import { makeIssue, translate } from "./validation";
-import { array } from "./composite";
+import { translate, ValidationIssue } from "./validation";
 
 describe("validIf", () => {
   const schema = validIf(number(), (v) => v % 2 === 0, "even");
@@ -21,12 +20,12 @@ describe("validIf", () => {
 describe("refine", () => {
   const schema = refine(number(), (v) => {
     if (v % 2 !== 0) {
-      return makeIssue("generic", "even", v);
+      return new ValidationIssue("generic", "even", v);
     }
   });
   const builderSchema = refine(number(), (v, { add }) => {
     if (v % 2 !== 0) {
-      add(makeIssue("generic", "even", v));
+      add(new ValidationIssue("generic", "even", v));
     }
   });
   const inlineSchema = refine(object({ a: string() }), (v, { validIf }) => ({

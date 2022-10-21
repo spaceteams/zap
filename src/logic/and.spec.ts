@@ -1,6 +1,6 @@
 import { and } from "./and";
 import { array } from "../composite/array";
-import { fun } from "../simple/fun";
+import { procedure } from "../simple/procedure";
 import { number } from "../simple/number";
 import { object } from "../composite/object";
 import { defaultValue, optional } from "../utility/optional";
@@ -10,7 +10,7 @@ import { translate } from "../validation";
 const Named = object({
   id: number(),
   name: array(string()),
-  getAge: optional(fun<[], number>()),
+  getAge: optional(procedure<[], number>()),
 });
 const Described = object({
   id: number(),

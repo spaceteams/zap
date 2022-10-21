@@ -1,5 +1,5 @@
 import { coerce, makeSchema, Schema } from "../schema";
-import { makeIssue } from "../validation";
+import { ValidationIssue } from "../validation";
 
 export function boolean(
   issues?: Partial<{
@@ -10,10 +10,15 @@ export function boolean(
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
-        return makeIssue("required", issues?.required, v);
+        return new ValidationIssue("required", issues?.required, v);
       }
       if (typeof v !== "boolean") {
-        return makeIssue("wrong_type", issues?.wrongType, v, "boolean");
+        return new ValidationIssue(
+          "wrong_type",
+          issues?.wrongType,
+          v,
+          "boolean"
+        );
       }
     },
     () => ({ type: "boolean" })

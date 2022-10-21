@@ -29,8 +29,9 @@ Some major features are
   - [Boolean](#boolean)
   - [Date](#date)
   - [Enum](#enum)
-  - [Fun](#fun)
   - [Literal](#literal)
+  - [Procedure](#procedure)
+  - [Promise](#promise)
   - [Number](#number)
   - [String](#string)
 
@@ -49,7 +50,6 @@ Some major features are
   - [XOR](#xor)
 
 - [Utility](#utility)
-  - [Conversion Graph](#conversion-graph)
   - [Lazy](#lazy)
   - [Optics](#optics)
   - [Optional, Required, Nullable & Nullish](#optional-required-nullable--nullish)
@@ -158,7 +158,7 @@ export interface Schema<I, O = I, M = { type: string }> {
 
 which is quite a handful.
 
-Since Prismo is a validation-first library, let us start with `accepts` and `validate`. Both get a value of unknown type and run validations on it. While `validate` builds a complete `ValidationResult` containing all found validation errors, `accepts` only returns a typeguard and is slightly more efficient thatn `validate`. The type of this validation is the first generic type `I`. If you don't care for the other two generic types you can write such a schema as `Schema<I>`. Both functions also accept a set of options. Tey currently include `earlyExit` (default false) which will stop validation on the first issue and `withCoercion` (default false) which will also coerce values on Validation (see [coerce](#coerce))
+Let us start with `accepts` and `validate`. Both get a value of unknown type and run validations on it. While `validate` builds a complete `ValidationResult` containing all found validation errors, `accepts` only returns a typeguard and is slightly more efficient thatn `validate`. The type of this validation is the first generic type `I`. If you don't care for the other two generic types you can write such a schema as `Schema<I>`. Both functions also accept a set of options. Tey currently include `earlyExit` (default false) which will stop validation on the first issue and `withCoercion` (default false) which will also coerce values on Validation (see [coerce](#coerce))
 
 Validation is great if you want to check if a value conforms to a schema, but sometimes you want to `coerce`, `tranform` a value or strip an object of additional fields. For these cases you want to call `parse()`. This function returns a Result of type
 
@@ -188,6 +188,14 @@ You can use this object to traverse the schema tree (via the `schema` attribute,
 To make traversing the meta object tree easier we have [Optics](#optics)
 
 ### Validation
+
+Let us have a closer look at the ValidationResult. The type is defined as
+
+```typescript
+export type ValidationResult<T, E = ValidationIssue> =
+  | Validation<T, E>
+  | undefined;
+```
 
 ### Refine
 
@@ -243,6 +251,33 @@ There is a `coercedDate` that uses the `Date` constructor if the value is `strin
 
 ### Enum
 
+`nativeEnum` validates native typescript enum types (not to be confused with a union of [literals](#literal)).
+
+Defining a schema
+
+```typescript
+enum E {
+  a,
+  b = 12,
+  c = "c",
+}
+const schema = nativeEnum(E);
+```
+
+results in a type `Schema<E>` that accepts the enum values `E.a` through `E.c` or their actual values `0`, `12` and `"c"`.
+
+You can also define a `nativeEnum` from a constant object
+
+```typescript
+const constEnum = nativeEnum({
+  a: "a",
+  b: 12,
+  c: "c",
+} as const);
+```
+
+resulting in a type `Schema<"a" | "c" | 12>`.
+
 ### Fun
 
 ### Literal
@@ -276,8 +311,6 @@ There is a `coercedDate` that uses the `Date` constructor if the value is `strin
 ### XOR
 
 ## Utility
-
-### Conversion Graph
 
 ### Lazy
 

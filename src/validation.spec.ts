@@ -1,6 +1,6 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
-import { makeIssue, mergeValidations } from "./validation";
+import { ValidationIssue, mergeValidations } from "./validation";
 
 type S = {
   array: string[];
@@ -16,7 +16,7 @@ type T = {
   nestedArray: { field: string }[];
   nestedObject: { field: string; field2: number };
 };
-const error = makeIssue("additionalProperty", undefined, undefined);
+const error = new ValidationIssue("additionalProperty", undefined, undefined);
 
 describe("mergeValidations", () => {
   it("returns right if left is success", () => {

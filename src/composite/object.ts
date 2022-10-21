@@ -7,7 +7,7 @@ import {
   Schema,
 } from "../schema";
 import { literals } from "../simple/literal";
-import { isFailure, makeIssue, Validation } from "../validation";
+import { isFailure, ValidationIssue, Validation } from "../validation";
 
 type optionalKeys<T> = {
   [k in keyof T]-?: undefined extends T[k] ? k : never;
@@ -40,10 +40,15 @@ export function object<
   return makeSchema(
     (v, o) => {
       if (typeof v === "undefined" || v === null) {
-        return makeIssue("required", issues?.required, v) as V;
+        return new ValidationIssue("required", issues?.required, v) as V;
       }
       if (typeof v !== "object") {
-        return makeIssue("wrong_type", issues?.wrongType, v, "object") as V;
+        return new ValidationIssue(
+          "wrong_type",
+          issues?.wrongType,
+          v,
+          "object"
+        ) as V;
       }
 
       const record = v as { [k: string]: unknown };
@@ -99,7 +104,7 @@ export function strict<
     (v) => {
       for (const key of Object.keys(v)) {
         if (!Object.hasOwn(schema.meta().schema, key)) {
-          return makeIssue(
+          return new ValidationIssue(
             "additionalProperty",
             issue,
             v,
@@ -132,11 +137,15 @@ export function fromInstance<T>(
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
-        return makeIssue("required", issues?.required, v) as Validation<T>;
+        return new ValidationIssue(
+          "required",
+          issues?.required,
+          v
+        ) as Validation<T>;
       }
       const isValid = v instanceof constructor;
       if (!isValid) {
-        return makeIssue(
+        return new ValidationIssue(
           "wrong_type",
           issues?.wrongType,
           v,
@@ -158,7 +167,12 @@ export function isInstance<I, O, M>(
     (v) => {
       const isValid = v instanceof constructor;
       if (!isValid) {
-        return makeIssue("wrong_type", issue, v, constructor) as Validation<I>;
+        return new ValidationIssue(
+          "wrong_type",
+          issue,
+          v,
+          constructor
+        ) as Validation<I>;
       }
     },
     { instance: constructor.name }

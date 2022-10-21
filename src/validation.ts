@@ -31,7 +31,11 @@ export type ValidationIssueCode =
   // object
   | "additionalProperty"
   // fun
+  | "invalid_arguments"
+  | "invalid_return"
   | "arity"
+  // promise
+  | "invalid_promise"
   // enum
   | "enum"
   // date
@@ -43,48 +47,31 @@ export type ValidationIssueCode =
   | "xor"
   | "not";
 
-const validationErrorMarker = Symbol();
+export class ValidationIssue extends Error {
+  public readonly args?: unknown[];
 
-export interface ValidationIssue {
-  __marker: symbol;
-  code: ValidationIssueCode;
-  message?: string;
-  value: unknown;
-  args?: unknown[];
+  constructor(
+    public readonly code: ValidationIssueCode,
+    message: string | undefined,
+    public readonly value: unknown,
+    ...args: unknown[]
+  ) {
+    super(message);
+    if (args?.length > 0) {
+      this.args = args;
+    }
+  }
 }
-export function isValidationError(v: unknown): v is ValidationIssue {
-  return (
-    typeof v === "object" &&
-    (v as Record<string, unknown>)["__marker"] == validationErrorMarker
-  );
-}
-export function makeIssue(
-  code: ValidationIssueCode,
-  message: string | undefined,
-  value: unknown,
-  ...args: unknown[]
-): ValidationIssue {
-  return {
-    __marker: validationErrorMarker,
-    code,
-    message,
-    value,
-    args: args.length > 0 ? args : undefined,
-  };
+export function isValidationIssue(v: unknown): v is ValidationIssue {
+  return v instanceof ValidationIssue;
 }
 
 export type Validation<T, E = ValidationIssue> = T extends Set<infer U>
   ? Set<Validation<U>> | E
   : T extends Map<infer K, infer U>
   ? Map<K, Validation<U>> | E
-  : T extends {
-      [key: string]: unknown;
-    }
-  ?
-      | {
-          [P in keyof T]?: Validation<T[P]>;
-        }
-      | E
+  : T extends Record<string, unknown>
+  ? { [P in keyof T]?: Validation<T[P]> } | E
   : T extends unknown[]
   ? (Validation<T[number]> | undefined)[] | E
   : E;
@@ -106,10 +93,10 @@ export function mergeValidations<S, T>(
   left: ValidationResult<S>,
   right: ValidationResult<T>
 ): ValidationResult<S & T> {
-  if (isValidationError(left)) {
+  if (isValidationIssue(left)) {
     return left as Validation<S & T>;
   }
-  if (isValidationError(right)) {
+  if (isValidationIssue(right)) {
     return right as Validation<S & T>;
   }
 
@@ -194,7 +181,7 @@ export function mergeValidations<S, T>(
 export function simplifyValidation<T>(
   v: ValidationResult<T>
 ): ValidationResult<T> {
-  if (isValidationError(v)) {
+  if (isValidationIssue(v)) {
     return v;
   }
   if (Array.isArray(v)) {
@@ -220,32 +207,39 @@ export function simplifyValidation<T>(
   }
 }
 
-export function defaultTranslateError(validation: ValidationIssue) {
-  if (validation.message) {
-    return validation.message;
+export function defaultTranslateError({
+  message,
+  code,
+  value,
+  args,
+}: ValidationIssue): string {
+  if (message) {
+    return message;
   }
-  switch (validation.code) {
+  const innerError = () =>
+    args && args.length > 0
+      ? defaultTranslateError(args[0] as ValidationIssue)
+      : "";
+
+  switch (code) {
     case "required": {
       return "value is required";
     }
     case "wrong_type": {
       return `value was of type ${
-        Array.isArray(validation.value) ? "array" : typeof validation.value
-      } expected ${(validation.args ?? []).join(" or ")}`;
+        Array.isArray(value) ? "array" : typeof value
+      } expected ${(args ?? []).join(" or ")}`;
     }
+    case "invalid_arguments":
+    case "invalid_return":
     case "invalid_key": {
-      let innerError = "";
-      if (validation.args && validation.args.length > 0) {
-        const issue = validation.args[0] as ValidationIssue;
-        innerError = defaultTranslateError(issue);
-      }
-      return `invalid key: ${innerError}`;
+      return `${code}: ${innerError()}`;
     }
     default: {
-      if (validation.args && validation.args.length > 0) {
-        return `${validation.code}(${validation.args.join(",")})`;
+      if (args && args.length > 0) {
+        return `${code}(${args.join(",")})`;
       }
-      return validation.code;
+      return code;
     }
   }
 }
@@ -259,7 +253,7 @@ export function translate<T>(
   if (validation === undefined) {
     return undefined;
   }
-  if (isValidationError(validation)) {
+  if (isValidationIssue(validation)) {
     return translateError(validation) as Validation<T, string>;
   }
   if (Array.isArray(validation)) {

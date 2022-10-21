@@ -1,10 +1,9 @@
 import {
   isFailure,
   isSuccess,
-  makeIssue,
+  ValidationIssue,
   mergeValidations,
   simplifyValidation,
-  ValidationIssue,
   ValidationResult,
 } from "./validation";
 
@@ -150,7 +149,7 @@ export interface RefineContext<O> {
  * const refined = refine(userSchema, ({id}) => {
  *   if (id > name.length) {
  *     return {
- *       name: makeIssue("id too high!!", v)
+ *       name: new ValidationIssue("id too high!!", v)
  *     };
  *   }
  * });
@@ -168,7 +167,7 @@ export interface RefineContext<O> {
  *
  * ```
  * const refined = refine(userSchema, ({id}, {invalidIf}) => ({
- *   id: id < name.length ? makeIssue("invalid_value", v, "idTooShort") : undefined,
+ *   id: id < name.length ? new ValidationIssue("invalid_value", v, "idTooShort") : undefined,
  *   name: issueIf(id > name.length, "id too high!!"),
  * });
  * ```
@@ -217,7 +216,12 @@ export function validIf<I, O, M>(
         return validation;
       }
       if (!valid(v as I)) {
-        return makeIssue("generic", message, v, ...args) as ValidationResult<I>;
+        return new ValidationIssue(
+          "generic",
+          message,
+          v,
+          ...args
+        ) as ValidationResult<I>;
       }
     },
     schema.meta,
@@ -255,7 +259,9 @@ export function refineWithMetainformation<I, O, M, N, P extends I = I>(
           validation = mergeValidations(validation, val);
         },
         validIf: (condition, message, ...args) =>
-          condition ? undefined : makeIssue("generic", message, v, ...args),
+          condition
+            ? undefined
+            : new ValidationIssue("generic", message, v, ...args),
         options: { ...defaultOptions, ...o },
       });
       return simplifyValidation(refinedValidation ?? validation);
@@ -281,8 +287,7 @@ export function refineWithMetainformation<I, O, M, N, P extends I = I>(
  * This method is especially useful for parsing Timestamps
  * into date, number or string schemas. @see coercedDate.
  * Using coercion, you can avoid DTO objects and manual
- * transformations in simple use-cases. The more demanding
- * use-cases might justify @see conversion-graph.ts
+ * transformations in simple use-cases.
  *
  * @param schema the base schema to coerce values into
  * @param coercion the coercion function

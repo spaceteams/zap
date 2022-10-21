@@ -1,6 +1,6 @@
 import { Unionize } from "../utility";
 import { makeSchema, Schema } from "../schema";
-import { makeIssue, Validation } from "../validation";
+import { ValidationIssue, Validation } from "../validation";
 
 export type Literal = number | string | boolean | symbol;
 
@@ -16,14 +16,14 @@ export function literal<T extends Literal>(
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
-        return makeIssue("required", issues?.required, v) as V;
+        return new ValidationIssue("required", issues?.required, v) as V;
       }
       if (
         typeof v !== "string" &&
         typeof v !== "symbol" &&
         typeof v !== "number"
       ) {
-        return makeIssue(
+        return new ValidationIssue(
           "wrong_type",
           issues?.wrongType,
           v,
@@ -33,7 +33,7 @@ export function literal<T extends Literal>(
         ) as V;
       }
       if (v !== literal) {
-        return makeIssue("literal", issues?.literal, v, literal) as V;
+        return new ValidationIssue("literal", issues?.literal, v, literal) as V;
       }
     },
     () => ({ type: "literal", literal })
@@ -58,14 +58,14 @@ export function literalsWithIssues<T extends readonly Literal[]>(
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
-        return makeIssue("required", issues?.required, v) as V;
+        return new ValidationIssue("required", issues?.required, v) as V;
       }
       if (
         typeof v !== "string" &&
         typeof v !== "symbol" &&
         typeof v !== "number"
       ) {
-        return makeIssue(
+        return new ValidationIssue(
           "wrong_type",
           issues?.wrongType,
           v,
@@ -75,7 +75,12 @@ export function literalsWithIssues<T extends readonly Literal[]>(
         ) as V;
       }
       if (!literals.includes(v as Literal)) {
-        return makeIssue("literal", issues?.literal, v, ...literals) as V;
+        return new ValidationIssue(
+          "literal",
+          issues?.literal,
+          v,
+          ...literals
+        ) as V;
       }
     },
     () => ({ type: "literals", literals })

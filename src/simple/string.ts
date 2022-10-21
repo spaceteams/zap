@@ -5,7 +5,7 @@ import {
   refineWithMetainformation,
   Schema,
 } from "../schema";
-import { makeIssue } from "../validation";
+import { ValidationIssue } from "../validation";
 
 export function string(
   issues?: Partial<{
@@ -16,10 +16,15 @@ export function string(
   return makeSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
-        return makeIssue("required", issues?.required, v);
+        return new ValidationIssue("required", issues?.required, v);
       }
       if (typeof v !== "string") {
-        return makeIssue("wrong_type", issues?.wrongType, v, "string");
+        return new ValidationIssue(
+          "wrong_type",
+          issues?.wrongType,
+          v,
+          "string"
+        );
       }
     },
     () => ({ type: "string" })
@@ -39,7 +44,7 @@ export function minLength<O, M>(
     schema,
     (v) => {
       if (v.length < minLength) {
-        return makeIssue("minLength", issue, v, minLength);
+        return new ValidationIssue("minLength", issue, v, minLength);
       }
     },
     { minLength }
@@ -54,7 +59,7 @@ export function maxLength<O, M>(
     schema,
     (v) => {
       if (v.length > maxLength) {
-        return makeIssue("maxLength", issue, v, maxLength);
+        return new ValidationIssue("maxLength", issue, v, maxLength);
       }
     },
     { maxLength }
@@ -69,7 +74,7 @@ export function length<O, M>(
     schema,
     (v) => {
       if (v.length === length) {
-        return makeIssue("length", issue, v, length);
+        return new ValidationIssue("length", issue, v, length);
       }
     },
     { minLength: length, maxLength: length }
@@ -90,7 +95,7 @@ export function pattern<O, M>(
     schema,
     (v) => {
       if (!pattern.test(v)) {
-        return makeIssue("pattern", issue, v, pattern);
+        return new ValidationIssue("pattern", issue, v, pattern);
       }
     },
     { pattern }
@@ -104,7 +109,13 @@ export function startsWith<O, M>(
 ) {
   return refine(schema, (v) => {
     if (!v.startsWith(searchString, position)) {
-      return makeIssue("startsWith", issue, v, searchString, position);
+      return new ValidationIssue(
+        "startsWith",
+        issue,
+        v,
+        searchString,
+        position
+      );
     }
   });
 }
@@ -116,7 +127,7 @@ export function endsWith<O, M>(
 ) {
   return refine(schema, (v) => {
     if (!v.endsWith(searchString, position)) {
-      return makeIssue("endsWith", issue, v, searchString, position);
+      return new ValidationIssue("endsWith", issue, v, searchString, position);
     }
   });
 }

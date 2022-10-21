@@ -43,7 +43,7 @@ it("validates", () => {
     )
   ).toEqual(
     new Map<number | string, string>([
-      ["1", "invalid key: value was of type string expected number"],
+      ["1", "invalid_key: value was of type string expected number"],
       [2, "value was of type number expected string"],
     ])
   );
@@ -62,7 +62,7 @@ it("validates with early exit", () => {
     )
   ).toEqual(
     new Map<number | string, string>([
-      ["1", "invalid key: value was of type string expected number"],
+      ["1", "invalid_key: value was of type string expected number"],
     ])
   );
 });

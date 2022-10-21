@@ -2,7 +2,7 @@ import { getOption, makeSchema, Schema } from "../schema";
 import { string } from "../simple";
 import {
   isFailure,
-  makeIssue,
+  ValidationIssue,
   Validation,
   ValidationResult,
 } from "../validation";
@@ -36,16 +36,21 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
   return makeSchema(
     (v, o) => {
       if (typeof v === "undefined" || v === null) {
-        return makeIssue("required", issues?.required, v) as V;
+        return new ValidationIssue("required", issues?.required, v) as V;
       }
       if (typeof v !== "object") {
-        return makeIssue("wrong_type", issues?.wrongType, v, "object") as V;
+        return new ValidationIssue(
+          "wrong_type",
+          issues?.wrongType,
+          v,
+          "object"
+        ) as V;
       }
       const validation: { [key: string]: unknown } = {};
       for (const [k, value] of Object.entries(v)) {
         const keyValidation = key.validate(k, o);
         if (isFailure(keyValidation)) {
-          validation[k] = makeIssue(
+          validation[k] = new ValidationIssue(
             "invalid_key",
             issues?.invalidKey,
             value,
