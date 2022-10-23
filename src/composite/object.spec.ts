@@ -11,6 +11,7 @@ import {
   pick,
   keys,
   strict,
+  catchAll,
 } from "./object";
 import { defaultValue, optional } from "../utility/optional";
 import { string } from "../simple/string";
@@ -158,6 +159,38 @@ describe("strict", () => {
 
   it("builds metadata", () => {
     expect(strict(schema).meta().additionalProperties).toBeFalsy();
+  });
+});
+
+describe("catchAll", () => {
+  const catchAllSchema = catchAll(schema, number());
+  it("validates", () => {
+    expect(
+      translate(
+        catchAllSchema.validate({
+          id: 12,
+          name: ["first", "last"],
+          nested: { user: "some user" },
+          additional: 32,
+        })
+      )
+    ).toBeUndefined();
+    expect(
+      translate(
+        catchAllSchema.validate({
+          id: 12,
+          name: ["first", "last"],
+          nested: { user: "some user" },
+          additional: "add",
+        })
+      )
+    ).toEqual({ additional: "value was of type string expected number" });
+  });
+
+  it("builds metadata", () => {
+    expect(catchAllSchema.meta().additionalProperties.meta().type).toEqual(
+      "number"
+    );
   });
 });
 

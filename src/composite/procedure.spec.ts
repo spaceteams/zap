@@ -4,9 +4,7 @@
 import { arity, Procedure, procedure, validatedProcedure } from "./procedure";
 import { translate } from "../validation";
 import { tuple } from "../composite";
-import { string } from "./string";
-import { number } from "./number";
-import { boolean } from "./boolean";
+import { string, number, boolean } from "../simple";
 
 const lazyString = procedure<[], string>();
 const binaryPredicate = procedure<[string, number], boolean>();

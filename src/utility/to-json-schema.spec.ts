@@ -1,6 +1,7 @@
 import { and, or } from "../logic";
 import {
   array,
+  catchAll,
   keyedRecord,
   object,
   record,
@@ -150,6 +151,9 @@ describe("object", () => {
     });
     expect(toJsonSchema(strict(object({})))).toMatchObject({
       additionalProperties: false,
+    });
+    expect(toJsonSchema(catchAll(object({}), number()))).toMatchObject({
+      additionalProperties: { type: "number" },
     });
   });
 });

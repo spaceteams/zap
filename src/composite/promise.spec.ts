@@ -1,9 +1,9 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
+import { string } from "../simple";
 import { translate } from "../validation";
 import { promise, validatedPromise } from "./promise";
-import { string } from "./string";
 
 const stringPromise = promise<string>();
 

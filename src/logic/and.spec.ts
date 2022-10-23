@@ -1,6 +1,6 @@
 import { and } from "./and";
 import { array } from "../composite/array";
-import { procedure } from "../simple/procedure";
+import { procedure } from "../composite/procedure";
 import { number } from "../simple/number";
 import { object } from "../composite/object";
 import { defaultValue, optional } from "../utility/optional";

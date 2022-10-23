@@ -42,20 +42,19 @@ export function toJsonSchema<M extends { type: string }>(
     case "record": {
       const recordMeta = meta as unknown as {
         type: "object";
-        schema: Schema<unknown>;
-        key: Schema<unknown>;
+        schema: { key: Schema<unknown>; value: Schema<unknown> };
       };
       return {
         type: "object",
-        propertyNames: toJsonSchema(recordMeta.key),
-        additionalProperties: toJsonSchema(recordMeta.schema),
+        propertyNames: toJsonSchema(recordMeta.schema.key),
+        additionalProperties: toJsonSchema(recordMeta.schema.value),
       };
     }
     case "object": {
       const objectMeta = meta as unknown as {
         type: "object";
         schema: { [key: string]: Schema<unknown> };
-        additionalProperties: boolean;
+        additionalProperties: boolean | Schema<unknown>;
       };
       const required: string[] = [];
       const properties = {};
@@ -70,7 +69,10 @@ export function toJsonSchema<M extends { type: string }>(
         type: "object",
         properties,
         required,
-        additionalProperties: objectMeta.additionalProperties,
+        additionalProperties:
+          typeof objectMeta.additionalProperties === "boolean"
+            ? objectMeta.additionalProperties
+            : toJsonSchema(objectMeta.additionalProperties),
       };
     }
     case "array": {

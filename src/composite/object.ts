@@ -1,13 +1,22 @@
+import { and, or } from "../logic";
 import {
   getOption,
   InferOutputType,
   InferType,
   makeSchema,
+  RefineContext,
   refineWithMetainformation,
   Schema,
+  withMetaInformation,
 } from "../schema";
 import { literals } from "../simple/literal";
-import { isFailure, ValidationIssue, Validation } from "../validation";
+import {
+  isFailure,
+  ValidationIssue,
+  Validation,
+  ValidationResult,
+} from "../validation";
+import { record } from "./record";
 
 type optionalKeys<T> = {
   [k in keyof T]-?: undefined extends T[k] ? k : never;
@@ -95,7 +104,6 @@ export function strict<
   I extends { [K in keyof I]: unknown },
   O,
   M extends {
-    additionalProperties: unknown;
     schema: { [K in keyof I]: Schema<unknown> };
   }
 >(schema: Schema<I, O, M>, issue?: string) {
@@ -114,6 +122,33 @@ export function strict<
       }
     },
     { additionalProperties: false as const }
+  );
+}
+
+export function catchAll<
+  I extends { [K in keyof I]: unknown },
+  O,
+  M extends { type: "object"; schema: { [K in keyof I]: Schema<unknown> } },
+  J,
+  P,
+  N
+>(schema: Schema<I, O, M>, catchAll: Schema<J, P, N>) {
+  type K = I & Record<string, InferType<typeof catchAll>>;
+  return refineWithMetainformation(
+    schema,
+    (v, { options }: RefineContext<K>) => {
+      const validation: { [key: string]: unknown } = {};
+      for (const key of Object.keys(v)) {
+        if (!Object.hasOwn(schema.meta().schema, key)) {
+          validation[key] = catchAll.validate(v[key], options);
+        }
+      }
+      if (Object.keys(validation).length === 0) {
+        return;
+      }
+      return validation as Validation<K>;
+    },
+    { additionalProperties: catchAll }
   );
 }
 

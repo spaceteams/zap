@@ -30,8 +30,6 @@ Some major features are
   - [Date](#date)
   - [Enum](#enum)
   - [Literal](#literal)
-  - [Procedure](#procedure)
-  - [Promise](#promise)
   - [Number](#number)
   - [String](#string)
 
@@ -39,6 +37,8 @@ Some major features are
 
   - [Array](#array)
   - [Object](#object)
+  - [Procedure](#procedure)
+  - [Promise](#promise)
   - [Record](#record)
   - [Tuple](#tuple)
 
@@ -278,8 +278,6 @@ const constEnum = nativeEnum({
 
 resulting in a type `Schema<"a" | "c" | 12>`.
 
-### Fun
-
 ### Literal
 
 ### Number
@@ -293,6 +291,10 @@ resulting in a type `Schema<"a" | "c" | 12>`.
 ### Map
 
 ### Object
+
+### Procedure
+
+### Promise
 
 ### Record
 
@@ -315,6 +317,49 @@ resulting in a type `Schema<"a" | "c" | 12>`.
 ### Lazy
 
 ### Optics
+
+If you want to access a schema in a nested structure like this
+
+```typescript
+const schema = object({
+  a: object({
+    b: object({
+      c: number(),
+    }),
+  }),
+  moreFields: number(),
+});
+```
+
+you can use the meta object:
+
+```typescript
+schema.meta().schema.a.meta().schema.b.meta().schema.c;
+```
+
+this is feels cumbersome and a bit hard to read so we built a function `get`
+
+```typescript
+get(get(get(schema, "a"), "b"), "c");
+```
+
+With this function you can also reach into Maps, Records, Tuples and Procedures. For composite schemas that only have one nested schema like Array, Set and Promise we have `into`. For example
+
+```typescript
+into(array(string()));
+```
+
+will return the `string()` schema.
+
+> These functions are inspired by [lenses and functional references](https://en.wikibooks.org/wiki/Haskell/Lenses_and_functional_references) but are unfortunately not as powerful. They are directly applied onto a schema, you are only able to reach down one level and you cannot mutate schemas. So not at all optics, but it is the spirit that counts!
+
+If you want to mutate an existing schema you could do that together with `and` and `omit`
+
+```typescript
+and(omit(schema, "a"), get(get(schema, "a"), "b"));
+```
+
+this replaces the field `a` by `c` resulting in a `Schema<{ c: number; moreFields: number(); }>`
 
 ### Optional, Required, Nullable & Nullish
 

@@ -28,7 +28,7 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
 ): Schema<
   Record<K, I>,
   Record<K, O>,
-  { type: "record"; schema: Schema<I, O, M>; key: Schema<K, K, N> }
+  { type: "record"; schema: { key: Schema<K, K, N>; value: Schema<I, O, M> } }
 > {
   type ResultI = Record<K, I>;
   type ResultO = Record<K, O>;
@@ -74,7 +74,7 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
       }
       return validation as V;
     },
-    () => ({ type: "record", schema, key }),
+    () => ({ type: "record", schema: { key, value: schema } }),
     (v, o) => {
       const result: Partial<ResultO> = {};
       for (const [k, value] of Object.entries(v)) {

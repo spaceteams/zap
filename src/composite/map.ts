@@ -17,7 +17,7 @@ export function map<K extends string | number | symbol, N, I, O, M>(
 ): Schema<
   Map<K, I>,
   Map<K, O>,
-  { type: "map"; schema: Schema<I, O, M>; key: Schema<K, K, N> }
+  { type: "map"; schema: { key: Schema<K, K, N>; value: Schema<I, O, M> } }
 > {
   return makeSchema(
     (v, o) => {
@@ -58,7 +58,7 @@ export function map<K extends string | number | symbol, N, I, O, M>(
       }
       return validations;
     },
-    () => ({ type: "map", schema, key }),
+    () => ({ type: "map", schema: { key, value: schema } }),
     (v, o) => {
       const result = new Map<K, O>();
       for (const [k, value] of v) {

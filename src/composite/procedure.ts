@@ -45,12 +45,12 @@ export function validatedProcedure<Args extends unknown[], Result>(
 ): Schema<
   Procedure<Args, Result>,
   Procedure<Args, Result>,
-  { type: "function"; schemas: [Schema<Args>, Schema<Result>] }
+  { type: "function"; schema: { args: Schema<Args>; result: Schema<Result> } }
 > {
   const base = procedure<Args, Result>(issues);
   return makeSchema(
     base.validate,
-    () => ({ type: "function", schemas: [args, result] }),
+    () => ({ type: "function", schema: { args, result } }),
     (v, o) =>
       (...a: Args) => {
         const argumentValidation = args.validate(a, o);
