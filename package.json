@@ -1,7 +1,10 @@
 {
   "name": "@spaceteams/zap",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "validation-first schema library with a functional api",
+  "repository": "github:spaceteams/zap.git",
+  "license": "BSD-3-Clause",
+  "author": "maximilian.stribeck@spaceteams.de",
   "files": [
     "dist"
   ],
@@ -18,8 +21,6 @@
     "bundle": "rollup --config",
     "clean-lib": "rm -f -r -d build && rm -f -r -d dist"
   },
-  "author": "maximilian.stribeck@spaceteams.de",
-  "license": "BSD-3-Clause",
   "devDependencies": {
     "@babel/eslint-parser": "^7.19.1",
     "@types/jest": "^29.0.3",
