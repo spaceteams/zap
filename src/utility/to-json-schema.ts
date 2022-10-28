@@ -27,8 +27,9 @@ export function toJsonSchema<M extends { type: string }>(
   switch (meta.type) {
     case "null":
     case "boolean":
-    case "string":
+    case "string": {
       return meta;
+    }
     case "number": {
       const { type, isInteger, ...rest } = meta as unknown as {
         type: "number";
@@ -114,8 +115,9 @@ export function toJsonSchema<M extends { type: string }>(
         enum: literalsMeta.literals,
       };
     }
-    case "nan":
+    case "nan": {
       return { type: "number" };
+    }
   }
   return {};
 }

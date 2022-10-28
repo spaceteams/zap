@@ -108,7 +108,8 @@ export function deepPartial<I, O, M extends { type: string }>(
         rest
       ) as unknown as DeepPartialSchema<I, O, M>;
     }
-    default:
+    default: {
       return schema as unknown as DeepPartialSchema<I, O, M>;
+    }
   }
 }

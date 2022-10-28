@@ -1,6 +1,6 @@
-# Prismo
+# Zap
 
-Prismo is a validation-first schema library with a functional Api.
+Zap is a validation-first schema library with a functional Api.
 
 Some major features are
 
@@ -142,7 +142,7 @@ The coerce function applies the `Date` only if the value is a string or a number
 
 ### Schema
 
-At the core of Prismo is the `schema` interface. All schema functions (like `object()`, `number()`, `string()`...) return an object that implements this schema. It is defined as
+At the core of Zap is the `schema` interface. All schema functions (like `object()`, `number()`, `string()`...) return an object that implements it. It is defined as
 
 ```typescript
 export interface Schema<I, O = I, M = { type: string }> {

@@ -85,7 +85,8 @@ export function partial<I, O, M extends { type: string }>(
         rest
       ) as unknown as PartialSchema<I, O, M>;
     }
-    default:
+    default: {
       return schema as unknown as PartialSchema<I, O, M>;
+    }
   }
 }

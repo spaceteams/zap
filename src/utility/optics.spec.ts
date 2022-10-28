@@ -112,10 +112,3 @@ describe("record get", () => {
     expect(get(schema, "value").meta().type).toEqual("number");
   });
 });
-const source = object({
-  a: object({
-    b: object({
-      c: number(),
-    }),
-  }),
-});

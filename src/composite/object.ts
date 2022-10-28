@@ -1,4 +1,3 @@
-import { and, or } from "../logic";
 import {
   getOption,
   InferOutputType,
@@ -7,16 +6,9 @@ import {
   RefineContext,
   refineWithMetainformation,
   Schema,
-  withMetaInformation,
 } from "../schema";
 import { literals } from "../simple/literal";
-import {
-  isFailure,
-  ValidationIssue,
-  Validation,
-  ValidationResult,
-} from "../validation";
-import { record } from "./record";
+import { isFailure, ValidationIssue, Validation } from "../validation";
 
 type optionalKeys<T> = {
   [k in keyof T]-?: undefined extends T[k] ? k : never;
