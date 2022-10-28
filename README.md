@@ -8,55 +8,22 @@ Some major features are
 - Transformation, Coercion and type narrowing
 - JSONSchema support
 
-# Table of Contents
-
-- [Quick Start](#quick-start)
-
-  - [Schema Definitions and Type Inference](#schema-definitions-and-type-inference)
-  - [Typeguards and Validations](#typeguards-and-validations)
-  - [Parsing and Coercion](#parsing-and-coercion)
-
-- [Core](#core)
-
-  - [Schema](#schema)
-  - [Validation](#validation)
-  - [Refine](#refine)
-  - [Coerce](#coerce)
-  - [Transform and Narrow](#transform-and-narrow)
-
-- [Simple Schema Types](#simple-schema-types)
-
-  - [Boolean](#boolean)
-  - [Date](#date)
-  - [Enum](#enum)
-  - [Literal](#literal)
-  - [Number](#number)
-  - [String](#string)
-
-- [Composite Schema Types](#composite-schema-types)
-
-  - [Array](#array)
-  - [Object](#object)
-  - [Procedure](#procedure)
-  - [Promise](#promise)
-  - [Record](#record)
-  - [Tuple](#tuple)
-
-- [Logic](#logic)
-
-  - [And](#and)
-  - [Not](#not)
-  - [Or](#or)
-  - [XOR](#xor)
-
-- [Utility](#utility)
-  - [Lazy](#lazy)
-  - [Optics](#optics)
-  - [Optional, Required, Nullable & Nullish](#optional-required-nullable--nullish)
-  - [Partial & DeepPartial](#partial--deeppartial)
-  - [ToJsonSchema](#tojsonschema)
-
 ## Quick Start
+
+### Install
+
+```
+npm install @spaceteams/zap
+or
+yarn add @spaceteams/zap
+```
+
+then import functions directly like this
+
+```typescript
+import { number, object } from "@spaceteams/zap";
+const mySchema = object({ a: number() });
+```
 
 ### Schema Definitions and Type Inference
 
@@ -138,9 +105,61 @@ The coerce function applies the `Date` only if the value is a string or a number
 
 > The usecase of coercion from string to Date is so common that we have `coercedDate()` as a builtin function
 
+# Table of Contents
+
+> 🚧 A lot of chapters of the documention are still missing. But each chapter links to relevant source code and specs.
+
+- [Quick Start](#quick-start)
+
+  - [Schema Definitions and Type Inference](#schema-definitions-and-type-inference)
+  - [Typeguards and Validations](#typeguards-and-validations)
+  - [Parsing and Coercion](#parsing-and-coercion)
+
+- [Core](#core)
+
+  - [Schema](#schema)
+  - [Validation](#validation)
+  - [Refine](#refine)
+  - [Coerce](#coerce)
+  - [Transform and Narrow](#transform-and-narrow)
+
+- [Simple Schema Types](#simple-schema-types)
+
+  - [Boolean](#boolean)
+  - [Date](#date)
+  - [Enum](#enum)
+  - [Literal](#literal)
+  - [Number](#number)
+  - [String](#string)
+
+- [Composite Schema Types](#composite-schema-types)
+
+  - [Array](#array)
+  - [Object](#object)
+  - [Procedure](#procedure)
+  - [Promise](#promise)
+  - [Record](#record)
+  - [Tuple](#tuple)
+
+- [Logic](#logic)
+
+  - [And](#and)
+  - [Not](#not)
+  - [Or](#or)
+  - [XOR](#xor)
+
+- [Utility](#utility)
+  - [Lazy](#lazy)
+  - [Optics](#optics)
+  - [Optional, Required, Nullable & Nullish](#optional-required-nullable--nullish)
+  - [Partial & DeepPartial](#partial--deeppartial)
+  - [ToJsonSchema](#tojsonschema)
+
 ## Core
 
 ### Schema
+
+> [spec](src/schema.spec.ts) and [source](src/schema.ts)
 
 At the core of zap is the `schema` interface. All schema functions (like `object()`, `number()`, `string()`...) return an object that implements it. It is defined as
 
@@ -189,6 +208,8 @@ To make traversing the meta object tree easier we have [Optics](#optics)
 
 ### Validation
 
+> [spec](src/validation.spec.ts) and [source](src/validation.ts)
+
 Let us have a closer look at the ValidationResult. The type is defined as
 
 ```typescript
@@ -198,6 +219,8 @@ export type ValidationResult<T, E = ValidationIssue> =
 ```
 
 ### Refine
+
+> [spec](src/schema.spec.ts) and [source](src/schema.ts)
 
 The `refine` function can be used to add custom validation steps to the schema.
 
@@ -232,6 +255,8 @@ Here we refine an object `{a: string, b: number}` so that the string `a` has len
 
 ### Coerce
 
+> [spec](src/schema.spec.ts) and [source](src/schema.ts)
+
 By default, a schema will not try to convert values during the parse step. In that case, the parse function will return its inputs without changing them. If you want to parse values like `"1998-10-05"` as dates however, you will need coercion.
 
 `coerce` takes a schema and a function `(v: unknown) => unknown` that may or may not convert the given value. Currently, this function is applied during `parse` before the validation step and _again_ for the actual parsing. Coercion is not applied in `accepts` or `validate` so a `coercedDate()` will still accept only dates (it is a `Schema<Date>` after all!). You can override this behaviour using the `withCoercion` option.
@@ -249,6 +274,8 @@ They are implemented using the default coercion of javascript. Note that this co
 
 ### Transform and Narrow
 
+> [spec](src/schema.spec.ts) and [source](src/schema.ts)
+
 After you parsed a value, you might want to further transform it. For example the schema `defaultValue(optional(number()), 42)` will parse `undefined` to 42. This schema has type `Schema<number | undefined, number>` indicating that it will still accept `undefined` but will always parse to a number.
 
 The `defaultValue` function is implemented using `narrow()`. This function takes a schema and a projection function `(v: O) => P` where `P extends O`. This means that the narrowed type must still be assignable to the ouput type.
@@ -265,11 +292,15 @@ This schema accepts an array of numbers and parses them into their maximum value
 
 ### Boolean
 
+> [spec](src/simple/boolean.spec.ts) and [source](src/simple/boolean.ts)
+
 `boolean()` accepts boolean values. It is equivalent to `literals(true, false)` but creates slightly more precise validation issues.
 
 There is a `coercedBoolean` that uses standard JS coercion to boolean.
 
 ### Date
+
+> [spec](src/simple/date.spec.ts) and [source](src/simple/date.ts)
 
 `date()` validates `Date` objects and accepts only if they point to an actual time by validating them against `isNaN`.
 
@@ -281,6 +312,8 @@ There is a `coercedDate` that uses the `Date` constructor if the value is `strin
 `after` - accept dates after the given value
 
 ### Enum
+
+> [spec](src/simple/enum.spec.ts) and [source](src/simple/enum.ts)
 
 `nativeEnum` validates native typescript enum types (not to be confused with a union of [literals](#literal)).
 
@@ -311,43 +344,77 @@ resulting in a type `Schema<"a" | "c" | 12>`.
 
 ### Literal
 
+> [spec](src/simple/literal.spec.ts) and [source](src/simple/literal.ts)
+
 ### Number
 
+> [spec](src/simple/number.spec.ts) and [source](src/simple/number.ts)
+
 ### String
+
+> [spec](src/simple/string.spec.ts) and [source](src/simple/string.ts)
 
 ## Composite Schema Types
 
 ### Array
 
+> [spec](src/composite/array.spec.ts) and [source](src/composite/array.ts)
+
 ### Map
+
+> [spec](src/composite/map.spec.ts) and [source](src/composite/map.ts)
 
 ### Object
 
+> [spec](src/composite/object.spec.ts) and [source](src/composite/object.ts)
+
 ### Procedure
+
+> [spec](src/composite/procedure.spec.ts) and [source](src/composite/procedure.ts)
 
 ### Promise
 
+> [spec](src/composite/promise.spec.ts) and [source](src/composite/promise.ts)
+
 ### Record
+
+> [spec](src/composite/record.spec.ts) and [source](src/composite/record.ts)
 
 ### Set
 
+> [spec](src/composite/set.spec.ts) and [source](src/composite/set.ts)
+
 ### Tuple
+
+> [spec](src/composite/tuple.spec.ts) and [source](src/composite/tuple.ts)
 
 ## Logic
 
 ### And
 
+> [spec](src/logic/and.spec.ts) and [source](src/logic/and.ts)
+
 ### Not
+
+> [spec](src/logic/not.spec.ts) and [source](src/logic/not.ts)
 
 ### Or
 
+> [spec](src/logic/or.spec.ts) and [source](src/logic/or.ts)
+
 ### XOR
+
+> [spec](src/logic/xor.spec.ts) and [source](src/logic/xor.ts)
 
 ## Utility
 
 ### Lazy
 
+> [spec](src/utility/lazy.spec.ts) and [source](src/utility/lazy.ts)
+
 ### Optics
+
+> [spec](src/utility/optics.spec.ts) and [source](src/utility/optics.ts)
 
 If you want to access a schema in a nested structure like this
 
@@ -394,6 +461,13 @@ this replaces the field `a` by `c` resulting in a `Schema<{ c: number; moreField
 
 ### Optional, Required, Nullable & Nullish
 
+> Optional: [spec](src/utility/optional.spec.ts) and [source](src/utility/optional.ts)
+
 ### Partial & DeepPartial
 
+> Partial: [spec](src/utility/partial.spec.ts) and [source](src/utility/partial.ts)
+> DeepPartial: [spec](src/utility/deep-partial.spec.ts) and [source](src/utility/deep-partial.ts)
+
 ### ToJsonSchema
+
+> [spec](src/utility/to-json-schema.spec.ts) and [source](src/utility/to-json-schema.ts)

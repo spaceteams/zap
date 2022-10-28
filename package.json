@@ -1,6 +1,6 @@
 {
   "name": "@spaceteams/zap",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "validation-first schema library with a functional api",
   "repository": "github:spaceteams/zap.git",
   "license": "BSD-3-Clause",
@@ -8,8 +8,8 @@
   "files": [
     "dist"
   ],
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest --watch",
     "build": "npm run clean-lib && npm run compile && npm run bundle",
