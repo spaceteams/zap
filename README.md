@@ -1,6 +1,6 @@
-# Zap
+# zap ⚡
 
-Zap is a validation-first schema library with a functional Api.
+zap is a validation-first schema library with a functional Api.
 
 Some major features are
 
@@ -142,7 +142,7 @@ The coerce function applies the `Date` only if the value is a string or a number
 
 ### Schema
 
-At the core of Zap is the `schema` interface. All schema functions (like `object()`, `number()`, `string()`...) return an object that implements it. It is defined as
+At the core of zap is the `schema` interface. All schema functions (like `object()`, `number()`, `string()`...) return an object that implements it. It is defined as
 
 ```typescript
 export interface Schema<I, O = I, M = { type: string }> {
@@ -199,6 +199,37 @@ export type ValidationResult<T, E = ValidationIssue> =
 
 ### Refine
 
+The `refine` function can be used to add custom validation steps to the schema.
+
+Refine takes a schema and a function `(v: I, ctx: RefineContext<P>) => void | ValidationResult<P>`. The `ctx` object contains both the `ValidationOptions` and helper methods `add` and `validIf`. The generic Parameter `P` is defined as `P extends I = I`, so it is just I by default or it [narrows](#transform-and-narrow) it further.
+
+Refine supports three styles of refinement:
+
+```typescript
+const schema = object({ a: string(), b: number() });
+const defaultStyle = refine(schema, (v) => {
+  if (v.a.length !== v.b) {
+    return {
+      a: new ValidationIssue("generic", "a must have length of b", v),
+    };
+  }
+});
+const builderStyle = refine(schema, (v, { add }) => {
+  if (v.a.length !== v.b) {
+    add({
+      a: new ValidationIssue("generic", "a must have length of b", v),
+    });
+  }
+});
+const inlineStyle = refine(schema, (v, { validIf }) => ({
+  a: validIf(v.a.length === v.b, "a must have length of b"),
+}));
+```
+
+Here we refine an object `{a: string, b: number}` so that the string `a` has length `b`. In the first style the `ValidationResult` itself is returned. This is very similar to the `refine` method the `Schema` supports. The second style is using the `add` method. This approach is useful if you want to iteratively collect validation errors and have them merged into a final validation result. And finally, there is an inline style using the `validIf` method. Here you create an object that will result in a validation error if it contains one failed validation.
+
+> Most of zap's built-in validation functions are implemented using `refineWithMetainformation`. They add meta-information that can be picked up and interpreted by utility functions like `toJsonSchema`
+
 ### Coerce
 
 By default, a schema will not try to convert values during the parse step. In that case, the parse function will return its inputs without changing them. If you want to parse values like `"1998-10-05"` as dates however, you will need coercion.
@@ -244,7 +275,7 @@ There is a `coercedBoolean` that uses standard JS coercion to boolean.
 
 There is a `coercedDate` that uses the `Date` constructor if the value is `string` or `number`.
 
-#### Refinements
+#### Validation Functions
 
 `before` - accept dates before the given value  
 `after` - accept dates after the given value
