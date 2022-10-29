@@ -1,4 +1,4 @@
-import { coerce, makeSchema, Schema } from "../schema";
+import { coerce, makeSyncSchema, Schema } from "../schema";
 import { ValidationIssue } from "../validation";
 
 export function boolean(
@@ -7,7 +7,7 @@ export function boolean(
     wrongType: string;
   }>
 ): Schema<boolean, boolean, { type: "boolean" }> {
-  return makeSchema(
+  return makeSyncSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issues?.required, v);

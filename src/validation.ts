@@ -3,6 +3,8 @@ export type ValidationIssueCode =
   | "required"
   | "wrong_type"
   | "invalid_key"
+  // async
+  | "async_validation_required"
   // array
   | "includes"
   | "items"
@@ -43,6 +45,7 @@ export type ValidationIssueCode =
   | "after"
   // literal/s
   | "literal"
+  // async
   // logic
   | "xor"
   | "not";

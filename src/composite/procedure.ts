@@ -1,4 +1,9 @@
-import { makeSchema, refineWithMetainformation, Schema } from "../schema";
+import {
+  makeSchema,
+  makeSyncSchema,
+  refineWithMetainformation,
+  Schema,
+} from "../schema";
 import { isFailure, ValidationIssue } from "../validation";
 
 export type Procedure<Args extends unknown[], Result> = (
@@ -15,7 +20,7 @@ export function procedure<Args extends unknown[], Result>(
   Procedure<Args, Result>,
   { type: "function" }
 > {
-  return makeSchema(
+  return makeSyncSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issues?.required, v);
@@ -50,6 +55,7 @@ export function validatedProcedure<Args extends unknown[], Result>(
   const base = procedure<Args, Result>(issues);
   return makeSchema(
     base.validate,
+    base.validateAsync,
     () => ({ type: "function", schema: { args, result } }),
     (v, o) =>
       (...a: Args) => {

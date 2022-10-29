@@ -42,6 +42,28 @@ export function array<I, O, M>(
       }
       return validations;
     },
+    async (v, o) => {
+      if (typeof v === "undefined" || v === null) {
+        return new ValidationIssue("required", issues?.required, v);
+      }
+      if (!Array.isArray(v)) {
+        return new ValidationIssue("wrong_type", issues?.wrongType, v, "array");
+      }
+
+      const validations: ValidationResult<I[]> = [];
+      for (const value of v) {
+        const validation = await schema.validateAsync(value, o);
+        validations.push(validation);
+
+        if (getOption(o, "earlyExit") && isFailure(validation)) {
+          return validations;
+        }
+      }
+      if (validations.every((v) => isSuccess(v))) {
+        return;
+      }
+      return validations;
+    },
     () => ({ type: "array", schema }),
     (v, o) => v.map((item) => schema.parse(item, o).parsedValue) as O[]
   );

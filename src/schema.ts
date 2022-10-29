@@ -81,12 +81,20 @@ export interface Schema<I, O = I, M = { type: string }> {
     v: unknown,
     options?: Partial<ValidationOptions>
   ) => ValidationResult<I>;
+  validateAsync: (
+    v: unknown,
+    options?: Partial<ValidationOptions>
+  ) => Promise<ValidationResult<I>>;
   /**
    * parses a value as type O after validating it as type I
    * @param v the value to be parsed
    * @returns the parse result
    */
   parse: (v: unknown, options?: Partial<Options>) => ParseResult<I, O>;
+  parseAsync: (
+    v: unknown,
+    options?: Partial<Options>
+  ) => Promise<ParseResult<I, O>>;
   /**
    * returns the Meta Object
    */
@@ -100,29 +108,80 @@ export interface Schema<I, O = I, M = { type: string }> {
  */
 export function makeSchema<I, O, M>(
   validate: Schema<I, O, M>["validate"],
+  validateAsync: Schema<I, O, M>["validateAsync"],
   meta: () => M,
   parseAfterValidation: (v: I, options?: Partial<Options>) => O = (v) =>
     v as unknown as O
 ): Schema<I, O, M> {
+  const parse: Schema<I, O, M>["parse"] = (v, o) => {
+    if (!getOption(o, "skipValidation")) {
+      const validation = validate(v, { ...o, withCoercion: true });
+      if (isFailure(validation)) {
+        return { validation };
+      }
+    }
+    return {
+      parsedValue: parseAfterValidation(v as I, {
+        ...o,
+        skipValidation: true,
+        withCoercion: true,
+      }),
+    };
+  };
+  const parseAsync: Schema<I, O, M>["parseAsync"] = async (v, o) => {
+    if (!getOption(o, "skipValidation")) {
+      const validation = await validateAsync(v, { ...o, withCoercion: true });
+      if (isFailure(validation)) {
+        return { validation };
+      }
+    }
+    return {
+      parsedValue: parseAfterValidation(v as I, {
+        ...o,
+        skipValidation: true,
+        withCoercion: true,
+      }),
+    };
+  };
   return {
     accepts: (v, o): v is I =>
       isSuccess(validate(v, { ...o, earlyExit: true })),
-    parse: (v, o) => {
-      if (!getOption(o, "skipValidation")) {
-        const validation = validate(v, { ...o, withCoercion: true });
-        if (isFailure(validation)) {
-          return { validation };
-        }
-      }
-      return {
-        parsedValue: parseAfterValidation(v as I, {
-          ...o,
-          skipValidation: true,
-          withCoercion: true,
-        }),
-      };
-    },
+    parse,
+    parseAsync,
     validate,
+    validateAsync,
+    meta,
+  };
+}
+
+export function makeSyncSchema<I, O, M>(
+  validate: Schema<I, O, M>["validate"],
+  meta: () => M,
+  parseAfterValidation: (v: I, options?: Partial<Options>) => O = (v) =>
+    v as unknown as O
+): Schema<I, O, M> {
+  const parse: Schema<I, O, M>["parse"] = (v, o) => {
+    if (!getOption(o, "skipValidation")) {
+      const validation = validate(v, { ...o, withCoercion: true });
+      if (isFailure(validation)) {
+        return { validation };
+      }
+    }
+    return {
+      parsedValue: parseAfterValidation(v as I, {
+        ...o,
+        skipValidation: true,
+        withCoercion: true,
+      }),
+    };
+  };
+  return {
+    accepts: (v, o): v is I =>
+      isSuccess(validate(v, { ...o, earlyExit: true })),
+    parse,
+    parseAsync: (v, o) => Promise.resolve(parse(v, o)),
+    validate,
+    validateAsync: (v, o) => Promise.resolve(validate(v, o)),
     meta,
   };
 }
@@ -185,6 +244,15 @@ export function refine<I, O, M, P extends I = I>(
 ): Schema<P, O, M> {
   return refineWithMetainformation(schema, validate, schema.meta);
 }
+export function refineAsync<I, O, M, P extends I = I>(
+  schema: Schema<I, O, M>,
+  validateAsync: (
+    v: I,
+    ctx: RefineContext<P>
+  ) => void | Promise<ValidationResult<P>>
+): Schema<P, O, M> {
+  return refineAsyncWithMetainformation(schema, validateAsync, schema.meta);
+}
 
 /**
  * Modify a schema by extending its meta informations.
@@ -197,7 +265,7 @@ export function withMetaInformation<T, O, M, N>(
   schema: Schema<T, O, M>,
   metaExtension: N
 ) {
-  return makeSchema(schema.validate, () => ({
+  return makeSchema(schema.validate, schema.validateAsync, () => ({
     ...schema.meta(),
     ...metaExtension,
   }));
@@ -209,20 +277,27 @@ export function validIf<I, O, M>(
   message: string,
   ...args: unknown[]
 ) {
+  const postValidation = (validation: ValidationResult<I>, v: unknown) => {
+    if (isFailure(validation)) {
+      return validation;
+    }
+    if (!valid(v as I)) {
+      return new ValidationIssue(
+        "generic",
+        message,
+        v,
+        ...args
+      ) as ValidationResult<I>;
+    }
+  };
   return makeSchema(
     (v, o) => {
       const validation = schema.validate(v, o);
-      if (isFailure(validation)) {
-        return validation;
-      }
-      if (!valid(v as I)) {
-        return new ValidationIssue(
-          "generic",
-          message,
-          v,
-          ...args
-        ) as ValidationResult<I>;
-      }
+      return postValidation(validation, v);
+    },
+    async (v, o) => {
+      const validation = await schema.validateAsync(v, o);
+      return postValidation(validation, v);
     },
     schema.meta,
     (v, o) => schema.parse(v, o)
@@ -248,13 +323,67 @@ export function refineWithMetainformation<I, O, M, N, P extends I = I>(
     [P in Exclude<keyof M, keyof N>]: M[P];
   } & N
 > {
+  const postValidation = (
+    validation: ValidationResult<I>,
+    v: unknown,
+    o?: Partial<ValidationOptions>
+  ) => {
+    if (isFailure(validation)) {
+      return validation as ValidationResult<P>;
+    }
+    const refinedValidation = validate(v as I, {
+      add: (val) => {
+        validation = mergeValidations(validation, val);
+      },
+      validIf: (condition, message, ...args) =>
+        condition
+          ? undefined
+          : new ValidationIssue("generic", message, v, ...args),
+      options: { ...defaultOptions, ...o },
+    });
+    return simplifyValidation(refinedValidation ?? validation);
+  };
+
   return makeSchema(
     (v, o) => {
-      let validation = schema.validate(v, o);
+      const validation = schema.validate(v, o);
+      return postValidation(validation, v, o);
+    },
+    async (v, o) => {
+      const validation = await schema.validateAsync(v, o);
+      return postValidation(validation, v, o);
+    },
+    () => ({ ...schema.meta(), ...metaExtension }),
+    (v, o) => schema.parse(v, o).parsedValue as O
+  );
+}
+export function refineAsyncWithMetainformation<I, O, M, N, P extends I = I>(
+  schema: Schema<I, O, M>,
+  validateAsync: (
+    v: I,
+    ctx: RefineContext<P>
+  ) => void | Promise<ValidationResult<P>>,
+  metaExtension: N
+): Schema<
+  P,
+  O,
+  {
+    [P in Exclude<keyof M, keyof N>]: M[P];
+  } & N
+> {
+  return makeSchema(
+    (v) =>
+      new ValidationIssue(
+        "async_validation_required",
+        undefined,
+        v
+      ) as ValidationResult<P>,
+    async (v, o) => {
+      let validation = await schema.validateAsync(v, o);
       if (isFailure(validation)) {
         return validation as ValidationResult<P>;
       }
-      const refinedValidation = validate(v as I, {
+      const refinedValidation = await validateAsync(v as I, {
         add: (val) => {
           validation = mergeValidations(validation, val);
         },
@@ -297,11 +426,16 @@ export function coerce<I, O, M>(
   schema: Schema<I, O, M>,
   coercion: (v: unknown) => unknown
 ): Schema<I, O, M> {
+  const parse: Schema<I, O, M>["parse"] = (v, o) =>
+    schema.parse(coercion(v), o);
+  const validate: Schema<I, O, M>["validate"] = (v, o) =>
+    schema.validate(getOption(o, "withCoercion") ? coercion(v) : v, o);
   return {
     accepts: (v): v is I => schema.accepts(v),
-    parse: (v, o) => schema.parse(coercion(v), o),
-    validate: (v, o) =>
-      schema.validate(getOption(o, "withCoercion") ? coercion(v) : v, o),
+    parse,
+    parseAsync: (v, o) => Promise.resolve(parse(v, o)),
+    validate,
+    validateAsync: (v, o) => Promise.resolve(validate(v, o)),
     meta: () => schema.meta(),
   };
 }
@@ -317,18 +451,22 @@ export function transform<I, O, P, M>(
   schema: Schema<I, O, M>,
   transform: (v: O) => P
 ): Schema<I, P, M> {
+  const parse: Schema<I, P, M>["parse"] = (v, o) => {
+    const result = schema.parse(v, o);
+    return {
+      ...result,
+      parsedValue: isSuccess(result.validation)
+        ? transform(result.parsedValue as O)
+        : undefined,
+    };
+  };
+  const validate: Schema<I, P, M>["validate"] = (v, o) => schema.validate(v, o);
   return {
     accepts: (v): v is I => schema.accepts(v),
-    parse: (v, o) => {
-      const result = schema.parse(v, o);
-      return {
-        ...result,
-        parsedValue: isSuccess(result.validation)
-          ? transform(result.parsedValue as O)
-          : undefined,
-      };
-    },
-    validate: (v, o) => schema.validate(v, o),
+    parse,
+    parseAsync: (v, o) => Promise.resolve(parse(v, o)),
+    validate,
+    validateAsync: (v, o) => Promise.resolve(validate(v, o)),
     meta: () => schema.meta(),
   };
 }
@@ -359,10 +497,16 @@ export function options<I, O, M>(
   schema: Schema<I, O, M>,
   options: Partial<Options>
 ): Schema<I, O, M> {
+  const parse: Schema<I, O, M>["parse"] = (v, o) =>
+    schema.parse(v, { ...o, ...options });
+  const validate: Schema<I, O, M>["validate"] = (v, o) =>
+    schema.validate(v, { ...o, ...options });
   return {
     accepts: (v): v is I => schema.accepts(v),
-    parse: (v, o) => schema.parse(v, { ...o, ...options }),
-    validate: (v, o) => schema.validate(v, { ...o, ...options }),
+    parse,
+    parseAsync: (v, o) => Promise.resolve(parse(v, o)),
+    validate,
+    validateAsync: (v, o) => Promise.resolve(validate(v, o)),
     meta: () => schema.meta(),
   };
 }

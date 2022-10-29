@@ -3,6 +3,7 @@ import {
   InferOutputType,
   InferType,
   makeSchema,
+  makeSyncSchema,
   RefineContext,
   refineWithMetainformation,
   Schema,
@@ -56,6 +57,38 @@ export function object<
       const validation: { [key: string]: unknown } = {};
       for (const [key, inner] of Object.entries(schema)) {
         const innerValidation = (inner as Schema<unknown>).validate(
+          record[key],
+          o
+        );
+        if (isFailure(innerValidation)) {
+          validation[key] = innerValidation;
+          if (getOption(o, "earlyExit")) {
+            return validation as V;
+          }
+        }
+      }
+      if (Object.keys(validation).length === 0) {
+        return;
+      }
+      return validation as V;
+    },
+    async (v, o) => {
+      if (typeof v === "undefined" || v === null) {
+        return new ValidationIssue("required", issues?.required, v) as V;
+      }
+      if (typeof v !== "object") {
+        return new ValidationIssue(
+          "wrong_type",
+          issues?.wrongType,
+          v,
+          "object"
+        ) as V;
+      }
+
+      const record = v as { [k: string]: unknown };
+      const validation: { [key: string]: unknown } = {};
+      for (const [key, inner] of Object.entries(schema)) {
+        const innerValidation = await (inner as Schema<unknown>).validateAsync(
           record[key],
           o
         );
@@ -161,7 +194,7 @@ export function fromInstance<T>(
     wrongType: string;
   }>
 ): Schema<T, T, { type: "object"; instance: string }> {
-  return makeSchema(
+  return makeSyncSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue(
@@ -251,6 +284,23 @@ export function omit<
       }
       return validation;
     },
+    async (v, o) => {
+      const validation = await schema.validateAsync(v, o);
+      if (validation === undefined) {
+        return validation;
+      }
+
+      const filteredValidation: { [key: string]: unknown } = {};
+      for (const [key, value] of Object.entries(validation)) {
+        if (!keys.includes(key as K)) {
+          filteredValidation[key] = value;
+        }
+      }
+      if (Object.keys(filteredValidation as object).length === 0) {
+        return;
+      }
+      return validation;
+    },
     () => ({
       type: "object",
       schema: filteredSchemas as Omit<M["schema"], K>,
@@ -283,6 +333,23 @@ export function pick<
   return makeSchema(
     (v, o) => {
       const validation = schema.validate(v, o);
+      if (validation === undefined) {
+        return validation;
+      }
+
+      const filteredValidation: { [key: string]: unknown } = {};
+      for (const [key, value] of Object.entries(validation)) {
+        if (keys.includes(key as K)) {
+          filteredValidation[key] = value;
+        }
+      }
+      if (Object.keys(filteredValidation as object).length === 0) {
+        return;
+      }
+      return validation;
+    },
+    async (v, o) => {
+      const validation = schema.validateAsync(v, o);
       if (validation === undefined) {
         return validation;
       }

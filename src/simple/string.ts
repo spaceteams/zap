@@ -1,6 +1,6 @@
 import {
   coerce,
-  makeSchema,
+  makeSyncSchema,
   refine,
   refineWithMetainformation,
   Schema,
@@ -13,7 +13,7 @@ export function string(
     wrongType: string;
   }>
 ): Schema<string, string, { type: "string" }> {
-  return makeSchema(
+  return makeSyncSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issues?.required, v);

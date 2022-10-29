@@ -28,6 +28,16 @@ export function and<T extends readonly Schema<unknown>[]>(
       }
       return result as ValidationResult<ResultI>;
     },
+    async (v, o) => {
+      let result: ValidationResult<unknown>;
+      for (const schema of schemas) {
+        result = mergeValidations(result, await schema.validateAsync(v, o));
+        if (isFailure(result) && getOption(o, "earlyExit")) {
+          break;
+        }
+      }
+      return result as ValidationResult<ResultI>;
+    },
     () => ({ type: "and", schemas }),
     (v, o) => {
       const results: Partial<ResultO>[] = [];

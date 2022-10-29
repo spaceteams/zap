@@ -11,6 +11,11 @@ export function not<I, O, M>(
         return new ValidationIssue("not", issue, v);
       }
     },
+    async (v, o) => {
+      if (isSuccess(await schema.validateAsync(v, o))) {
+        return new ValidationIssue("not", issue, v);
+      }
+    },
     () => ({
       type: "not",
       schema,

@@ -1,4 +1,4 @@
-import { makeSchema, Schema } from "../schema";
+import { makeSyncSchema, Schema } from "../schema";
 import { ValidationIssue, Validation } from "../validation";
 
 export type EnumLike<E> = Record<keyof E, number | string>;
@@ -19,7 +19,7 @@ export function nativeEnum<T extends EnumLike<T>>(
       .map(([_, value]) => value)
   );
 
-  return makeSchema(
+  return makeSyncSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issues?.required, v) as V;

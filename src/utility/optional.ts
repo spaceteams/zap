@@ -1,4 +1,4 @@
-import { makeSchema, narrow, Schema } from "../schema";
+import { makeSchema, makeSyncSchema, narrow, Schema } from "../schema";
 import { ValidationIssue, ValidationResult } from "../validation";
 
 export function optional<I, O, M>(
@@ -8,6 +8,11 @@ export function optional<I, O, M>(
     (v, o) => {
       if (typeof v !== "undefined") {
         return schema.validate(v, o);
+      }
+    },
+    async (v, o) => {
+      if (typeof v !== "undefined") {
+        return schema.validateAsync(v, o);
       }
     },
     () => ({ ...schema.meta(), required: false }),
@@ -21,6 +26,11 @@ export function nullable<I, O, M>(
     (v, o) => {
       if (v !== null) {
         return schema.validate(v, o);
+      }
+    },
+    async (v, o) => {
+      if (v !== null) {
+        return schema.validateAsync(v, o);
       }
     },
     () => ({ ...schema.meta() }),
@@ -38,6 +48,11 @@ export function nullish<I, O, M>(
     (v, o) => {
       if (typeof v !== "undefined" && v !== null) {
         return schema.validate(v, o);
+      }
+    },
+    async (v, o) => {
+      if (typeof v !== "undefined" && v !== null) {
+        return schema.validateAsync(v, o);
       }
     },
     () => ({ ...schema.meta(), required: false }),
@@ -58,7 +73,13 @@ export function required<I, O, M>(
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issue, v) as V;
       }
-      return schema.validate(v, o) as V;
+      return schema.validate(v, o);
+    },
+    async (v, o) => {
+      if (typeof v === "undefined" || v === null) {
+        return new ValidationIssue("required", issue, v) as V;
+      }
+      return schema.validateAsync(v, o);
     },
     () => ({ ...schema.meta(), required: true }),
     (v, o) => schema.parse(v, o).parsedValue as NonNullable<O>
@@ -81,7 +102,7 @@ export function nullToUndefined<I, O, M>(
 export function undefinedSchema(
   issue?: string
 ): Schema<undefined, undefined, { type: "undefined" }> {
-  return makeSchema(
+  return makeSyncSchema(
     (v) => {
       if (typeof v !== "undefined") {
         return new ValidationIssue("wrong_type", issue, v, "undefined");
@@ -93,7 +114,7 @@ export function undefinedSchema(
 export function nullSchema(
   issue?: string
 ): Schema<null, null, { type: "null" }> {
-  return makeSchema(
+  return makeSyncSchema(
     (v) => {
       if (typeof v !== null) {
         return new ValidationIssue("wrong_type", issue, v, "null");
