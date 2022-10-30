@@ -1,5 +1,5 @@
 import { Unionize } from "../utility";
-import { makeSyncSchema, Schema } from "../schema";
+import { makeSimpleSchema, Schema } from "../schema";
 import { ValidationIssue, Validation } from "../validation";
 
 export type Literal = number | string | boolean | symbol;
@@ -13,7 +13,7 @@ export function literal<T extends Literal>(
   }>
 ): Schema<typeof literal, typeof literal, { type: "literal"; literal: T }> {
   type V = Validation<typeof literal>;
-  return makeSyncSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issues?.required, v) as V;
@@ -55,7 +55,7 @@ export function literalsWithIssues<T extends readonly Literal[]>(
   }>
 ): Schema<Unionize<T>, Unionize<T>, { type: "literals"; literals: T }> {
   type V = Validation<Unionize<T>>;
-  return makeSyncSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issues?.required, v) as V;

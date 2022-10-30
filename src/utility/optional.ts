@@ -1,4 +1,4 @@
-import { makeSchema, makeSyncSchema, narrow, Schema } from "../schema";
+import { makeSchema, makeSimpleSchema, narrow, Schema } from "../schema";
 import { ValidationIssue, ValidationResult } from "../validation";
 
 export function optional<I, O, M>(
@@ -102,7 +102,7 @@ export function nullToUndefined<I, O, M>(
 export function undefinedSchema(
   issue?: string
 ): Schema<undefined, undefined, { type: "undefined" }> {
-  return makeSyncSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v !== "undefined") {
         return new ValidationIssue("wrong_type", issue, v, "undefined");
@@ -114,7 +114,7 @@ export function undefinedSchema(
 export function nullSchema(
   issue?: string
 ): Schema<null, null, { type: "null" }> {
-  return makeSyncSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v !== null) {
         return new ValidationIssue("wrong_type", issue, v, "null");

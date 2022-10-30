@@ -75,12 +75,19 @@ export interface Schema<I, O = I, M = { type: string }> {
   /**
    * builds a validation object containing all validation errors of the object
    * @param v the value to be checked
+   * @param options the validation options
    * @returns the validation result
    */
   validate: (
     v: unknown,
     options?: Partial<ValidationOptions>
   ) => ValidationResult<I>;
+  /**
+   * builds a validation object asynchronously containing all validation errors of the object
+   * @param v the value to be checked
+   * @param options the validation options
+   * @returns a promise containing the validation result
+   */
   validateAsync: (
     v: unknown,
     options?: Partial<ValidationOptions>
@@ -88,9 +95,16 @@ export interface Schema<I, O = I, M = { type: string }> {
   /**
    * parses a value as type O after validating it as type I
    * @param v the value to be parsed
+   * @param options the parsing and validation options
    * @returns the parse result
    */
   parse: (v: unknown, options?: Partial<Options>) => ParseResult<I, O>;
+  /**
+   * parses a value as type O after validating it asynchronously as type I
+   * @param v the value to be parsed
+   * @param options the parsing and validation options
+   * @returns a promise containing the parse result
+   */
   parseAsync: (
     v: unknown,
     options?: Partial<Options>
@@ -154,7 +168,13 @@ export function makeSchema<I, O, M>(
   };
 }
 
-export function makeSyncSchema<I, O, M>(
+/**
+ * A helper function to create a schema from a validation function.
+ * It builds the asynchronous validation canonically from the validation function.
+ * @param validate the validation method
+ * @returns the schema
+ */
+export function makeSimpleSchema<I, O, M>(
   validate: Schema<I, O, M>["validate"],
   meta: () => M,
   parseAfterValidation: (v: I, options?: Partial<Options>) => O = (v) =>
@@ -403,7 +423,7 @@ export function refineAsyncWithMetainformation<I, O, M, N, P extends I = I>(
 /**
  * Preprocesses data before parsing or validation (aka coercion).
  *
- * Note that coercion done for accepting!
+ * Note that coercion is only done during `accepts` and `validate` if `options.withCoercion` is true.
  *
  * For example
  * ```
@@ -431,7 +451,8 @@ export function coerce<I, O, M>(
   const validate: Schema<I, O, M>["validate"] = (v, o) =>
     schema.validate(getOption(o, "withCoercion") ? coercion(v) : v, o);
   return {
-    accepts: (v): v is I => schema.accepts(v),
+    accepts: (v, o): v is I =>
+      schema.accepts(getOption(o, "withCoercion") ? coercion(v) : v, o),
     parse,
     parseAsync: (v, o) => Promise.resolve(parse(v, o)),
     validate,

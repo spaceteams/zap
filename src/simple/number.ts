@@ -1,6 +1,6 @@
 import {
   coerce,
-  makeSyncSchema,
+  makeSimpleSchema,
   refineWithMetainformation,
   Schema,
 } from "../schema";
@@ -13,7 +13,7 @@ export function number(
     isNan: string;
   }>
 ): Schema<number, number, { type: "number" }> {
-  return makeSyncSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issues?.required, v);
@@ -45,7 +45,7 @@ export function coercedNumber(
 }
 
 export function nan(issue?: string): Schema<number, number, { type: "nan" }> {
-  return makeSyncSchema(
+  return makeSimpleSchema(
     (v) => {
       if (!Number.isNaN(v)) {
         return new ValidationIssue("wrong_type", issue, v, "nan");

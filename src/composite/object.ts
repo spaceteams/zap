@@ -3,7 +3,7 @@ import {
   InferOutputType,
   InferType,
   makeSchema,
-  makeSyncSchema,
+  makeSimpleSchema,
   RefineContext,
   refineWithMetainformation,
   Schema,
@@ -194,7 +194,7 @@ export function fromInstance<T>(
     wrongType: string;
   }>
 ): Schema<T, T, { type: "object"; instance: string }> {
-  return makeSyncSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue(

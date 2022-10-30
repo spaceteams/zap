@@ -1,6 +1,6 @@
 import {
   makeSchema,
-  makeSyncSchema,
+  makeSimpleSchema,
   refineWithMetainformation,
   Schema,
 } from "../schema";
@@ -20,7 +20,7 @@ export function procedure<Args extends unknown[], Result>(
   Procedure<Args, Result>,
   { type: "function" }
 > {
-  return makeSyncSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issues?.required, v);

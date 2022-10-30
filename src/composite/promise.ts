@@ -1,4 +1,4 @@
-import { makeSchema, makeSyncSchema, Schema } from "../schema";
+import { makeSchema, makeSimpleSchema, Schema } from "../schema";
 import { isFailure, ValidationIssue } from "../validation";
 
 export function promise<T>(
@@ -7,7 +7,7 @@ export function promise<T>(
     wrongType: string;
   }> = {}
 ): Schema<Promise<T>, Promise<T>, { type: "promise" }> {
-  return makeSyncSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issues?.required, v);
