@@ -1,11 +1,11 @@
 import { and } from "./and";
 import { array } from "../composite/array";
-import { procedure } from "../composite/procedure";
 import { number } from "../simple/number";
 import { object } from "../composite/object";
 import { defaultValue, optional } from "../utility/optional";
 import { string } from "../simple/string";
 import { translate } from "../validation";
+import { procedure } from "../utility";
 
 const Named = object({
   id: number(),

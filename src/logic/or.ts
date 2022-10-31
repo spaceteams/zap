@@ -1,4 +1,10 @@
-import { InferOutputTypes, InferTypes, ParseResult, Schema } from "../schema";
+import {
+  InferOutputTypes,
+  InferTypes,
+  ParseResult,
+  Schema,
+  ValidationOptions,
+} from "../schema";
 import { isSuccess, ValidationResult } from "../validation";
 import { Unionize } from "../utility";
 
@@ -11,30 +17,41 @@ export function or<T extends Schema<unknown>[]>(
 > {
   type ResultI = Unionize<InferTypes<T>>;
   type ResultO = Unionize<InferOutputTypes<T>>;
-  type V = ValidationResult<ResultI>;
+
+  class Aggregator {
+    constructor(readonly options: Partial<ValidationOptions> | undefined) {}
+
+    public result: ValidationResult<ResultI> = undefined;
+
+    onValidate(validation: ValidationResult<unknown>): boolean {
+      this.result = validation as ValidationResult<ResultI>;
+      return isSuccess(validation);
+    }
+  }
+
   const validate: Schema<ResultI, ResultO, unknown>["validate"] = (v, o) => {
-    let result: ValidationResult<unknown>;
+    const aggregator = new Aggregator(o);
     for (const schema of schemas) {
-      result = schema.validate(v, o);
-      if (isSuccess(result)) {
-        return;
+      const validation = schema.validate(v, o);
+      if (aggregator.onValidate(validation)) {
+        break;
       }
     }
-    return result as V;
+    return aggregator.result;
   };
   const validateAsync: Schema<
     ResultI,
     ResultO,
     unknown
   >["validateAsync"] = async (v, o) => {
-    let result: ValidationResult<unknown>;
+    const aggregator = new Aggregator(o);
     for (const schema of schemas) {
-      result = await schema.validateAsync(v, o);
-      if (isSuccess(result)) {
-        return;
+      const validation = await schema.validateAsync(v, o);
+      if (aggregator.onValidate(validation)) {
+        break;
       }
     }
-    return result as V;
+    return aggregator.result;
   };
   const parse: Schema<ResultI, ResultO, unknown>["parse"] = (v, o) => {
     let validation: ValidationResult<unknown>;

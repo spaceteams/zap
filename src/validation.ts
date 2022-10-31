@@ -83,7 +83,9 @@ export type ValidationResult<T, E = ValidationIssue> =
   | Validation<T, E>
   | undefined;
 
-export function isSuccess<T>(validation: ValidationResult<T>): boolean {
+export function isSuccess<T>(
+  validation: ValidationResult<T>
+): validation is undefined {
   return validation === undefined;
 }
 export function isFailure<T>(
@@ -253,8 +255,8 @@ export function translate<T>(
     validation: ValidationIssue
   ) => string = defaultTranslateError
 ): ValidationResult<T, string> {
-  if (validation === undefined) {
-    return undefined;
+  if (isSuccess(validation)) {
+    return;
   }
   if (isValidationIssue(validation)) {
     return translateError(validation) as Validation<T, string>;

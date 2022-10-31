@@ -1,15 +1,8 @@
-import {
-  array,
-  map,
-  object,
-  record,
-  set,
-  tuple,
-  validatedProcedure,
-  validatedPromise,
-} from "../composite";
+import { array, map, object, record, set, tuple } from "../composite";
 import { number, string } from "../simple";
 import { into, get } from "./optics";
+import { validatedProcedure } from "./procedure";
+import { validatedPromise } from "./promise";
 
 describe("array get", () => {
   const schema = array(number());

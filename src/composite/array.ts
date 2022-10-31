@@ -4,6 +4,7 @@ import {
   refine,
   refineWithMetainformation,
   Schema,
+  ValidationOptions,
 } from "../schema";
 import {
   isFailure,
@@ -19,50 +20,62 @@ export function array<I, O, M>(
     wrongType: string;
   }>
 ): Schema<I[], O[], { type: "array"; schema: Schema<I, O, M> }> {
+  const preValidate = (v: unknown) => {
+    if (typeof v === "undefined" || v === null) {
+      return new ValidationIssue("required", issues?.required, v);
+    }
+    if (!Array.isArray(v)) {
+      return new ValidationIssue("wrong_type", issues?.wrongType, v, "array");
+    }
+  };
+
+  class Aggregator {
+    constructor(readonly options: Partial<ValidationOptions> | undefined) {}
+
+    public readonly validations: ValidationResult<I>[] = [];
+
+    onValidate(validation: ValidationResult<I>): boolean {
+      this.validations.push(validation);
+      return getOption(this.options, "earlyExit") && isFailure(validation);
+    }
+    result(): ValidationResult<I[]> {
+      if (this.validations.every((v) => isSuccess(v))) {
+        return undefined;
+      }
+      return this.validations;
+    }
+  }
+
   return makeSchema(
     (v, o) => {
-      if (typeof v === "undefined" || v === null) {
-        return new ValidationIssue("required", issues?.required, v);
-      }
-      if (!Array.isArray(v)) {
-        return new ValidationIssue("wrong_type", issues?.wrongType, v, "array");
+      const validation = preValidate(v);
+      if (isFailure(validation)) {
+        return validation;
       }
 
-      const validations: ValidationResult<I[]> = [];
-      for (const value of v) {
+      const aggregator = new Aggregator(o);
+      for (const value of v as unknown[]) {
         const validation = schema.validate(value, o);
-        validations.push(validation);
-
-        if (getOption(o, "earlyExit") && isFailure(validation)) {
-          return validations;
+        if (aggregator.onValidate(validation)) {
+          break;
         }
       }
-      if (validations.every((v) => isSuccess(v))) {
-        return;
-      }
-      return validations;
+      return aggregator.result();
     },
     async (v, o) => {
-      if (typeof v === "undefined" || v === null) {
-        return new ValidationIssue("required", issues?.required, v);
-      }
-      if (!Array.isArray(v)) {
-        return new ValidationIssue("wrong_type", issues?.wrongType, v, "array");
+      const validation = preValidate(v);
+      if (isFailure(validation)) {
+        return validation;
       }
 
-      const validations: ValidationResult<I[]> = [];
-      for (const value of v) {
+      const aggregator = new Aggregator(o);
+      for (const value of v as unknown[]) {
         const validation = await schema.validateAsync(value, o);
-        validations.push(validation);
-
-        if (getOption(o, "earlyExit") && isFailure(validation)) {
-          return validations;
+        if (aggregator.onValidate(validation)) {
+          break;
         }
       }
-      if (validations.every((v) => isSuccess(v))) {
-        return;
-      }
-      return validations;
+      return aggregator.result();
     },
     () => ({ type: "array", schema }),
     (v, o) => v.map((item) => schema.parse(item, o).parsedValue) as O[]

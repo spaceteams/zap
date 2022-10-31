@@ -4,6 +4,7 @@ import {
   InferOutputTypes,
   makeSchema,
   Schema,
+  ValidationOptions,
 } from "../schema";
 import { Intersect } from "../utility";
 import { isFailure, mergeValidations, ValidationResult } from "../validation";
@@ -17,26 +18,38 @@ export function and<T extends readonly Schema<unknown>[]>(
 > {
   type ResultI = Intersect<InferTypes<T>>;
   type ResultO = Intersect<InferOutputTypes<T>>;
+
+  class Aggregator {
+    constructor(readonly options: Partial<ValidationOptions> | undefined) {}
+
+    public result: ValidationResult<ResultI> = undefined;
+
+    onValidate(validation: ValidationResult<unknown>): boolean {
+      this.result = mergeValidations(this.result, validation);
+      return getOption(this.options, "earlyExit") && isFailure(validation);
+    }
+  }
+
   return makeSchema(
     (v, o) => {
-      let result: ValidationResult<unknown>;
+      const aggregator = new Aggregator(o);
       for (const schema of schemas) {
-        result = mergeValidations(result, schema.validate(v, o));
-        if (isFailure(result) && getOption(o, "earlyExit")) {
+        const validation = schema.validate(v, o);
+        if (aggregator.onValidate(validation)) {
           break;
         }
       }
-      return result as ValidationResult<ResultI>;
+      return aggregator.result;
     },
     async (v, o) => {
-      let result: ValidationResult<unknown>;
+      const aggregator = new Aggregator(o);
       for (const schema of schemas) {
-        result = mergeValidations(result, await schema.validateAsync(v, o));
-        if (isFailure(result) && getOption(o, "earlyExit")) {
+        const validation = await schema.validateAsync(v, o);
+        if (aggregator.onValidate(validation)) {
           break;
         }
       }
-      return result as ValidationResult<ResultI>;
+      return aggregator.result;
     },
     () => ({ type: "and", schemas }),
     (v, o) => {

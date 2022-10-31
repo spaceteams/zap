@@ -4,12 +4,12 @@ import {
   makeSchema,
   Schema,
   InferOutputTypes,
+  ValidationOptions,
 } from "../schema";
 import {
   isFailure,
   isSuccess,
   ValidationIssue,
-  Validation,
   ValidationResult,
 } from "../validation";
 
@@ -29,79 +29,83 @@ export function tupleWithIssues<T extends readonly Schema<unknown>[]>(
 ): Schema<InferTypes<T>, InferOutputTypes<T>, { type: "tuple"; schemas: T }> {
   type ResultI = InferTypes<T>;
   type ResultO = InferOutputTypes<T>;
-  type V = Validation<ResultI>;
+  type V = ValidationResult<ResultI>;
+
+  const preValidate = (v: unknown) => {
+    if (typeof v === "undefined" || v === null) {
+      return new ValidationIssue("required", issues?.required, v) as V;
+    }
+    if (!Array.isArray(v)) {
+      return new ValidationIssue(
+        "wrong_type",
+        issues?.wrongType,
+        v,
+        "array"
+      ) as V;
+    }
+    if (schemas.length !== v.length) {
+      return new ValidationIssue(
+        "length",
+        issues?.length,
+        v,
+        schemas.length
+      ) as V;
+    }
+  };
+
+  class Aggregator {
+    constructor(readonly options: Partial<ValidationOptions> | undefined) {}
+
+    public readonly validations: ValidationResult<unknown>[] = [];
+
+    onValidate(validation: ValidationResult<unknown>): boolean {
+      this.validations.push(validation);
+      return getOption(this.options, "earlyExit") && isFailure(validation);
+    }
+    result(): V {
+      if (this.validations.every((v) => isSuccess(v))) {
+        return undefined;
+      }
+      return this.validations as V;
+    }
+  }
+
   return makeSchema(
     (v, o) => {
-      if (typeof v === "undefined" || v === null) {
-        return new ValidationIssue("required", issues?.required, v) as V;
-      }
-      if (!Array.isArray(v)) {
-        return new ValidationIssue(
-          "wrong_type",
-          issues?.wrongType,
-          v,
-          "array"
-        ) as V;
-      }
-      if (schemas.length !== v.length) {
-        return new ValidationIssue(
-          "length",
-          issues?.length,
-          v,
-          schemas.length
-        ) as V;
+      const validation = preValidate(v);
+      if (isFailure(validation)) {
+        return validation;
       }
 
-      const validations = [] as ValidationResult<unknown>[];
+      const aggregator = new Aggregator(o);
       let i = 0;
-      for (const value of v) {
+      for (const value of v as unknown[]) {
         const validation = schemas[i].validate(value, o);
-        validations.push(validation);
-        if (getOption(o, "earlyExit") && isFailure(validation)) {
-          return validations as V;
-        }
         i++;
+
+        if (aggregator.onValidate(validation)) {
+          break;
+        }
       }
-      if (validations.every((v) => isSuccess(v))) {
-        return;
-      }
-      return validations as V;
+      return aggregator.result();
     },
     async (v, o) => {
-      if (typeof v === "undefined" || v === null) {
-        return new ValidationIssue("required", issues?.required, v) as V;
-      }
-      if (!Array.isArray(v)) {
-        return new ValidationIssue(
-          "wrong_type",
-          issues?.wrongType,
-          v,
-          "array"
-        ) as V;
-      }
-      if (schemas.length !== v.length) {
-        return new ValidationIssue(
-          "length",
-          issues?.length,
-          v,
-          schemas.length
-        ) as V;
+      const validation = preValidate(v);
+      if (isFailure(validation)) {
+        return validation;
       }
 
-      const validations = [] as ValidationResult<unknown>[];
+      const aggregator = new Aggregator(o);
       let i = 0;
-      for (const value of v) {
+      for (const value of v as unknown[]) {
         const validation = await schemas[i].validateAsync(value, o);
-        validations.push(validation);
-        if (getOption(o, "earlyExit") && isFailure(validation)) {
-          return validations as V;
-        }
         i++;
+
+        if (aggregator.onValidate(validation)) {
+          break;
+        }
       }
-      if (validations.every((v) => isSuccess(v))) {
-        return;
-      }
-      return validations as V;
+      return aggregator.result();
     },
     () => ({ type: "tuple", schemas }),
     (v, o) => {
