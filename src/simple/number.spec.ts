@@ -9,6 +9,12 @@ import {
   positive,
   multipleOf,
   coercedNumber,
+  nonPositive,
+  nonNegative,
+  exclusiveMinimum,
+  exclusiveMaximum,
+  minimum,
+  maximum,
 } from "./number";
 import { or } from "../logic/or";
 import { translate } from "../validation";
@@ -70,6 +76,17 @@ describe("positive", () => {
   });
 });
 
+describe("nonPositive", () => {
+  const schema = nonPositive(number());
+  it("validates", () => {
+    expect(schema.validate(0)).toBeUndefined();
+    expect(schema.validate(-1)).toBeUndefined();
+    expect(schema.validate(-0)).toBeUndefined();
+
+    expect(translate(schema.validate(1))).toEqual("nonPositive");
+  });
+});
+
 describe("negative", () => {
   const schema = negative(number());
   it("validates", () => {
@@ -81,7 +98,18 @@ describe("negative", () => {
   });
 });
 
-describe("int", () => {
+describe("nonNegative", () => {
+  const schema = nonNegative(number());
+  it("validates", () => {
+    expect(schema.validate(1)).toBeUndefined();
+    expect(translate(schema.validate(0))).toBeUndefined();
+    expect(translate(schema.validate(-0))).toBeUndefined();
+
+    expect(translate(schema.validate(-1))).toEqual("nonNegative");
+  });
+});
+
+describe("integer", () => {
   const schema = integer(number());
   it("validates", () => {
     expect(schema.validate(-1)).toBeUndefined();
@@ -100,5 +128,41 @@ describe("multipleOf", () => {
     expect(schema.validate(-1.2)).toBeUndefined();
 
     expect(translate(schema.validate(-1.21))).toEqual("multipleOf(0.1)");
+  });
+});
+
+describe("exclusiveMinimum", () => {
+  const schema = exclusiveMinimum(number(), 0.1);
+  it("validates", () => {
+    expect(schema.validate(0.11)).toBeUndefined();
+    expect(translate(schema.validate(0.1))).toEqual("exclusiveMinimum(0.1)");
+    expect(translate(schema.validate(0.09))).toEqual("exclusiveMinimum(0.1)");
+  });
+});
+
+describe("exclusiveMaximum", () => {
+  const schema = exclusiveMaximum(number(), 0.1);
+  it("validates", () => {
+    expect(translate(schema.validate(0.11))).toEqual("exclusiveMaximum(0.1)");
+    expect(translate(schema.validate(0.1))).toEqual("exclusiveMaximum(0.1)");
+    expect(translate(schema.validate(0.09))).toBeUndefined();
+  });
+});
+
+describe("minimum", () => {
+  const schema = minimum(number(), 0.1);
+  it("validates", () => {
+    expect(schema.validate(0.11)).toBeUndefined();
+    expect(translate(schema.validate(0.1))).toBeUndefined();
+    expect(translate(schema.validate(0.09))).toEqual("minimum(0.1)");
+  });
+});
+
+describe("maximum", () => {
+  const schema = maximum(number(), 0.1);
+  it("validates", () => {
+    expect(translate(schema.validate(0.11))).toEqual("maximum(0.1)");
+    expect(translate(schema.validate(0.1))).toBeUndefined();
+    expect(translate(schema.validate(0.09))).toBeUndefined();
   });
 });

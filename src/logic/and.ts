@@ -1,5 +1,4 @@
 import {
-  getOption,
   InferTypes,
   InferOutputTypes,
   makeSchema,
@@ -26,7 +25,7 @@ export function and<T extends readonly Schema<unknown>[]>(
 
     onValidate(validation: ValidationResult<unknown>): boolean {
       this.result = mergeValidations(this.result, validation);
-      return getOption(this.options, "earlyExit") && isFailure(validation);
+      return isFailure(validation);
     }
   }
 

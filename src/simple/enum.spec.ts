@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-useless-undefined */
 import { nativeEnum } from "./enum";
 import { translate } from "../validation";
 
@@ -30,4 +31,14 @@ it("validates", () => {
   expect(schema.validate(E.a)).toBeUndefined();
 
   expect(translate(schema.validate("a"))).toEqual("enum(0,12,c)");
+  expect(translate(schema.validate(undefined))).toEqual("value is required");
+  expect(translate(schema.validate([]))).toEqual(
+    "value was of type array expected string or number"
+  );
+});
+
+it("builds meta information", () => {
+  expect(schema.meta().type).toEqual("enum");
+  expect(schema.meta().enum.a).toEqual(E.a);
+  expect(constEnum.meta().enum.a).toEqual("a");
 });

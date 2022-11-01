@@ -2,9 +2,22 @@
 /* eslint-disable unicorn/no-null */
 
 import { number } from "../simple/number";
-import { nullable, nullish, optional, required } from "./optional";
+import {
+  nullable,
+  nullish,
+  nullSchema,
+  nullToUndefined,
+  optional,
+  required,
+  undefinedSchema,
+} from "./optional";
 import { translate } from "../validation";
-import { coercedDate } from "../simple";
+import { coercedDate, string } from "../simple";
+import { refineAsync } from "../schema";
+
+const asyncPositiveNumber = refineAsync(number(), (v, { validIf }) =>
+  Promise.resolve(validIf(v > 0, "must be positive"))
+);
 
 describe("optional", () => {
   const schema = optional(number());
@@ -20,6 +33,15 @@ describe("optional", () => {
     expect(schema.validate(undefined)).toBeUndefined();
 
     expect(translate(schema.validate(null))).toEqual("value is required");
+  });
+
+  it("validates async", async () => {
+    const schema = optional(asyncPositiveNumber);
+    expect(await schema.validateAsync(1)).toBeUndefined();
+    expect(await schema.validateAsync(undefined)).toBeUndefined();
+    expect(translate(await schema.validateAsync(null))).toEqual(
+      "value is required"
+    );
   });
 
   it("parses", () => {
@@ -40,6 +62,21 @@ describe("required", () => {
   it("validates", () => {
     expect(translate(schema.validate(undefined))).toEqual("value is required");
     expect(translate(schema.validate(null))).toEqual("value is required");
+  });
+
+  it("validates async", async () => {
+    const schema = required(optional(asyncPositiveNumber));
+    expect(await schema.validateAsync(1)).toBeUndefined();
+    expect(translate(await schema.validateAsync(undefined))).toEqual(
+      "value is required"
+    );
+    expect(translate(await schema.validateAsync(null))).toEqual(
+      "value is required"
+    );
+  });
+
+  it("builds meta", () => {
+    expect(schema.meta().required).toBeTruthy();
   });
 
   it("parses", () => {
@@ -65,6 +102,15 @@ describe("nullable", () => {
     expect(translate(schema.validate(undefined))).toEqual("value is required");
   });
 
+  it("validates async", async () => {
+    const schema = nullable(asyncPositiveNumber);
+    expect(await schema.validateAsync(1)).toBeUndefined();
+    expect(await schema.validateAsync(null)).toBeUndefined();
+    expect(translate(await schema.validateAsync(undefined))).toEqual(
+      "value is required"
+    );
+  });
+
   it("parses", () => {
     expect(nullable(coercedDate()).parse(42).parsedValue).toEqual(new Date(42));
   });
@@ -84,7 +130,65 @@ describe("nullish", () => {
     expect(schema.validate(null)).toBeUndefined();
   });
 
+  it("validates async", async () => {
+    const schema = nullish(asyncPositiveNumber);
+    expect(await schema.validateAsync(1)).toBeUndefined();
+    expect(await schema.validateAsync(null)).toBeUndefined();
+    expect(translate(await schema.validateAsync(undefined))).toBeUndefined();
+  });
+
   it("parses", () => {
     expect(nullish(coercedDate()).parse(42).parsedValue).toEqual(new Date(42));
+  });
+
+  it("builds meta", () => {
+    expect(schema.meta().required).toBeFalsy();
+  });
+});
+
+describe("nullToUndefined", () => {
+  it("coerces", () => {
+    const schema = nullToUndefined(nullish(string()));
+    expect(schema.parse(null).parsedValue).toEqual(undefined);
+  });
+});
+
+describe("undefinedSchema", () => {
+  const schema = undefinedSchema();
+
+  it("accepts", () => {
+    expect(schema.accepts(undefined)).toBeTruthy();
+    expect(schema.accepts(null)).toBeFalsy();
+  });
+
+  it("validates", () => {
+    expect(schema.validate(undefined)).toBeUndefined();
+    expect(translate(schema.validate(null))).toEqual(
+      "value was of type object expected undefined"
+    );
+  });
+
+  it("builds meta", () => {
+    expect(schema.meta().type).toEqual("undefined");
+  });
+});
+
+describe("nullSchema", () => {
+  const schema = nullSchema();
+
+  it("accepts", () => {
+    expect(schema.accepts(null)).toBeTruthy();
+    expect(schema.accepts(undefined)).toBeFalsy();
+  });
+
+  it("validates", () => {
+    expect(schema.validate(null)).toBeUndefined();
+    expect(translate(schema.validate(undefined))).toEqual(
+      "value was of type undefined expected null"
+    );
+  });
+
+  it("builds meta", () => {
+    expect(schema.meta().type).toEqual("null");
   });
 });

@@ -73,7 +73,7 @@ export function length<O, M>(
   return refineWithMetainformation(
     schema,
     (v) => {
-      if (v.length === length) {
+      if (v.length !== length) {
         return new ValidationIssue("length", issue, v, length);
       }
     },

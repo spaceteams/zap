@@ -5,6 +5,7 @@ import {
   mergeValidations,
   simplifyValidation,
   ValidationResult,
+  isValidationIssue,
 } from "./validation";
 
 export interface ValidationOptions {
@@ -269,7 +270,7 @@ export function refineAsync<I, O, M, P extends I = I>(
   validateAsync: (
     v: I,
     ctx: RefineContext<P>
-  ) => void | Promise<ValidationResult<P>>
+  ) => Promise<ValidationResult<P> | void>
 ): Schema<P, O, M> {
   return refineAsyncWithMetainformation(schema, validateAsync, schema.meta);
 }
@@ -351,16 +352,26 @@ export function refineWithMetainformation<I, O, M, N, P extends I = I>(
     if (isFailure(validation)) {
       return validation as ValidationResult<P>;
     }
-    const refinedValidation = validate(v as I, {
-      add: (val) => {
-        validation = mergeValidations(validation, val);
-      },
-      validIf: (condition, message, ...args) =>
-        condition
-          ? undefined
-          : new ValidationIssue("generic", message, v, ...args),
-      options: { ...defaultOptions, ...o },
-    });
+    let refinedValidation: ValidationResult<P>;
+    try {
+      refinedValidation =
+        validate(v as I, {
+          add: (val) => {
+            validation = mergeValidations(validation, val);
+          },
+          validIf: (condition, message, ...args) =>
+            condition
+              ? undefined
+              : new ValidationIssue("generic", message, v, ...args),
+          options: { ...defaultOptions, ...o },
+        }) ?? undefined;
+    } catch (error: unknown) {
+      if (isValidationIssue(error)) {
+        refinedValidation = error as ValidationResult<P>;
+      } else {
+        throw error;
+      }
+    }
     return simplifyValidation(refinedValidation ?? validation);
   };
 
@@ -382,7 +393,7 @@ export function refineAsyncWithMetainformation<I, O, M, N, P extends I = I>(
   validateAsync: (
     v: I,
     ctx: RefineContext<P>
-  ) => void | Promise<ValidationResult<P>>,
+  ) => Promise<ValidationResult<P> | void>,
   metaExtension: N
 ): Schema<
   P,
@@ -403,16 +414,26 @@ export function refineAsyncWithMetainformation<I, O, M, N, P extends I = I>(
       if (isFailure(validation)) {
         return validation as ValidationResult<P>;
       }
-      const refinedValidation = await validateAsync(v as I, {
-        add: (val) => {
-          validation = mergeValidations(validation, val);
-        },
-        validIf: (condition, message, ...args) =>
-          condition
-            ? undefined
-            : new ValidationIssue("generic", message, v, ...args),
-        options: { ...defaultOptions, ...o },
-      });
+      let refinedValidation: ValidationResult<P>;
+      try {
+        refinedValidation =
+          (await validateAsync(v as I, {
+            add: (val) => {
+              validation = mergeValidations(validation, val);
+            },
+            validIf: (condition, message, ...args) =>
+              condition
+                ? undefined
+                : new ValidationIssue("generic", message, v, ...args),
+            options: { ...defaultOptions, ...o },
+          })) ?? undefined;
+      } catch (error: unknown) {
+        if (isValidationIssue(error)) {
+          refinedValidation = error as ValidationResult<P>;
+        } else {
+          throw error;
+        }
+      }
       return simplifyValidation(refinedValidation ?? validation);
     },
     () => ({ ...schema.meta(), ...metaExtension }),

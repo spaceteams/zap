@@ -1,7 +1,18 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
-import { coercedString, string } from "./string";
+import { translate } from "../validation";
+import {
+  coercedString,
+  endsWith,
+  length,
+  maxLength,
+  minLength,
+  nonEmptyString,
+  pattern,
+  startsWith,
+  string,
+} from "./string";
 
 it("accepts", () => {
   expect(string().accepts("")).toBeTruthy();
@@ -29,5 +40,62 @@ describe("coercedString", () => {
     expect(coercedString().parse([1, "a", 2]).parsedValue).toEqual("1,a,2");
     expect(coercedString().parse({}).parsedValue).toEqual("[object Object]");
     expect(coercedString().parse(() => 1).parsedValue).toEqual("() => 1");
+  });
+});
+
+describe("minLength", () => {
+  const schema = minLength(string(), 2);
+  it("validates", () => {
+    expect(schema.validate("12")).toBeUndefined();
+    expect(translate(schema.validate("1"))).toEqual("minLength(2)");
+  });
+});
+
+describe("maxLength", () => {
+  const schema = maxLength(string(), 2);
+  it("validates", () => {
+    expect(schema.validate("12")).toBeUndefined();
+    expect(translate(schema.validate("123"))).toEqual("maxLength(2)");
+  });
+});
+
+describe("minLength", () => {
+  const schema = length(string(), 2);
+  it("validates", () => {
+    expect(schema.validate("12")).toBeUndefined();
+    expect(translate(schema.validate("1"))).toEqual("length(2)");
+    expect(translate(schema.validate("123"))).toEqual("length(2)");
+  });
+});
+
+describe("nonEmptyString", () => {
+  const schema = nonEmptyString(string());
+  it("validates", () => {
+    expect(schema.validate("12")).toBeUndefined();
+    expect(translate(schema.validate(""))).toEqual("minLength(1)");
+  });
+});
+
+describe("pattern", () => {
+  const schema = pattern(string(), /1/);
+  it("validates", () => {
+    expect(schema.validate("12")).toBeUndefined();
+    expect(translate(schema.validate("2"))).toEqual("pattern(/1/)");
+  });
+});
+
+describe("startsWith", () => {
+  const schema = startsWith(string(), "1");
+  it("validates", () => {
+    expect(schema.validate("12")).toBeUndefined();
+    expect(translate(schema.validate("2"))).toEqual("startsWith(1,)");
+  });
+});
+
+describe("endsWith", () => {
+  const schema = endsWith(string(), "2");
+  it("validates", () => {
+    expect(schema.validate("12")).toBeUndefined();
+    expect(translate(schema.validate("1"))).toEqual("endsWith(2,)");
   });
 });

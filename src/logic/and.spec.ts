@@ -1,11 +1,12 @@
 import { and } from "./and";
 import { array } from "../composite/array";
-import { number } from "../simple/number";
+import { integer, number } from "../simple/number";
 import { object } from "../composite/object";
 import { defaultValue, optional } from "../utility/optional";
 import { string } from "../simple/string";
 import { translate } from "../validation";
 import { procedure } from "../utility";
+import { refineAsync } from "../schema";
 
 const Named = object({
   id: number(),
@@ -59,9 +60,6 @@ it("validates", () => {
     translate(schema.validate({ id: "", name: ["some", "string"], nested: {} }))
   ).toEqual({
     id: "value was of type string expected number",
-    nested: {
-      user: "value is required",
-    },
   });
   expect(
     translate(schema.validate({ id: 12, name: ["some", "string"], nested: {} }))
@@ -81,6 +79,18 @@ it("validates with early exit", () => {
   ).toEqual({
     id: "value was of type string expected number",
   });
+});
+
+it("validates async", async () => {
+  const schema = and(
+    integer(number()),
+    refineAsync(number(), (v, { validIf }) =>
+      Promise.resolve(validIf(v > 0, "must be positive"))
+    )
+  );
+  expect(await schema.validateAsync(1)).toBeUndefined();
+  expect(translate(await schema.validateAsync(1.2))).toEqual("integer");
+  expect(translate(await schema.validateAsync(0))).toEqual("must be positive");
 });
 
 it("parses", () => {

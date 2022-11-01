@@ -25,7 +25,7 @@ export function map<K extends string | number | symbol, N, I, O, M>(
       return new ValidationIssue("required", issues?.required, v);
     }
     if (!(v instanceof Map)) {
-      return new ValidationIssue("wrong_type", issues?.wrongType, v, "set");
+      return new ValidationIssue("wrong_type", issues?.wrongType, v, "map");
     }
   };
 

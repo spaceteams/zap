@@ -41,6 +41,7 @@ export type ValidationIssueCode =
   // enum
   | "enum"
   // date
+  | "invalid_date"
   | "before"
   | "after"
   // literal/s

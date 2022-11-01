@@ -95,11 +95,10 @@ export function xorWithIssue<T extends readonly Schema<unknown>[]>(
           };
         }
         successSchema = schema;
-        break;
       }
     }
     if (successSchema === undefined) {
-      throw validation;
+      return { validation } as ParseResult<ResultI, ResultO>;
     }
     return successSchema.parse(v, {
       ...o,
@@ -121,11 +120,10 @@ export function xorWithIssue<T extends readonly Schema<unknown>[]>(
           };
         }
         successSchema = schema;
-        break;
       }
     }
     if (successSchema === undefined) {
-      throw validation;
+      return { validation } as ParseResult<ResultI, ResultO>;
     }
     return successSchema.parse(v, {
       ...o,

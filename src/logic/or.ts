@@ -64,7 +64,7 @@ export function or<T extends Schema<unknown>[]>(
       }
     }
     if (successSchema === undefined) {
-      throw validation;
+      return { validation } as ParseResult<ResultI, ResultO>;
     }
     return successSchema.parse(v, {
       ...o,
@@ -85,7 +85,7 @@ export function or<T extends Schema<unknown>[]>(
       }
     }
     if (successSchema === undefined) {
-      throw validation;
+      return { validation } as ParseResult<ResultI, ResultO>;
     }
     return successSchema.parse(v, {
       ...o,

@@ -119,7 +119,7 @@ export function items<I, O, M>(
   return refineWithMetainformation(
     schema,
     (v) => {
-      if (v.length === items) {
+      if (v.length !== items) {
         return new ValidationIssue("items", issue, v, items);
       }
     },
@@ -151,7 +151,7 @@ export function uniqueItems<I, O, M>(
 export function includes<I, O, M>(
   schema: Schema<I[], O, M>,
   element: I,
-  fromIndex: number,
+  fromIndex?: number,
   issue?: string
 ) {
   return refine(schema, (v) => {

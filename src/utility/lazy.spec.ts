@@ -21,3 +21,13 @@ it("accepts", () => {
 
   expect(schema.accepts({ subCategories: [1, {}] })).toBeFalsy();
 });
+
+it("builds meta", () => {
+  expect(schema.meta().type).toEqual("object");
+});
+
+it("parse", () => {
+  expect(
+    schema.parse({ subCategories: [{ subCategories: [] }] }).parsedValue
+  ).toEqual({ subCategories: [{ subCategories: [] }] });
+});

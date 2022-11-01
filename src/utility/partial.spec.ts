@@ -8,6 +8,7 @@ import { optional } from "./optional";
 import { partial } from "./partial";
 import { string } from "../simple/string";
 import { tuple } from "../composite/tuple";
+import { map, record, set } from "../composite";
 
 const schema = object({
   id: number(),
@@ -26,7 +27,18 @@ it("accepts arrays", () => {
   expect(partial(array(number())).accepts([undefined])).toBeTruthy();
 });
 it("accepts objects", () => {
-  expect(partial(schema).accepts({})).toBeTruthy();
+  expect(partial(schema).accepts({ a: undefined })).toBeTruthy();
+});
+it("accepts records", () => {
+  expect(partial(record(string())).accepts({})).toBeTruthy();
+});
+it("accepts sets", () => {
+  expect(partial(set(string())).accepts(new Set([undefined, ""]))).toBeTruthy();
+});
+it("accepts maps", () => {
+  expect(
+    partial(map(string(), string())).accepts(new Map([["", undefined]]))
+  ).toBeTruthy();
 });
 it("accepts tuples", () => {
   expect(
@@ -47,6 +59,19 @@ it("builds metadata of objects", () => {
     partial(schema).meta().schema.nested.meta().schema.user.meta()
   ).toEqual({ type: "string" });
   expect(partial(date()).meta().instance).toEqual("Date");
+});
+it("builds metadata of records", () => {
+  expect(partial(record(string())).meta().schema.value.meta().required).toEqual(
+    false
+  );
+});
+it("builds metadata of sets", () => {
+  expect(partial(set(string())).meta().schema.meta().required).toEqual(false);
+});
+it("builds metadata of maps", () => {
+  expect(
+    partial(map(string(), string())).meta().schema.value.meta().required
+  ).toEqual(false);
 });
 it("builds metadata of tuples", () => {
   expect(

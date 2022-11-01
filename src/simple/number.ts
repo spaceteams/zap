@@ -72,7 +72,7 @@ export function nonPositive<O, M>(
   return refineWithMetainformation(
     schema,
     (v) => {
-      if (v <= 0) {
+      if (v > 0) {
         return new ValidationIssue("nonPositive", issue, v);
       }
     },
