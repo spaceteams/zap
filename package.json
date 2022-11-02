@@ -12,6 +12,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest --watch",
+    "test:ci": "jest --coverage",
     "build": "npm run clean-lib && npm run compile && npm run bundle",
     "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}' --quiet",
     "lint:fix": "eslint 'src/**/*.{js,jsx,ts,tsx}' --quiet --fix",

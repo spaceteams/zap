@@ -1,5 +1,11 @@
 import { Unionize } from "../utility";
-import { InferOutputTypes, InferTypes, ParseResult, Schema } from "../schema";
+import {
+  InferOutputTypes,
+  InferTypes,
+  ParseResult,
+  Schema,
+  ValidationOptions,
+} from "../schema";
 import { isSuccess, ValidationIssue, ValidationResult } from "../validation";
 
 export function xor<T extends readonly Schema<unknown>[]>(
@@ -23,48 +29,104 @@ export function xorWithIssue<T extends readonly Schema<unknown>[]>(
   type ResultI = Unionize<InferTypes<T>>;
   type ResultO = Unionize<InferOutputTypes<T>>;
   type V = ValidationResult<ResultI>;
-  const validate: Schema<ResultI, ResultO, unknown>["validate"] = (v, o) => {
-    let result: ValidationResult<unknown>;
-    let hasSuccess = false;
-    for (const schema of schemas) {
-      result = schema.validate(v, o);
-      if (isSuccess(result)) {
-        if (hasSuccess) {
-          return new ValidationIssue("xor", issue, v) as V;
+
+  class Aggregator {
+    constructor(readonly options: Partial<ValidationOptions> | undefined) {}
+
+    public lastFailure: ValidationResult<ResultI>;
+    private xorValidation: V;
+    private successSchema: Schema<unknown> | undefined;
+
+    onValidate(
+      v: unknown,
+      schema: Schema<unknown>,
+      validation: ValidationResult<unknown>
+    ): boolean {
+      if (isSuccess(validation)) {
+        if (this.successSchema) {
+          this.xorValidation = new ValidationIssue("xor", issue, v) as V;
+          this.successSchema = undefined;
+          return true;
         } else {
-          hasSuccess = true;
+          this.successSchema = schema;
         }
+      } else {
+        this.lastFailure = validation as ValidationResult<ResultI>;
+      }
+      return false;
+    }
+
+    result(): V {
+      if (!this.successSchema) {
+        return this.xorValidation ?? this.lastFailure;
       }
     }
-    if (!hasSuccess) {
-      return result as V;
+
+    parseResult(v: unknown): ParseResult<ResultI, ResultO> {
+      if (this.successSchema === undefined) {
+        return { validation: this.xorValidation ?? this.lastFailure };
+      }
+      return this.successSchema.parse(v, {
+        ...this.options,
+        skipValidation: true,
+      }) as ParseResult<ResultI, ResultO>;
     }
+  }
+
+  const validate: Schema<ResultI, ResultO, unknown>["validate"] = (v, o) => {
+    const aggregator = new Aggregator(o);
+    for (const schema of schemas) {
+      const validation = schema.validate(v, o);
+      if (aggregator.onValidate(v, schema, validation)) {
+        break;
+      }
+    }
+    return aggregator.result();
+  };
+  const validateAsync: Schema<
+    ResultI,
+    ResultO,
+    unknown
+  >["validateAsync"] = async (v, o) => {
+    const aggregator = new Aggregator(o);
+    for (const schema of schemas) {
+      const validation = await schema.validateAsync(v, o);
+      if (aggregator.onValidate(v, schema, validation)) {
+        break;
+      }
+    }
+    return aggregator.result();
+  };
+  const parse: Schema<ResultI, ResultO, unknown>["parse"] = (v, o) => {
+    const aggregator = new Aggregator(o);
+    for (const schema of schemas) {
+      const validation = schema.validate(v, o);
+      if (aggregator.onValidate(v, schema, validation)) {
+        break;
+      }
+    }
+    return aggregator.parseResult(v);
+  };
+  const parseAsync: Schema<ResultI, ResultO, unknown>["parseAsync"] = async (
+    v,
+    o
+  ) => {
+    const aggregator = new Aggregator(o);
+    for (const schema of schemas) {
+      const validation = await schema.validateAsync(v, o);
+      if (aggregator.onValidate(v, schema, validation)) {
+        break;
+      }
+    }
+    return aggregator.parseResult(v);
   };
 
   return {
     accepts: (v, o): v is Unionize<InferTypes<T>> => isSuccess(validate(v, o)),
+    parse,
+    parseAsync,
     validate,
-    parse: (v, o) => {
-      let validation: ValidationResult<unknown>;
-      let successSchema: Schema<unknown> | undefined;
-      for (const schema of schemas) {
-        validation = schema.validate(v, o);
-        if (isSuccess(validation)) {
-          if (successSchema !== undefined) {
-            throw new ValidationIssue("xor", issue, v) as V;
-          }
-          successSchema = schema;
-          break;
-        }
-      }
-      if (successSchema === undefined) {
-        throw validation;
-      }
-      return successSchema.parse(v, {
-        ...o,
-        skipValidation: true,
-      }) as ParseResult<ResultI, ResultO>;
-    },
+    validateAsync,
     meta: () => ({ type: "xor", schemas }),
   };
 }

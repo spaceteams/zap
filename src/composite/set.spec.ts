@@ -1,5 +1,6 @@
 /* eslint-disable unicorn/no-null */
 
+import { refineAsync } from "../refine";
 import { number } from "../simple/number";
 import { translate } from "../validation";
 import { set } from "./set";
@@ -19,6 +20,26 @@ it("validates", () => {
   expect(translate(schema.validate(new Set([1, "2", "3"])))).toEqual(
     // NOTE: the two error messages translate to the same string. And the set collapses!
     new Set(["value was of type string expected number"])
+  );
+});
+
+it("validates", async () => {
+  const schema = set(
+    refineAsync(number(), (v, { validIf }) =>
+      Promise.resolve(validIf(v > 0, "must be positive"))
+    )
+  );
+  expect(await schema.validateAsync(new Set())).toBeUndefined();
+  expect(translate(await schema.validateAsync(new Set([1, -2])))).toEqual(
+    new Set(["must be positive"])
+  );
+  expect(
+    translate(
+      await schema.validateAsync(new Set([1, -2, 3, "-4"]), { earlyExit: true })
+    )
+  ).toEqual(new Set(["must be positive"]));
+  expect(translate(await schema.validateAsync(2))).toEqual(
+    "value was of type number expected set"
   );
 });
 

@@ -1,10 +1,5 @@
-import {
-  coerce,
-  makeSchema,
-  refine,
-  refineWithMetainformation,
-  Schema,
-} from "../schema";
+import { refine, refineWithMetainformation } from "../refine";
+import { coerce, makeSimpleSchema, Schema } from "../schema";
 import { ValidationIssue } from "../validation";
 
 export function string(
@@ -13,7 +8,7 @@ export function string(
     wrongType: string;
   }>
 ): Schema<string, string, { type: "string" }> {
-  return makeSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issues?.required, v);
@@ -73,7 +68,7 @@ export function length<O, M>(
   return refineWithMetainformation(
     schema,
     (v) => {
-      if (v.length === length) {
+      if (v.length !== length) {
         return new ValidationIssue("length", issue, v, length);
       }
     },

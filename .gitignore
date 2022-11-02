@@ -1,5 +1,6 @@
 .direnv
 .envrc
+coverage
 build
 dist
 node_modules

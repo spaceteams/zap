@@ -1,4 +1,4 @@
-import { makeSchema, Schema } from "../schema";
+import { makeSchema, makeSimpleSchema, Schema } from "../schema";
 import { isFailure, ValidationIssue } from "../validation";
 
 export function promise<T>(
@@ -7,7 +7,7 @@ export function promise<T>(
     wrongType: string;
   }> = {}
 ): Schema<Promise<T>, Promise<T>, { type: "promise" }> {
-  return makeSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issues?.required, v);
@@ -44,6 +44,7 @@ export function validatedPromise<T>(
   const base = promise<T>(issues);
   return makeSchema(
     base.validate,
+    base.validateAsync,
     () => ({ type: "promise", schema }),
     (v, o) =>
       v.then((v) => {

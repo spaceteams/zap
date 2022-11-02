@@ -3,6 +3,8 @@ export type ValidationIssueCode =
   | "required"
   | "wrong_type"
   | "invalid_key"
+  // async
+  | "async_validation_required"
   // array
   | "includes"
   | "items"
@@ -39,6 +41,7 @@ export type ValidationIssueCode =
   // enum
   | "enum"
   // date
+  | "invalid_date"
   | "before"
   | "after"
   // literal/s
@@ -67,20 +70,22 @@ export function isValidationIssue(v: unknown): v is ValidationIssue {
 }
 
 export type Validation<T, E = ValidationIssue> = T extends Set<infer U>
-  ? Set<Validation<U>> | E
+  ? Set<Validation<U, E>> | E
   : T extends Map<infer K, infer U>
-  ? Map<K, Validation<U>> | E
+  ? Map<K, Validation<U, E>> | E
   : T extends Record<string, unknown>
-  ? { [P in keyof T]?: Validation<T[P]> } | E
+  ? { [P in keyof T]?: Validation<T[P], E> } | E
   : T extends unknown[]
-  ? (Validation<T[number]> | undefined)[] | E
+  ? (Validation<T[number], E> | undefined)[] | E
   : E;
 
 export type ValidationResult<T, E = ValidationIssue> =
   | Validation<T, E>
   | undefined;
 
-export function isSuccess<T>(validation: ValidationResult<T>): boolean {
+export function isSuccess<T>(
+  validation: ValidationResult<T>
+): validation is undefined {
   return validation === undefined;
 }
 export function isFailure<T>(
@@ -250,8 +255,8 @@ export function translate<T>(
     validation: ValidationIssue
   ) => string = defaultTranslateError
 ): ValidationResult<T, string> {
-  if (validation === undefined) {
-    return undefined;
+  if (isSuccess(validation)) {
+    return;
   }
   if (isValidationIssue(validation)) {
     return translateError(validation) as Validation<T, string>;

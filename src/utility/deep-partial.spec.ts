@@ -8,6 +8,7 @@ import { deepPartial } from "./deep-partial";
 import { string } from "../simple/string";
 import { tuple } from "../composite/tuple";
 import { date } from "../simple/date";
+import { map, record, set } from "../composite";
 
 const schema = object({
   id: number(),
@@ -15,6 +16,7 @@ const schema = object({
   description: optional(string()),
   nested: object({
     user: string(),
+    dateOfBirth: date(),
   }),
 });
 
@@ -28,8 +30,29 @@ it("accepts arrays", () => {
     deepPartial(array(array(number()))).accepts([[undefined], undefined])
   ).toBeTruthy();
 });
+
 it("accepts objects", () => {
   expect(deepPartial(schema).accepts({})).toBeTruthy();
+});
+it("accepts records", () => {
+  expect(deepPartial(record(record(string()))).accepts({})).toBeTruthy();
+});
+it("accepts sets", () => {
+  expect(
+    deepPartial(set(set(string()))).accepts(
+      new Set([undefined, new Set(["", undefined]), new Set()])
+    )
+  ).toBeTruthy();
+});
+it("accepts maps", () => {
+  expect(
+    deepPartial(map(string(), map(string(), string()))).accepts(
+      new Map([
+        ["a", new Map([["b", undefined]])],
+        ["c", undefined],
+      ])
+    )
+  ).toBeTruthy();
 });
 it("accepts tuples", () => {
   expect(
@@ -66,6 +89,32 @@ it("builds metadata of objects", () => {
     deepPartial(schema).meta().schema.nested.meta().schema.user.meta().required
   ).toEqual(false);
   expect(deepPartial(date()).meta().instance).toEqual("Date");
+});
+it("builds metadata of records", () => {
+  expect(
+    deepPartial(record(string())).meta().schema.value.meta().required
+  ).toEqual(false);
+});
+it("builds metadata of sets", () => {
+  expect(
+    deepPartial(set(set(string())))
+      .meta()
+      .schema.meta().required
+  ).toEqual(false);
+  expect(
+    deepPartial(set(set(string())))
+      .meta()
+      .schema.meta()
+      .schema.meta().required
+  ).toEqual(false);
+});
+it("builds metadata of maps", () => {
+  expect(
+    deepPartial(map(string(), map(string(), string())))
+      .meta()
+      .schema.value.meta()
+      .schema.value.meta().required
+  ).toEqual(false);
 });
 it("builds metadata of tuples", () => {
   expect(

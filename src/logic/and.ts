@@ -1,10 +1,4 @@
-import {
-  getOption,
-  InferTypes,
-  InferOutputTypes,
-  makeSchema,
-  Schema,
-} from "../schema";
+import { InferTypes, InferOutputTypes, makeSchema, Schema } from "../schema";
 import { Intersect } from "../utility";
 import { isFailure, mergeValidations, ValidationResult } from "../validation";
 
@@ -17,16 +11,36 @@ export function and<T extends readonly Schema<unknown>[]>(
 > {
   type ResultI = Intersect<InferTypes<T>>;
   type ResultO = Intersect<InferOutputTypes<T>>;
+
+  class Aggregator {
+    public result: ValidationResult<ResultI>;
+
+    onValidate(validation: ValidationResult<unknown>): boolean {
+      this.result = mergeValidations(this.result, validation);
+      return isFailure(validation);
+    }
+  }
+
   return makeSchema(
     (v, o) => {
-      let result: ValidationResult<unknown>;
+      const aggregator = new Aggregator();
       for (const schema of schemas) {
-        result = mergeValidations(result, schema.validate(v, o));
-        if (isFailure(result) && getOption(o, "earlyExit")) {
+        const validation = schema.validate(v, o);
+        if (aggregator.onValidate(validation)) {
           break;
         }
       }
-      return result as ValidationResult<ResultI>;
+      return aggregator.result;
+    },
+    async (v, o) => {
+      const aggregator = new Aggregator();
+      for (const schema of schemas) {
+        const validation = await schema.validateAsync(v, o);
+        if (aggregator.onValidate(validation)) {
+          break;
+        }
+      }
+      return aggregator.result;
     },
     () => ({ type: "and", schemas }),
     (v, o) => {

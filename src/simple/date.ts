@@ -1,5 +1,6 @@
 import { fromInstance } from "../composite/object";
-import { coerce, refine, refineWithMetainformation, Schema } from "../schema";
+import { refine, refineWithMetainformation } from "../refine";
+import { coerce, Schema } from "../schema";
 import { ValidationIssue } from "../validation";
 
 export function date(
@@ -10,8 +11,8 @@ export function date(
   }>
 ): Schema<Date, Date, { type: "object"; instance: string }> {
   return refine(fromInstance(Date, issues), (d) => {
-    if (Number.isNaN(d)) {
-      return new ValidationIssue("isNaN", issues?.isNan, d);
+    if (Number.isNaN(d.valueOf())) {
+      return new ValidationIssue("invalid_date", issues?.isNan, d);
     }
   });
 }

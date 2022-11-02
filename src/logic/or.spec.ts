@@ -5,6 +5,7 @@ import { optional } from "../utility/optional";
 import { or } from "./or";
 import { string } from "../simple/string";
 import { translate } from "../validation";
+import { refineAsync } from "../refine";
 
 const Named = object({
   id: number(),
@@ -64,6 +65,18 @@ it("validates", () => {
   });
 });
 
+it("validates async", async () => {
+  const schema = or(
+    string(),
+    refineAsync(number(), (v, { validIf }) =>
+      Promise.resolve(validIf(v > 0, "must be positive"))
+    )
+  );
+  expect(await schema.validateAsync("")).toBeUndefined();
+  expect(await schema.validateAsync(1)).toBeUndefined();
+  expect(translate(await schema.validateAsync(0))).toEqual("must be positive");
+});
+
 it("parses", () => {
   expect(
     schema.parse({
@@ -75,6 +88,30 @@ it("parses", () => {
     id: 12,
     name: ["some", "string"],
   });
+  expect(
+    translate(
+      schema.parse({
+        id: "12",
+        name: ["some", "string"],
+        nested: { user: "3" },
+      }).validation
+    )
+  ).toEqual({
+    id: "value was of type string expected number",
+  });
+});
+
+it("parses async", async () => {
+  const schema = or(
+    string(),
+    refineAsync(number(), (v, { validIf }) =>
+      Promise.resolve(validIf(v > 0, "must be positive"))
+    )
+  );
+  const { parsedValue } = await schema.parseAsync(12);
+  expect(parsedValue).toEqual(12);
+  const { validation } = await schema.parseAsync(0);
+  expect(translate(validation)).toEqual("must be positive");
 });
 
 it("builds metadata", () => {

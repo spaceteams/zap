@@ -4,56 +4,10 @@ import { nan, number } from "./simple/number";
 import { object } from "./composite/object";
 import { undefinedSchema } from "./utility/optional";
 import { or } from "./logic/or";
-import { coerce, narrow, options, refine, transform, validIf } from "./schema";
+import { coerce, json, narrow, options, transform } from "./schema";
 import { string } from "./simple/string";
-import { translate, ValidationIssue } from "./validation";
-
-describe("validIf", () => {
-  const schema = validIf(number(), (v) => v % 2 === 0, "even");
-
-  it("adds additional validation", () => {
-    expect(schema.validate(12)).toBeUndefined();
-    expect(translate(schema.validate(13))).toEqual("even");
-  });
-});
-
-describe("refine", () => {
-  const schema = refine(number(), (v) => {
-    if (v % 2 !== 0) {
-      return new ValidationIssue("generic", "even", v);
-    }
-  });
-  const builderSchema = refine(number(), (v, { add }) => {
-    if (v % 2 !== 0) {
-      add(new ValidationIssue("generic", "even", v));
-    }
-  });
-  const inlineSchema = refine(object({ a: string() }), (v, { validIf }) => ({
-    a: validIf(v.a.length === 0, "a must be empty"),
-  }));
-
-  it("adds additional validation", () => {
-    expect(schema.validate(12)).toBeUndefined();
-    expect(translate(schema.validate(13))).toEqual("even");
-  });
-  it("only applies after basic validation passes", () => {
-    expect(translate(schema.validate(Number.NaN))).toEqual("isNaN");
-  });
-
-  it("supports a builder-approach", () => {
-    expect(translate(builderSchema.validate(13))).toEqual("even");
-  });
-
-  it("supports inline-style", () => {
-    expect(translate(inlineSchema.validate({ a: "a" }))).toEqual({
-      a: "a must be empty",
-    });
-  });
-
-  it("simplifies result", () => {
-    expect(inlineSchema.validate({ a: "" })).toBeUndefined();
-  });
-});
+import { translate } from "./validation";
+import { refine } from "./refine";
 
 describe("coerce", () => {
   const schema = coerce(number(), Number);
@@ -171,5 +125,11 @@ describe("options", () => {
     ).toEqual({
       a: { b: { c: "string" }, d: { e: 1, add: "more" }, add: "inner" },
     });
+  });
+});
+
+describe("json", () => {
+  it("coerces from json", () => {
+    expect(json(number()).parse(JSON.stringify(12)).parsedValue).toEqual(12);
   });
 });

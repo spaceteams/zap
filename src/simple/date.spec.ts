@@ -13,6 +13,7 @@ it("accepts", () => {
 
 it("validates", () => {
   expect(date().validate(new Date())).toBeUndefined();
+  expect(translate(date().validate(new Date("xxx")))).toEqual("invalid_date");
   expect(translate(date().validate(undefined))).toEqual("value is required");
 });
 
@@ -45,6 +46,9 @@ describe("coercedDate", () => {
   });
   it("parses", () => {
     expect(schema.parse("2023-01-01").parsedValue).toEqual(
+      new Date("2023-01-01")
+    );
+    expect(schema.parse(new Date("2023-01-01")).parsedValue).toEqual(
       new Date("2023-01-01")
     );
   });

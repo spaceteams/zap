@@ -1,14 +1,20 @@
+import { RefineContext, refineWithMetainformation } from "../refine";
 import {
   getOption,
   InferOutputType,
   InferType,
   makeSchema,
-  RefineContext,
-  refineWithMetainformation,
+  makeSimpleSchema,
   Schema,
 } from "../schema";
 import { literals } from "../simple/literal";
-import { isFailure, ValidationIssue, Validation } from "../validation";
+import {
+  isFailure,
+  ValidationIssue,
+  Validation,
+  isSuccess,
+  ValidationResult,
+} from "../validation";
 
 type optionalKeys<T> = {
   [k in keyof T]-?: undefined extends T[k] ? k : never;
@@ -37,39 +43,77 @@ export function object<
 > {
   type ResultI = fixPartialKeys<{ [K in keyof T]: InferType<T[K]> }>;
   type ResultO = fixPartialKeys<{ [K in keyof T]: InferOutputType<T[K]> }>;
-  type V = Validation<ResultI>;
+  type V = ValidationResult<ResultI>;
+
+  const preValidate = (v: unknown) => {
+    if (typeof v === "undefined" || v === null) {
+      return new ValidationIssue("required", issues?.required, v) as V;
+    }
+    if (typeof v !== "object") {
+      return new ValidationIssue(
+        "wrong_type",
+        issues?.wrongType,
+        v,
+        "object"
+      ) as V;
+    }
+  };
+
+  class Aggregator {
+    constructor(readonly earlyExit: boolean) {}
+
+    public readonly validations: { [key: string]: unknown } = {};
+
+    onValidate(key: string, validation: ValidationResult<unknown>): boolean {
+      if (isSuccess(validation)) {
+        return false;
+      }
+      this.validations[key] = validation;
+      return this.earlyExit && isFailure(validation);
+    }
+    result(): V {
+      if (Object.keys(this.validations).length === 0) {
+        return undefined;
+      }
+      return this.validations as V;
+    }
+  }
+
   return makeSchema(
     (v, o) => {
-      if (typeof v === "undefined" || v === null) {
-        return new ValidationIssue("required", issues?.required, v) as V;
-      }
-      if (typeof v !== "object") {
-        return new ValidationIssue(
-          "wrong_type",
-          issues?.wrongType,
-          v,
-          "object"
-        ) as V;
+      const validation = preValidate(v);
+      if (isFailure(validation)) {
+        return validation;
       }
 
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       const record = v as { [k: string]: unknown };
-      const validation: { [key: string]: unknown } = {};
       for (const [key, inner] of Object.entries(schema)) {
-        const innerValidation = (inner as Schema<unknown>).validate(
+        const validation = (inner as Schema<unknown>).validate(record[key], o);
+        if (aggregator.onValidate(key, validation)) {
+          break;
+        }
+      }
+      return aggregator.result();
+    },
+    async (v, o) => {
+      const validation = preValidate(v);
+      if (isFailure(validation)) {
+        return validation;
+      }
+
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
+      const record = v as { [k: string]: unknown };
+      for (const [key, inner] of Object.entries(schema)) {
+        const validation = await (inner as Schema<unknown>).validateAsync(
           record[key],
           o
         );
-        if (isFailure(innerValidation)) {
-          validation[key] = innerValidation;
-          if (getOption(o, "earlyExit")) {
-            return validation as V;
-          }
+        if (aggregator.onValidate(key, validation)) {
+          break;
         }
       }
-      if (Object.keys(validation).length === 0) {
-        return;
-      }
-      return validation as V;
+      return aggregator.result();
     },
     () => ({ type: "object", schema, additionalProperties: true }),
     (v, o) => {
@@ -161,7 +205,7 @@ export function fromInstance<T>(
     wrongType: string;
   }>
 ): Schema<T, T, { type: "object"; instance: string }> {
-  return makeSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue(
@@ -233,23 +277,31 @@ export function omit<
     }
   }
 
+  const filterValidation = (validation: Validation<I>) => {
+    const filteredValidation: { [key: string]: unknown } = {};
+    for (const [key, value] of Object.entries(validation)) {
+      if (!keys.includes(key as K)) {
+        filteredValidation[key] = value;
+      }
+    }
+    if (Object.keys(filteredValidation as object).length === 0) {
+      return;
+    }
+    return validation;
+  };
+
   return makeSchema(
     (v, o) => {
       const validation = schema.validate(v, o);
-      if (validation === undefined) {
-        return validation;
+      if (isFailure(validation)) {
+        return filterValidation(validation);
       }
-
-      const filteredValidation: { [key: string]: unknown } = {};
-      for (const [key, value] of Object.entries(validation)) {
-        if (!keys.includes(key as K)) {
-          filteredValidation[key] = value;
-        }
+    },
+    async (v, o) => {
+      const validation = await schema.validateAsync(v, o);
+      if (isFailure(validation)) {
+        return filterValidation(validation);
       }
-      if (Object.keys(filteredValidation as object).length === 0) {
-        return;
-      }
-      return validation;
     },
     () => ({
       type: "object",
@@ -280,23 +332,31 @@ export function pick<
     }
   }
 
+  const filterValidation = (validation: Validation<I>) => {
+    const filteredValidation: { [key: string]: unknown } = {};
+    for (const [key, value] of Object.entries(validation)) {
+      if (keys.includes(key as K)) {
+        filteredValidation[key] = value;
+      }
+    }
+    if (Object.keys(filteredValidation as object).length === 0) {
+      return;
+    }
+    return validation;
+  };
+
   return makeSchema(
     (v, o) => {
       const validation = schema.validate(v, o);
-      if (validation === undefined) {
-        return validation;
+      if (isFailure(validation)) {
+        return filterValidation(validation);
       }
-
-      const filteredValidation: { [key: string]: unknown } = {};
-      for (const [key, value] of Object.entries(validation)) {
-        if (keys.includes(key as K)) {
-          filteredValidation[key] = value;
-        }
+    },
+    async (v, o) => {
+      const validation = await schema.validateAsync(v, o);
+      if (isFailure(validation)) {
+        return filterValidation(validation);
       }
-      if (Object.keys(filteredValidation as object).length === 0) {
-        return;
-      }
-      return validation;
     },
     () => ({
       type: "object",

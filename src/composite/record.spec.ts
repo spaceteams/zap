@@ -4,7 +4,8 @@ import { number } from "../simple/number";
 import { defaultValue, optional } from "../utility/optional";
 import { keyedRecord, record } from "./record";
 import { translate } from "../validation";
-import { minLength, string } from "../simple";
+import { minLength, pattern, string } from "../simple";
+import { refineAsync } from "../refine";
 
 const schema = record(number());
 const keyedSchema = keyedRecord(minLength(string(), 3), number());
@@ -36,6 +37,7 @@ it("validates", () => {
 });
 
 it("validates with early exit", () => {
+  const schema = keyedRecord(pattern(string(), /^\d+$/), string());
   expect(
     translate(
       schema.validate(
@@ -44,8 +46,55 @@ it("validates with early exit", () => {
       )
     )
   ).toEqual({
-    id: "value was of type string expected number",
+    id: "invalid_key: pattern(/^\\d+$/)",
   });
+});
+
+it("validates async", async () => {
+  const schema = keyedRecord(
+    refineAsync(pattern(string(), /^\d+$/), (v, { validIf }) =>
+      Promise.resolve(validIf(v.length > 0, "must not be empty"))
+    ),
+    refineAsync(string(), (v, { validIf }) =>
+      Promise.resolve(validIf(v.length > 0, "must not be empty"))
+    )
+  );
+  expect(
+    translate(await schema.validateAsync({ 1: "some value" }))
+  ).toBeUndefined();
+
+  expect(
+    translate(
+      await schema.validateAsync({ "not a number": "some value", 2: 2 })
+    )
+  ).toEqual({
+    "2": "value was of type number expected string",
+    "not a number": "invalid_key: pattern(/^\\d+$/)",
+  });
+
+  expect(
+    translate(
+      await schema.validateAsync(
+        { "not a number": "some value", 2: 2 },
+        { earlyExit: true }
+      )
+    )
+  ).toEqual({
+    "2": "value was of type number expected string",
+  });
+  expect(
+    translate(
+      await schema.validateAsync(
+        { "not a number": "some value" },
+        { earlyExit: true }
+      )
+    )
+  ).toEqual({
+    "not a number": "invalid_key: pattern(/^\\d+$/)",
+  });
+  expect(translate(await schema.validateAsync(2))).toEqual(
+    "value was of type number expected object"
+  );
 });
 
 it("parses", () => {

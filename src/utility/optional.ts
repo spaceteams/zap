@@ -1,4 +1,4 @@
-import { makeSchema, narrow, Schema } from "../schema";
+import { makeSchema, makeSimpleSchema, narrow, Schema } from "../schema";
 import { ValidationIssue, ValidationResult } from "../validation";
 
 export function optional<I, O, M>(
@@ -10,8 +10,16 @@ export function optional<I, O, M>(
         return schema.validate(v, o);
       }
     },
+    async (v, o) => {
+      if (typeof v !== "undefined") {
+        return schema.validateAsync(v, o);
+      }
+    },
     () => ({ ...schema.meta(), required: false }),
-    (v, o) => schema.parse(v, o).parsedValue
+    (v, o) =>
+      typeof v !== "undefined"
+        ? schema.parse(v, o).parsedValue
+        : (v as undefined)
   );
 }
 export function nullable<I, O, M>(
@@ -21,6 +29,11 @@ export function nullable<I, O, M>(
     (v, o) => {
       if (v !== null) {
         return schema.validate(v, o);
+      }
+    },
+    async (v, o) => {
+      if (v !== null) {
+        return schema.validateAsync(v, o);
       }
     },
     () => ({ ...schema.meta() }),
@@ -40,6 +53,11 @@ export function nullish<I, O, M>(
         return schema.validate(v, o);
       }
     },
+    async (v, o) => {
+      if (typeof v !== "undefined" && v !== null) {
+        return schema.validateAsync(v, o);
+      }
+    },
     () => ({ ...schema.meta(), required: false }),
     (v, o) =>
       typeof v !== "undefined" && v !== null
@@ -51,14 +69,24 @@ export function nullish<I, O, M>(
 export function required<I, O, M>(
   schema: Schema<I, O, M>,
   issue?: string
-): Schema<NonNullable<I>, NonNullable<O>, M & { required: true }> {
+): Schema<
+  NonNullable<I>,
+  NonNullable<O>,
+  Omit<M, "required"> & { required: true }
+> {
   type V = ValidationResult<NonNullable<I>>;
   return makeSchema(
     (v, o) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issue, v) as V;
       }
-      return schema.validate(v, o) as V;
+      return schema.validate(v, o);
+    },
+    async (v, o) => {
+      if (typeof v === "undefined" || v === null) {
+        return new ValidationIssue("required", issue, v) as V;
+      }
+      return schema.validateAsync(v, o);
     },
     () => ({ ...schema.meta(), required: true }),
     (v, o) => schema.parse(v, o).parsedValue as NonNullable<O>
@@ -81,7 +109,7 @@ export function nullToUndefined<I, O, M>(
 export function undefinedSchema(
   issue?: string
 ): Schema<undefined, undefined, { type: "undefined" }> {
-  return makeSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v !== "undefined") {
         return new ValidationIssue("wrong_type", issue, v, "undefined");
@@ -93,9 +121,9 @@ export function undefinedSchema(
 export function nullSchema(
   issue?: string
 ): Schema<null, null, { type: "null" }> {
-  return makeSchema(
+  return makeSimpleSchema(
     (v) => {
-      if (typeof v !== null) {
+      if (v !== null) {
         return new ValidationIssue("wrong_type", issue, v, "null");
       }
     },

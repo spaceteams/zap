@@ -1,9 +1,5 @@
-import {
-  coerce,
-  makeSchema,
-  refineWithMetainformation,
-  Schema,
-} from "../schema";
+import { refineWithMetainformation } from "../refine";
+import { coerce, makeSimpleSchema, Schema } from "../schema";
 import { ValidationIssue } from "../validation";
 
 export function number(
@@ -13,7 +9,7 @@ export function number(
     isNan: string;
   }>
 ): Schema<number, number, { type: "number" }> {
-  return makeSchema(
+  return makeSimpleSchema(
     (v) => {
       if (typeof v === "undefined" || v === null) {
         return new ValidationIssue("required", issues?.required, v);
@@ -45,7 +41,7 @@ export function coercedNumber(
 }
 
 export function nan(issue?: string): Schema<number, number, { type: "nan" }> {
-  return makeSchema(
+  return makeSimpleSchema(
     (v) => {
       if (!Number.isNaN(v)) {
         return new ValidationIssue("wrong_type", issue, v, "nan");
@@ -72,7 +68,7 @@ export function nonPositive<O, M>(
   return refineWithMetainformation(
     schema,
     (v) => {
-      if (v <= 0) {
+      if (v > 0) {
         return new ValidationIssue("nonPositive", issue, v);
       }
     },

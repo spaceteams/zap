@@ -1,10 +1,5 @@
-import {
-  getOption,
-  makeSchema,
-  refine,
-  refineWithMetainformation,
-  Schema,
-} from "../schema";
+import { refine, refineWithMetainformation } from "../refine";
+import { getOption, makeSchema, Schema } from "../schema";
 import {
   isFailure,
   isSuccess,
@@ -19,28 +14,62 @@ export function array<I, O, M>(
     wrongType: string;
   }>
 ): Schema<I[], O[], { type: "array"; schema: Schema<I, O, M> }> {
+  const preValidate = (v: unknown) => {
+    if (typeof v === "undefined" || v === null) {
+      return new ValidationIssue("required", issues?.required, v);
+    }
+    if (!Array.isArray(v)) {
+      return new ValidationIssue("wrong_type", issues?.wrongType, v, "array");
+    }
+  };
+
+  class Aggregator {
+    constructor(readonly earlyExit: boolean) {}
+
+    public readonly validations: ValidationResult<I>[] = [];
+
+    onValidate(validation: ValidationResult<I>): boolean {
+      this.validations.push(validation);
+      return this.earlyExit && isFailure(validation);
+    }
+    result(): ValidationResult<I[]> {
+      if (this.validations.every((v) => isSuccess(v))) {
+        return undefined;
+      }
+      return this.validations;
+    }
+  }
+
   return makeSchema(
     (v, o) => {
-      if (typeof v === "undefined" || v === null) {
-        return new ValidationIssue("required", issues?.required, v);
-      }
-      if (!Array.isArray(v)) {
-        return new ValidationIssue("wrong_type", issues?.wrongType, v, "array");
+      const validation = preValidate(v);
+      if (isFailure(validation)) {
+        return validation;
       }
 
-      const validations: ValidationResult<I[]> = [];
-      for (const value of v) {
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
+      for (const value of v as unknown[]) {
         const validation = schema.validate(value, o);
-        validations.push(validation);
-
-        if (getOption(o, "earlyExit") && isFailure(validation)) {
-          return validations;
+        if (aggregator.onValidate(validation)) {
+          break;
         }
       }
-      if (validations.every((v) => isSuccess(v))) {
-        return;
+      return aggregator.result();
+    },
+    async (v, o) => {
+      const validation = preValidate(v);
+      if (isFailure(validation)) {
+        return validation;
       }
-      return validations;
+
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
+      for (const value of v as unknown[]) {
+        const validation = await schema.validateAsync(value, o);
+        if (aggregator.onValidate(validation)) {
+          break;
+        }
+      }
+      return aggregator.result();
     },
     () => ({ type: "array", schema }),
     (v, o) => v.map((item) => schema.parse(item, o).parsedValue) as O[]
@@ -84,7 +113,7 @@ export function items<I, O, M>(
   return refineWithMetainformation(
     schema,
     (v) => {
-      if (v.length === items) {
+      if (v.length !== items) {
         return new ValidationIssue("items", issue, v, items);
       }
     },
@@ -116,7 +145,7 @@ export function uniqueItems<I, O, M>(
 export function includes<I, O, M>(
   schema: Schema<I[], O, M>,
   element: I,
-  fromIndex: number,
+  fromIndex?: number,
   issue?: string
 ) {
   return refine(schema, (v) => {

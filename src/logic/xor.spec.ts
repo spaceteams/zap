@@ -5,6 +5,7 @@ import { defaultValue, optional } from "../utility/optional";
 import { xor } from "./xor";
 import { string } from "../simple/string";
 import { translate } from "../validation";
+import { refineAsync } from "../refine";
 
 const Named = object({
   id: number(),
@@ -66,6 +67,21 @@ it("validates", () => {
   });
 });
 
+it("validates async", async () => {
+  const schema = xor(
+    refineAsync(number(), (v, { validIf }) =>
+      Promise.resolve(validIf(v < 4, "must be smaller than 4"))
+    ),
+    refineAsync(number(), (v, { validIf }) =>
+      Promise.resolve(validIf(v > 0, "must be positive"))
+    )
+  );
+  expect(await schema.validateAsync(0)).toBeUndefined();
+  expect(await schema.validateAsync(4)).toBeUndefined();
+  expect(translate(await schema.validateAsync(1))).toEqual("xor");
+  expect(translate(await schema.validateAsync(Number.NaN))).toEqual("isNaN");
+});
+
 it("parses", () => {
   expect(
     schema.parse({
@@ -75,6 +91,35 @@ it("parses", () => {
     description: "default",
     nested: { user: "name" },
   });
+  expect(
+    translate(
+      schema.parse({
+        id: 12,
+        name: ["some", "string"],
+        nested: { user: "3" },
+      }).validation
+    )
+  ).toEqual("xor");
+  expect(translate(schema.parse({}).validation)).toEqual({
+    nested: "value is required",
+  });
+});
+
+it("parses async", async () => {
+  const schema = xor(
+    refineAsync(number(), (v, { validIf }) =>
+      Promise.resolve(validIf(v < 4, "must be smaller than 4"))
+    ),
+    refineAsync(number(), (v, { validIf }) =>
+      Promise.resolve(validIf(v > 0, "must be positive"))
+    )
+  );
+  const { parsedValue } = await schema.parseAsync(0);
+  expect(parsedValue).toEqual(0);
+  const { validation } = await schema.parseAsync(1);
+  expect(translate(validation)).toEqual("xor");
+  const { validation: validation2 } = await schema.parseAsync(Number.NaN);
+  expect(translate(validation2)).toEqual("isNaN");
 });
 
 it("builds metadata", () => {

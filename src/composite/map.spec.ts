@@ -4,6 +4,7 @@ import { number } from "../simple/number";
 import { map } from "./map";
 import { translate } from "../validation";
 import { string } from "../simple";
+import { refineAsync } from "../refine";
 
 const schema = map(number(), string());
 
@@ -53,6 +54,21 @@ it("validates with early exit", () => {
   expect(
     translate(
       schema.validate(
+        new Map([
+          [1, 1],
+          [2, 2],
+        ]),
+        { earlyExit: true }
+      )
+    )
+  ).toEqual(
+    new Map<number | string, string>([
+      [1, "value was of type number expected string"],
+    ])
+  );
+  expect(
+    translate(
+      schema.validate(
         new Map<unknown, unknown>([
           ["1", "1"],
           [2, 2],
@@ -64,6 +80,60 @@ it("validates with early exit", () => {
     new Map<number | string, string>([
       ["1", "invalid_key: value was of type string expected number"],
     ])
+  );
+});
+
+it("validates async", async () => {
+  const schema = map(
+    refineAsync(number(), (v, { validIf }) =>
+      Promise.resolve(validIf(v > 0, "must be positive"))
+    ),
+    refineAsync(string(), (v, { validIf }) =>
+      Promise.resolve(validIf(v.length > 0, "must not be empty"))
+    )
+  );
+  expect(await schema.validateAsync(new Map([[1, "1"]]))).toBeUndefined();
+  expect(
+    translate(
+      await schema.validateAsync(
+        new Map<unknown, unknown>([
+          [1, 1],
+          ["2", "2"],
+        ])
+      )
+    )
+  ).toEqual(
+    new Map<unknown, unknown>([
+      [1, "value was of type number expected string"],
+      ["2", "invalid_key: value was of type string expected number"],
+    ])
+  );
+  expect(
+    translate(
+      await schema.validateAsync(
+        new Map([
+          [1, 1],
+          [2, 2],
+        ]),
+        { earlyExit: true }
+      )
+    )
+  ).toEqual(new Map([[1, "value was of type number expected string"]]));
+  expect(
+    translate(
+      await schema.validateAsync(
+        new Map([
+          ["1", "1"],
+          ["2", "2"],
+        ]),
+        { earlyExit: true }
+      )
+    )
+  ).toEqual(
+    new Map([["1", "invalid_key: value was of type string expected number"]])
+  );
+  expect(translate(await schema.validateAsync({}))).toEqual(
+    "value was of type object expected map"
   );
 });
 

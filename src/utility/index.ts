@@ -4,5 +4,7 @@ export * from "./lazy";
 export * from "./optional";
 export * from "./optics";
 export * from "./partial";
+export * from "./procedure";
+export * from "./promise";
 export * from "./to-json-schema";
 export * from "./unionize";
