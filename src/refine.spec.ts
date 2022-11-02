@@ -1,5 +1,5 @@
 import { object } from "./composite";
-import { refine, refineAsync, validIf } from "./refine";
+import { refine, refineAsync, validIf, validIfAsync } from "./refine";
 import { number, string } from "./simple";
 import { translate, ValidationIssue } from "./validation";
 
@@ -24,6 +24,19 @@ describe("validIf", () => {
       "must be positive"
     );
     expect(translate(await asyncSchema.validateAsync(13))).toEqual("even");
+  });
+});
+
+describe("validIfAsync", () => {
+  const schema = validIfAsync(
+    number(),
+    (v) => Promise.resolve(v % 2 === 0),
+    "even"
+  );
+
+  it("adds additional validation", async () => {
+    expect(await schema.validateAsync(12)).toBeUndefined();
+    expect(translate(await schema.validateAsync(13))).toEqual("even");
   });
 });
 

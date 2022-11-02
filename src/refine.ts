@@ -117,6 +117,28 @@ export function validIf<I, O, M>(
 }
 
 /**
+ * This function is the asynchronous counterpart to validIf
+ *
+ * @param schema the base schema
+ * @param valid the additional validation function
+ * @param message the message of the generic issue
+ * @param args arguments of the issue
+ * @returns the modified schema
+ */
+export function validIfAsync<I, O, M>(
+  schema: Schema<I, O, M>,
+  valid: (v: I) => Promise<boolean>,
+  message: string,
+  ...args: unknown[]
+) {
+  return refineAsync(
+    schema,
+    async (v, { validIf }) =>
+      validIf(await valid(v), message, ...args) as ValidationResult<I>
+  );
+}
+
+/**
  * Like refine but also extends the meta information.
  *
  * @param schema the base schema

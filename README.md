@@ -303,28 +303,22 @@ which will result in a type `{id: string}` and not `{id?: string | undefined}`.
 
 > Most of zap's built-in validation functions are implemented using `refineWithMetainformation`. They add meta-information that can be picked up and interpreted by utility functions like `toJsonSchema`
 
-There are also `refineAsync` and `refineAsyncWithMetaInformation`. Consider validation of a user registration
+There are also `validIfAsync`, `refineAsync` and `refineAsyncWithMetaInformation`. Consider validation of a user registration
 
 ```typescript
 // call the backend
 const userAvailable = (_username: string) => Promise.resolve(true);
 
-const userRegistration = refineAsync(
-  object({
-    username: string(),
-  }),
-  async ({ username }, { validIf }) => {
-    return {
-      username: validIf(
-        await userAvailable(username),
-        "this username is already taken"
-      ),
-    };
-  }
-);
+export const userRegistration = object({
+  username: validIfAsync(
+    string(),
+    userAvailable,
+    "this username is already taken"
+  ),
+});
 ```
 
-For this schema you have to use `validateAsync` and `refineAsync`, the synchronous versions will result in validation errors.
+This will call the function `userAvailable` if `userName` is a string and await the result. You should of course consider to debounce, deduplicate and cache your requests to the backend depending on your usecase. To use this schema you have to call `validateAsync` and `refineAsync`, the synchronous versions will result in validation errors.
 
 ### Coerce
 
