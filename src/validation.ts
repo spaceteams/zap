@@ -46,7 +46,6 @@ export type ValidationIssueCode =
   | "after"
   // literal/s
   | "literal"
-  // async
   // logic
   | "xor"
   | "not";
@@ -71,13 +70,13 @@ export function isValidationIssue(v: unknown): v is ValidationIssue {
 }
 
 export type Validation<T, E = ValidationIssue> = T extends Set<infer U>
-  ? Set<Validation<U>> | E
+  ? Set<Validation<U, E>> | E
   : T extends Map<infer K, infer U>
-  ? Map<K, Validation<U>> | E
+  ? Map<K, Validation<U, E>> | E
   : T extends Record<string, unknown>
-  ? { [P in keyof T]?: Validation<T[P]> } | E
+  ? { [P in keyof T]?: Validation<T[P], E> } | E
   : T extends unknown[]
-  ? (Validation<T[number]> | undefined)[] | E
+  ? (Validation<T[number], E> | undefined)[] | E
   : E;
 
 export type ValidationResult<T, E = ValidationIssue> =

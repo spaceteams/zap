@@ -1,9 +1,5 @@
-import {
-  coerce,
-  makeSimpleSchema,
-  refineWithMetainformation,
-  Schema,
-} from "../schema";
+import { refineWithMetainformation } from "../refine";
+import { coerce, makeSimpleSchema, Schema } from "../schema";
 import { ValidationIssue } from "../validation";
 
 export function number(

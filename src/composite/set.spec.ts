@@ -1,6 +1,6 @@
 /* eslint-disable unicorn/no-null */
 
-import { refineAsync } from "../schema";
+import { refineAsync } from "../refine";
 import { number } from "../simple/number";
 import { translate } from "../validation";
 import { set } from "./set";

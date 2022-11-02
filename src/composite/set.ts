@@ -1,4 +1,4 @@
-import { getOption, makeSchema, Schema, ValidationOptions } from "../schema";
+import { getOption, makeSchema, Schema } from "../schema";
 import {
   isFailure,
   isSuccess,
@@ -15,7 +15,7 @@ export function set<I, O, M>(
   }>
 ): Schema<Set<I>, Set<O>, { type: "set"; schema: Schema<I, O, M> }> {
   class Aggregator {
-    constructor(readonly options: Partial<ValidationOptions> | undefined) {}
+    constructor(readonly earlyExit: boolean) {}
 
     public readonly validations: Set<Validation<I>> = new Set();
 
@@ -24,7 +24,7 @@ export function set<I, O, M>(
         return false;
       }
       this.validations.add(validation);
-      return getOption(this.options, "earlyExit");
+      return this.earlyExit;
     }
     result(): ValidationResult<Set<I>> {
       if (this.validations.size === 0) {
@@ -50,7 +50,7 @@ export function set<I, O, M>(
         return validation;
       }
 
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       for (const value of v as Set<unknown>) {
         const validation = schema.validate(value, o);
         if (aggregator.onValidate(validation)) {
@@ -65,7 +65,7 @@ export function set<I, O, M>(
         return validation;
       }
 
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       for (const value of v as Set<unknown>) {
         const validation = await schema.validateAsync(value, o);
         if (aggregator.onValidate(validation)) {

@@ -1,4 +1,4 @@
-import { getOption, makeSchema, Schema, ValidationOptions } from "../schema";
+import { getOption, makeSchema, Schema } from "../schema";
 import { string } from "../simple";
 import {
   isFailure,
@@ -50,7 +50,7 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
   };
 
   class Aggregator {
-    constructor(readonly options: Partial<ValidationOptions> | undefined) {}
+    constructor(readonly earlyExit: boolean) {}
 
     public readonly validations: { [key: string]: unknown } = {};
 
@@ -68,7 +68,7 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
         value,
         validation
       ) as Validation<I>;
-      return getOption(this.options, "earlyExit");
+      return this.earlyExit;
     }
 
     onValidation(k: string, validation: ValidationResult<I>) {
@@ -76,7 +76,7 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
         return false;
       }
       this.validations[k] = validation;
-      return getOption(this.options, "earlyExit");
+      return this.earlyExit;
     }
 
     result(): V {
@@ -94,7 +94,7 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
         return validation;
       }
 
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       for (const [k, value] of Object.entries(v as Record<string, unknown>)) {
         const keyValidation = key.validate(k, o);
         if (aggregator.onKeyValidation(k, value, keyValidation)) {
@@ -114,7 +114,7 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
         return validation;
       }
 
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       for (const [k, value] of Object.entries(v as Record<string, unknown>)) {
         const keyValidation = await key.validateAsync(k, o);
         if (aggregator.onKeyValidation(k, value, keyValidation)) {

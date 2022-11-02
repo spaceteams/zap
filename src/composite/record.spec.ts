@@ -5,7 +5,7 @@ import { defaultValue, optional } from "../utility/optional";
 import { keyedRecord, record } from "./record";
 import { translate } from "../validation";
 import { minLength, pattern, string } from "../simple";
-import { refineAsync } from "../schema";
+import { refineAsync } from "../refine";
 
 const schema = record(number());
 const keyedSchema = keyedRecord(minLength(string(), 3), number());

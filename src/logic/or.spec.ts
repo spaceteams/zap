@@ -5,7 +5,7 @@ import { optional } from "../utility/optional";
 import { or } from "./or";
 import { string } from "../simple/string";
 import { translate } from "../validation";
-import { refineAsync } from "../schema";
+import { refineAsync } from "../refine";
 
 const Named = object({
   id: number(),

@@ -1,9 +1,5 @@
-import {
-  makeSchema,
-  makeSimpleSchema,
-  refineWithMetainformation,
-  Schema,
-} from "../schema";
+import { refineWithMetainformation } from "../refine";
+import { makeSchema, makeSimpleSchema, Schema } from "../schema";
 import { isFailure, ValidationIssue } from "../validation";
 
 export type Procedure<Args extends unknown[], Result> = (

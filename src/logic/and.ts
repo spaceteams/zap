@@ -1,10 +1,4 @@
-import {
-  InferTypes,
-  InferOutputTypes,
-  makeSchema,
-  Schema,
-  ValidationOptions,
-} from "../schema";
+import { InferTypes, InferOutputTypes, makeSchema, Schema } from "../schema";
 import { Intersect } from "../utility";
 import { isFailure, mergeValidations, ValidationResult } from "../validation";
 
@@ -19,9 +13,7 @@ export function and<T extends readonly Schema<unknown>[]>(
   type ResultO = Intersect<InferOutputTypes<T>>;
 
   class Aggregator {
-    constructor(readonly options: Partial<ValidationOptions> | undefined) {}
-
-    public result: ValidationResult<ResultI> = undefined;
+    public result: ValidationResult<ResultI>;
 
     onValidate(validation: ValidationResult<unknown>): boolean {
       this.result = mergeValidations(this.result, validation);
@@ -31,7 +23,7 @@ export function and<T extends readonly Schema<unknown>[]>(
 
   return makeSchema(
     (v, o) => {
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator();
       for (const schema of schemas) {
         const validation = schema.validate(v, o);
         if (aggregator.onValidate(validation)) {
@@ -41,7 +33,7 @@ export function and<T extends readonly Schema<unknown>[]>(
       return aggregator.result;
     },
     async (v, o) => {
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator();
       for (const schema of schemas) {
         const validation = await schema.validateAsync(v, o);
         if (aggregator.onValidate(validation)) {

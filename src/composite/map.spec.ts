@@ -4,7 +4,7 @@ import { number } from "../simple/number";
 import { map } from "./map";
 import { translate } from "../validation";
 import { string } from "../simple";
-import { refineAsync } from "../schema";
+import { refineAsync } from "../refine";
 
 const schema = map(number(), string());
 

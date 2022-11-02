@@ -6,7 +6,7 @@ import { number } from "../simple/number";
 import { defaultValue, optional } from "../utility/optional";
 import { tuple } from "./tuple";
 import { translate } from "../validation";
-import { refineAsync } from "../schema";
+import { refineAsync } from "../refine";
 
 const schema = tuple(number(), literal("a"));
 schema.meta().schemas[1].meta();

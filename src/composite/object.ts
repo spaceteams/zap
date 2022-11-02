@@ -1,13 +1,11 @@
+import { RefineContext, refineWithMetainformation } from "../refine";
 import {
   getOption,
   InferOutputType,
   InferType,
   makeSchema,
   makeSimpleSchema,
-  RefineContext,
-  refineWithMetainformation,
   Schema,
-  ValidationOptions,
 } from "../schema";
 import { literals } from "../simple/literal";
 import {
@@ -62,7 +60,7 @@ export function object<
   };
 
   class Aggregator {
-    constructor(readonly options: Partial<ValidationOptions> | undefined) {}
+    constructor(readonly earlyExit: boolean) {}
 
     public readonly validations: { [key: string]: unknown } = {};
 
@@ -71,7 +69,7 @@ export function object<
         return false;
       }
       this.validations[key] = validation;
-      return getOption(this.options, "earlyExit") && isFailure(validation);
+      return this.earlyExit && isFailure(validation);
     }
     result(): V {
       if (Object.keys(this.validations).length === 0) {
@@ -88,7 +86,7 @@ export function object<
         return validation;
       }
 
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       const record = v as { [k: string]: unknown };
       for (const [key, inner] of Object.entries(schema)) {
         const validation = (inner as Schema<unknown>).validate(record[key], o);
@@ -104,7 +102,7 @@ export function object<
         return validation;
       }
 
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       const record = v as { [k: string]: unknown };
       for (const [key, inner] of Object.entries(schema)) {
         const validation = await (inner as Schema<unknown>).validateAsync(

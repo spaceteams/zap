@@ -6,7 +6,7 @@ import { defaultValue, optional } from "../utility/optional";
 import { string } from "../simple/string";
 import { translate } from "../validation";
 import { procedure } from "../utility";
-import { refineAsync } from "../schema";
+import { refineAsync } from "../refine";
 
 const Named = object({
   id: number(),

@@ -4,7 +4,6 @@ import {
   makeSchema,
   Schema,
   InferOutputTypes,
-  ValidationOptions,
 } from "../schema";
 import {
   isFailure,
@@ -54,13 +53,13 @@ export function tupleWithIssues<T extends readonly Schema<unknown>[]>(
   };
 
   class Aggregator {
-    constructor(readonly options: Partial<ValidationOptions> | undefined) {}
+    constructor(readonly earlyExit: boolean) {}
 
     public readonly validations: ValidationResult<unknown>[] = [];
 
     onValidate(validation: ValidationResult<unknown>): boolean {
       this.validations.push(validation);
-      return getOption(this.options, "earlyExit") && isFailure(validation);
+      return this.earlyExit && isFailure(validation);
     }
     result(): V {
       if (this.validations.every((v) => isSuccess(v))) {
@@ -77,7 +76,7 @@ export function tupleWithIssues<T extends readonly Schema<unknown>[]>(
         return validation;
       }
 
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       let i = 0;
       for (const value of v as unknown[]) {
         const validation = schemas[i].validate(value, o);
@@ -95,7 +94,7 @@ export function tupleWithIssues<T extends readonly Schema<unknown>[]>(
         return validation;
       }
 
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       let i = 0;
       for (const value of v as unknown[]) {
         const validation = await schemas[i].validateAsync(value, o);

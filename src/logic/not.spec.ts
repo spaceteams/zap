@@ -6,7 +6,7 @@ import { not } from "./not";
 import { integer, number } from "../simple/number";
 import { object } from "../composite/object";
 import { translate } from "../validation";
-import { refineAsync } from "../schema";
+import { refineAsync } from "../refine";
 import { get, into } from "../utility";
 
 const schema = and(

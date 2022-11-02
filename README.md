@@ -170,7 +170,15 @@ export interface Schema<I, O = I, M = { type: string }> {
     v: unknown,
     options?: Partial<ValidationOptions>
   ) => ValidationResult<I>;
+  validateAsync: (
+    v: unknown,
+    options?: Partial<ValidationOptions>
+  ) => Promise<ValidationResult<I>>;
   parse: (v: unknown, options?: Partial<Options>) => ParseResult<I, O>;
+  parseAsync: (
+    v: unknown,
+    options?: Partial<Options>
+  ) => Promise<ParseResult<I, O>>;
   meta: () => M;
 }
 ```
@@ -178,6 +186,8 @@ export interface Schema<I, O = I, M = { type: string }> {
 which is quite a handful.
 
 Let us start with `accepts` and `validate`. Both get a value of unknown type and run validations on it. While `validate` builds a complete `ValidationResult` containing all found validation errors, `accepts` only returns a typeguard and is slightly more efficient thatn `validate`. The type of this validation is the first generic type `I`. If you don't care for the other two generic types you can write such a schema as `Schema<I>`. Both functions also accept a set of options. Tey currently include `earlyExit` (default false) which will stop validation on the first issue and `withCoercion` (default false) which will also coerce values on Validation (see [coerce](#coerce))
+
+There is an async version of both validate and parse available. These are needed if you use [async refinements](#refine).
 
 Validation is great if you want to check if a value conforms to a schema, but sometimes you want to `coerce`, `tranform` a value or strip an object of additional fields. For these cases you want to call `parse()`. This function returns a Result of type
 
@@ -218,40 +228,103 @@ export type ValidationResult<T, E = ValidationIssue> =
   | undefined;
 ```
 
+So it is dependent on `T` and an error type `E`. By default the error type is a `ValidationIssue`. This class extends `Error` so it can be thrown nicely and it contains a `ValidationIssueCode`, a custom error `message`, the validated `value` and a list of `args` to give further information about the validation. Using the `translate` method you can transform a `ValidationResult<T, ValidationIssue>` into a `ValidationResult<T, string>` containing user readable validation errors. The default translator is a bit technical though, so it is up to you to translate `ValidationIssues` for your users.
+
+The `ValidationResult` can now either by `undefined` indicating a success or a `Validation<T, E>` indicating a failure. You can check this with `isSuccess` and `isFailure` functions. The `ValidationResult` has a pretty complicated typedefinition but it tries to resamble a deeply partial `T` with ValidationIssues instead of the actual types. Consider this validation:
+
+```typescript
+type Value = {
+  array: number[];
+  nested: {
+    id: string;
+  };
+};
+const validation: Validation<Value, string> = {
+  array: [undefined, "validation error"],
+  nested: "object invalid",
+};
+```
+
+This is a validation of type `Validation<Value, string>` so it validates `Value` and uses a `string` to describe validation issues. In the example the second entry of `array` has a validation error and the `nested` object itself has a validation error.
+
+By default zap will keep on validation even if an issue has been encountered (you can change this with the `earlyExit` flag). We even keep on validating through an `and` schema (aka Intersection type) and merge the individual Validation objects. This is especially helpful when validating complex forms.
+
 ### Refine
 
-> [spec](src/schema.spec.ts) and [source](src/schema.ts)
+> [spec](src/refine.spec.ts) and [source](src/refine.ts)
 
-The `refine` function can be used to add custom validation steps to the schema.
+Out of the box zap supports a lot of validation methods. Methods like `length` for strings or `after` for dates. These validation methods (or refinements) are described together with their applicable schemas.
 
-Refine takes a schema and a function `(v: I, ctx: RefineContext<P>) => void | ValidationResult<P>`. The `ctx` object contains both the `ValidationOptions` and helper methods `add` and `validIf`. The generic Parameter `P` is defined as `P extends I = I`, so it is just I by default or it [narrows](#transform-and-narrow) it further.
+You can build custom validation methods, however. And the simplest way is the `validIf` function
+
+```typescript
+validIf(number(), (v) => v % 2 === 0, "must be even");
+```
+
+This function creates a validation error if the given number is not even.
+
+The next powerful refinement function is just called `refine`. It takes a schema and a function `(v: I, ctx: RefineContext<P>) => void | ValidationResult<P>`. Where the `ctx` object contains both the `ValidationOptions` and helper methods `add` and `validIf`. The generic Parameter `P` is defined as `P extends I = I`, which means that it is `I` by default or it [narrows](#transform-and-narrow) it further.
 
 Refine supports three styles of refinement:
 
 ```typescript
 const schema = object({ a: string(), b: number() });
-const defaultStyle = refine(schema, (v) => {
-  if (v.a.length !== v.b) {
+const defaultStyle = refine(schema, ({ a, b }) => {
+  if (a.length !== b) {
     return {
       a: new ValidationIssue("generic", "a must have length of b", v),
     };
   }
 });
-const builderStyle = refine(schema, (v, { add }) => {
-  if (v.a.length !== v.b) {
+const builderStyle = refine(schema, ({ a, b }, { add }) => {
+  if (a.length !== b) {
     add({
       a: new ValidationIssue("generic", "a must have length of b", v),
     });
   }
 });
-const inlineStyle = refine(schema, (v, { validIf }) => ({
-  a: validIf(v.a.length === v.b, "a must have length of b"),
+const inlineStyle = refine(schema, ({ a, b }, { validIf }) => ({
+  a: validIf(a.length === b, "a must have length of b"),
 }));
 ```
 
-Here we refine an object `{a: string, b: number}` so that the string `a` has length `b`. In the first style the `ValidationResult` itself is returned. This is very similar to the `refine` method the `Schema` supports. The second style is using the `add` method. This approach is useful if you want to iteratively collect validation errors and have them merged into a final validation result. And finally, there is an inline style using the `validIf` method. Here you create an object that will result in a validation error if it contains one failed validation.
+Here we refine an object `{a: string, b: number}` so that the string `a` has length `b`. In the first style the `ValidationResult` itself is returned. This is very similar to the `refine` method the `Schema` supports. The second style is using the `add` method. This approach is useful if you want to iteratively collect validation errors and have them merged into a final validation result. And finally, there is an inline style using the `validIf` method. The advantage of `refine` over the simpler `validIf` is that you can add validation errors anywhere in the `ValidationResult`. For exmple you could validate the `age` field and write the error inside the `name` field. Also you can do narrowing:
+
+```typescript
+refine(
+  object({ id: optional(string()) }),
+  (v, ctx: RefineContext<{ id: string }>) => ({
+    id: ctx.validIf(v !== undefined, "must be present"),
+  })
+);
+```
+
+which will result in a type `{id: string}` and not `{id?: string | undefined}`.
 
 > Most of zap's built-in validation functions are implemented using `refineWithMetainformation`. They add meta-information that can be picked up and interpreted by utility functions like `toJsonSchema`
+
+There are also `refineAsync` and `refineAsyncWithMetaInformation`. Consider validation of a user registration
+
+```typescript
+// call the backend
+const userAvailable = (_username: string) => Promise.resolve(true);
+
+const userRegistration = refineAsync(
+  object({
+    username: string(),
+  }),
+  async ({ username }, { validIf }) => {
+    return {
+      username: validIf(
+        await userAvailable(username),
+        "this username is already taken"
+      ),
+    };
+  }
+);
+```
+
+For this schema you have to use `validateAsync` and `refineAsync`, the synchronous versions will result in validation errors.
 
 ### Coerce
 

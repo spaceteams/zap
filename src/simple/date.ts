@@ -1,5 +1,6 @@
 import { fromInstance } from "../composite/object";
-import { coerce, refine, refineWithMetainformation, Schema } from "../schema";
+import { refine, refineWithMetainformation } from "../refine";
+import { coerce, Schema } from "../schema";
 import { ValidationIssue } from "../validation";
 
 export function date(

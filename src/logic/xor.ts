@@ -33,18 +33,22 @@ export function xorWithIssue<T extends readonly Schema<unknown>[]>(
   class Aggregator {
     constructor(readonly options: Partial<ValidationOptions> | undefined) {}
 
-    public lastFailure: ValidationResult<ResultI> = undefined;
+    public lastFailure: ValidationResult<ResultI>;
     private xorValidation: V;
-    private oneSuccess = false;
+    private successSchema: Schema<unknown> | undefined;
 
-    onValidate(v: unknown, validation: ValidationResult<unknown>): boolean {
+    onValidate(
+      v: unknown,
+      schema: Schema<unknown>,
+      validation: ValidationResult<unknown>
+    ): boolean {
       if (isSuccess(validation)) {
-        if (this.oneSuccess) {
+        if (this.successSchema) {
           this.xorValidation = new ValidationIssue("xor", issue, v) as V;
-          this.oneSuccess = false;
+          this.successSchema = undefined;
           return true;
         } else {
-          this.oneSuccess = true;
+          this.successSchema = schema;
         }
       } else {
         this.lastFailure = validation as ValidationResult<ResultI>;
@@ -53,9 +57,19 @@ export function xorWithIssue<T extends readonly Schema<unknown>[]>(
     }
 
     result(): V {
-      if (!this.oneSuccess) {
+      if (!this.successSchema) {
         return this.xorValidation ?? this.lastFailure;
       }
+    }
+
+    parseResult(v: unknown): ParseResult<ResultI, ResultO> {
+      if (this.successSchema === undefined) {
+        return { validation: this.xorValidation ?? this.lastFailure };
+      }
+      return this.successSchema.parse(v, {
+        ...this.options,
+        skipValidation: true,
+      }) as ParseResult<ResultI, ResultO>;
     }
   }
 
@@ -63,7 +77,7 @@ export function xorWithIssue<T extends readonly Schema<unknown>[]>(
     const aggregator = new Aggregator(o);
     for (const schema of schemas) {
       const validation = schema.validate(v, o);
-      if (aggregator.onValidate(v, validation)) {
+      if (aggregator.onValidate(v, schema, validation)) {
         break;
       }
     }
@@ -77,58 +91,34 @@ export function xorWithIssue<T extends readonly Schema<unknown>[]>(
     const aggregator = new Aggregator(o);
     for (const schema of schemas) {
       const validation = await schema.validateAsync(v, o);
-      if (aggregator.onValidate(v, validation)) {
+      if (aggregator.onValidate(v, schema, validation)) {
         break;
       }
     }
     return aggregator.result();
   };
   const parse: Schema<ResultI, ResultO, unknown>["parse"] = (v, o) => {
-    let validation: ValidationResult<unknown>;
-    let successSchema: Schema<unknown> | undefined;
+    const aggregator = new Aggregator(o);
     for (const schema of schemas) {
-      validation = schema.validate(v, o);
-      if (isSuccess(validation)) {
-        if (successSchema !== undefined) {
-          return {
-            validation: new ValidationIssue("xor", issue, v) as V,
-          };
-        }
-        successSchema = schema;
+      const validation = schema.validate(v, o);
+      if (aggregator.onValidate(v, schema, validation)) {
+        break;
       }
     }
-    if (successSchema === undefined) {
-      return { validation } as ParseResult<ResultI, ResultO>;
-    }
-    return successSchema.parse(v, {
-      ...o,
-      skipValidation: true,
-    }) as ParseResult<ResultI, ResultO>;
+    return aggregator.parseResult(v);
   };
   const parseAsync: Schema<ResultI, ResultO, unknown>["parseAsync"] = async (
     v,
     o
   ) => {
-    let validation: ValidationResult<unknown>;
-    let successSchema: Schema<unknown> | undefined;
+    const aggregator = new Aggregator(o);
     for (const schema of schemas) {
-      validation = await schema.validateAsync(v, o);
-      if (isSuccess(validation)) {
-        if (successSchema !== undefined) {
-          return {
-            validation: new ValidationIssue("xor", issue, v) as V,
-          };
-        }
-        successSchema = schema;
+      const validation = await schema.validateAsync(v, o);
+      if (aggregator.onValidate(v, schema, validation)) {
+        break;
       }
     }
-    if (successSchema === undefined) {
-      return { validation } as ParseResult<ResultI, ResultO>;
-    }
-    return successSchema.parse(v, {
-      ...o,
-      skipValidation: true,
-    }) as ParseResult<ResultI, ResultO>;
+    return aggregator.parseResult(v);
   };
 
   return {

@@ -13,7 +13,7 @@ import {
 } from "./optional";
 import { translate } from "../validation";
 import { coercedDate, string } from "../simple";
-import { refineAsync } from "../schema";
+import { refineAsync } from "../refine";
 
 const asyncPositiveNumber = refineAsync(number(), (v, { validIf }) =>
   Promise.resolve(validIf(v > 0, "must be positive"))

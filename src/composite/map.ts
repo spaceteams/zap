@@ -1,4 +1,4 @@
-import { getOption, makeSchema, Schema, ValidationOptions } from "../schema";
+import { getOption, makeSchema, Schema } from "../schema";
 import {
   isFailure,
   ValidationIssue,
@@ -30,7 +30,7 @@ export function map<K extends string | number | symbol, N, I, O, M>(
   };
 
   class Aggregator {
-    constructor(readonly options: Partial<ValidationOptions> | undefined) {}
+    constructor(readonly earlyExit: boolean) {}
 
     public readonly validations: Map<K, Validation<I>> = new Map();
 
@@ -51,7 +51,7 @@ export function map<K extends string | number | symbol, N, I, O, M>(
           validation
         ) as Validation<I>
       );
-      return getOption(this.options, "earlyExit");
+      return this.earlyExit;
     }
 
     onValidation(k: K, validation: ValidationResult<I>) {
@@ -59,7 +59,7 @@ export function map<K extends string | number | symbol, N, I, O, M>(
         return false;
       }
       this.validations.set(k, validation);
-      return getOption(this.options, "earlyExit");
+      return this.earlyExit;
     }
 
     result(): ValidationResult<Map<K, I>> {
@@ -77,7 +77,7 @@ export function map<K extends string | number | symbol, N, I, O, M>(
         return validation;
       }
 
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       for (const [k, value] of v as Map<unknown, unknown>) {
         const keyValidation = key.validate(k, o);
         if (aggregator.onKeyValidation(k as K, value, keyValidation)) {
@@ -96,7 +96,7 @@ export function map<K extends string | number | symbol, N, I, O, M>(
         return validation;
       }
 
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       for (const [k, value] of v as Map<unknown, unknown>) {
         const keyValidation = await key.validateAsync(k, o);
         if (aggregator.onKeyValidation(k as K, value, keyValidation)) {

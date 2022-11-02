@@ -16,6 +16,7 @@ const schema = object({
   description: optional(string()),
   nested: object({
     user: string(),
+    dateOfBirth: date(),
   }),
 });
 
@@ -29,6 +30,7 @@ it("accepts arrays", () => {
     deepPartial(array(array(number()))).accepts([[undefined], undefined])
   ).toBeTruthy();
 });
+
 it("accepts objects", () => {
   expect(deepPartial(schema).accepts({})).toBeTruthy();
 });

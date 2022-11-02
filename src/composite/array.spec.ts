@@ -11,8 +11,9 @@ import {
   uniqueItems,
 } from "./array";
 import { number } from "../simple/number";
-import { coerce, refineAsync } from "../schema";
+import { coerce } from "../schema";
 import { translate } from "../validation";
+import { refineAsync } from "../refine";
 
 const schema = array(number());
 const asyncSchema = refineAsync(array(number()), (v, { validIf }) =>

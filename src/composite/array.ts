@@ -1,11 +1,5 @@
-import {
-  getOption,
-  makeSchema,
-  refine,
-  refineWithMetainformation,
-  Schema,
-  ValidationOptions,
-} from "../schema";
+import { refine, refineWithMetainformation } from "../refine";
+import { getOption, makeSchema, Schema } from "../schema";
 import {
   isFailure,
   isSuccess,
@@ -30,13 +24,13 @@ export function array<I, O, M>(
   };
 
   class Aggregator {
-    constructor(readonly options: Partial<ValidationOptions> | undefined) {}
+    constructor(readonly earlyExit: boolean) {}
 
     public readonly validations: ValidationResult<I>[] = [];
 
     onValidate(validation: ValidationResult<I>): boolean {
       this.validations.push(validation);
-      return getOption(this.options, "earlyExit") && isFailure(validation);
+      return this.earlyExit && isFailure(validation);
     }
     result(): ValidationResult<I[]> {
       if (this.validations.every((v) => isSuccess(v))) {
@@ -53,7 +47,7 @@ export function array<I, O, M>(
         return validation;
       }
 
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       for (const value of v as unknown[]) {
         const validation = schema.validate(value, o);
         if (aggregator.onValidate(validation)) {
@@ -68,7 +62,7 @@ export function array<I, O, M>(
         return validation;
       }
 
-      const aggregator = new Aggregator(o);
+      const aggregator = new Aggregator(getOption(o, "earlyExit"));
       for (const value of v as unknown[]) {
         const validation = await schema.validateAsync(value, o);
         if (aggregator.onValidate(validation)) {
