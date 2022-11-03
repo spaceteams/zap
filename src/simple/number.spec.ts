@@ -33,6 +33,7 @@ it("validates", () => {
   expect(translate(number().validate(undefined))).toEqual("value is required");
   expect(translate(number().validate(Number.NaN))).toEqual("isNaN");
 });
+
 describe("coercedNumber", () => {
   it("parses", () => {
     expect(coercedNumber().parse(1).parsedValue).toEqual(1);

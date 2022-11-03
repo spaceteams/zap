@@ -357,6 +357,16 @@ This schema accepts an array of numbers and parses them into their maximum value
 
 ## Simple Schema Types
 
+### BigInt
+
+> [spec](src/simple/bigint.spec.ts) and [source](src/simple/bigint.ts)
+
+`bigInt()` accepts BigInt values.
+
+There is a `coercedBigInt` that uses standard JS coercion using the BigInt constructor.
+
+Most of the [Number](#number) refinements also work for bigInt.
+
 ### Boolean
 
 > [spec](src/simple/boolean.spec.ts) and [source](src/simple/boolean.ts)

@@ -1,6 +1,6 @@
 import { refineWithMetainformation } from "../refine";
 import { coerce, makeSimpleSchema, Schema } from "../schema";
-import { ValidationIssue } from "../validation";
+import { ValidationIssue, ValidationResult } from "../validation";
 
 export function number(
   issues?: Partial<{
@@ -50,51 +50,65 @@ export function nan(issue?: string): Schema<number, number, { type: "nan" }> {
     () => ({ type: "nan" })
   );
 }
-export function positive<O, M>(schema: Schema<number, O, M>, issue?: string) {
+export function positive<T extends number | bigint, O, M>(
+  schema: Schema<T, O, M>,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v <= 0) {
-        return new ValidationIssue("positive", issue, v);
+        return new ValidationIssue("positive", issue, v) as ValidationResult<T>;
       }
     },
     { exclusiveMinimum: 0 }
   );
 }
-export function nonPositive<O, M>(
-  schema: Schema<number, O, M>,
+export function nonPositive<T extends number | bigint, O, M>(
+  schema: Schema<T, O, M>,
   issue?: string
 ) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v > 0) {
-        return new ValidationIssue("nonPositive", issue, v);
+        return new ValidationIssue(
+          "nonPositive",
+          issue,
+          v
+        ) as ValidationResult<T>;
       }
     },
     { maximum: 0 }
   );
 }
-export function negative<O, M>(schema: Schema<number, O, M>, issue?: string) {
+export function negative<T extends number | bigint, O, M>(
+  schema: Schema<T, O, M>,
+  issue?: string
+) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v >= 0) {
-        return new ValidationIssue("negative", issue, v);
+        return new ValidationIssue("negative", issue, v) as ValidationResult<T>;
       }
     },
     { minimum: 0 }
   );
 }
-export function nonNegative<O, M>(
-  schema: Schema<number, O, M>,
+export function nonNegative<T extends number | bigint, O, M>(
+  schema: Schema<T, O, M>,
   issue?: string
 ) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v < 0) {
-        return new ValidationIssue("nonNegative", issue, v);
+        return new ValidationIssue(
+          "nonNegative",
+          issue,
+          v
+        ) as ValidationResult<T>;
       }
     },
     { exclusiveMaximum: 0 }
@@ -138,61 +152,81 @@ export function multipleOf<O, M>(
   );
 }
 
-export function exclusiveMaximum<O, M>(
-  schema: Schema<number, O, M>,
-  value: number,
+export function exclusiveMaximum<T extends number | bigint, O, M>(
+  schema: Schema<T, O, M>,
+  value: number | bigint,
   issue?: string
 ) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v >= value) {
-        return new ValidationIssue("exclusiveMaximum", issue, v, value);
+        return new ValidationIssue(
+          "exclusiveMaximum",
+          issue,
+          v,
+          value
+        ) as ValidationResult<T>;
       }
     },
     { exclusiveMaximum: value }
   );
 }
-export function exclusiveMinimum<O, M>(
-  schema: Schema<number, O, M>,
-  value: number,
+export function exclusiveMinimum<T extends number | bigint, O, M>(
+  schema: Schema<T, O, M>,
+  value: number | bigint,
   issue?: string
 ) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v <= value) {
-        return new ValidationIssue("exclusiveMinimum", issue, v, value);
+        return new ValidationIssue(
+          "exclusiveMinimum",
+          issue,
+          v,
+          value
+        ) as ValidationResult<T>;
       }
     },
     { exclusiveMinimum: value }
   );
 }
-export function maximum<O, M>(
-  schema: Schema<number, O, M>,
-  value: number,
+export function maximum<T extends number | bigint, O, M>(
+  schema: Schema<T, O, M>,
+  value: number | bigint,
   issue?: string
 ) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v > value) {
-        return new ValidationIssue("maximum", issue, v, value);
+        return new ValidationIssue(
+          "maximum",
+          issue,
+          v,
+          value
+        ) as ValidationResult<T>;
       }
     },
     { maximum: value }
   );
 }
-export function minimum<O, M>(
-  schema: Schema<number, O, M>,
-  value: number,
+export function minimum<T extends number | bigint, O, M>(
+  schema: Schema<T, O, M>,
+  value: number | bigint,
   issue?: string
 ) {
   return refineWithMetainformation(
     schema,
     (v) => {
       if (v < value) {
-        return new ValidationIssue("minimum", issue, v, value);
+        return new ValidationIssue(
+          "minimum",
+          issue,
+          v,
+          value
+        ) as ValidationResult<T>;
       }
     },
     { minimum: value }
