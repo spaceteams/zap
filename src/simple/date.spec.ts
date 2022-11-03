@@ -22,7 +22,7 @@ describe("before", () => {
   it("validates", () => {
     expect(schema.validate(new Date("2021-01-01"))).toBeUndefined();
     expect(translate(schema.validate(new Date("2022-01-01")))).toEqual(
-      "before(Sat Jan 01 2022 01:00:00 GMT+0100 (Central European Standard Time))"
+      "before(Sat Jan 01 2022 00:00:00 GMT+0000 (Coordinated Universal Time))"
     );
   });
 });
@@ -32,7 +32,7 @@ describe("after", () => {
   it("validates", () => {
     expect(schema.validate(new Date("2023-01-01"))).toBeUndefined();
     expect(translate(schema.validate(new Date("2022-01-01")))).toEqual(
-      "after(Sat Jan 01 2022 01:00:00 GMT+0100 (Central European Standard Time))"
+      "after(Sat Jan 01 2022 00:00:00 GMT+0000 (Coordinated Universal Time))"
     );
   });
 });
