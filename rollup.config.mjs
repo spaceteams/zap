@@ -1,5 +1,5 @@
-import dts from "rollup-plugin-dts";
 import resolve from "@rollup/plugin-node-resolve";
+import dts from "rollup-plugin-dts";
 
 export default [
   {

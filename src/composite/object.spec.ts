@@ -1,21 +1,21 @@
 /* eslint-disable unicorn/no-null */
 
-import { array } from "./array";
-import { number } from "../simple/number";
 import { InferType } from "../schema";
+import { number } from "../simple/number";
+import { string } from "../simple/string";
+import { defaultValue, optional } from "../utility/optional";
+import { translate } from "../validation";
+import { array } from "./array";
 import {
+  catchAll,
   fromInstance,
   isInstance,
+  keys,
   object,
   omit,
   pick,
-  keys,
   strict,
-  catchAll,
 } from "./object";
-import { defaultValue, optional } from "../utility/optional";
-import { string } from "../simple/string";
-import { translate } from "../validation";
 
 const schema = object({
   id: number(),

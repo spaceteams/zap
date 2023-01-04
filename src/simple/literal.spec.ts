@@ -1,7 +1,7 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
-import { literal, literals } from "./literal";
 import { translate } from "../validation";
+import { literal, literals } from "./literal";
 
 describe("literal", () => {
   const schema = literal("a");

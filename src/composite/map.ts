@@ -1,10 +1,10 @@
 import { getOption, makeSchema, Schema } from "../schema";
 import {
   isFailure,
-  ValidationIssue,
-  Validation,
-  ValidationResult,
   isSuccess,
+  Validation,
+  ValidationIssue,
+  ValidationResult,
 } from "../validation";
 
 export function map<K extends string | number | symbol, N, I, O, M>(

@@ -1,6 +1,6 @@
 /* eslint-disable unicorn/no-useless-undefined */
-import { nativeEnum } from "./enum";
 import { translate } from "../validation";
+import { nativeEnum } from "./enum";
 
 enum E {
   a,

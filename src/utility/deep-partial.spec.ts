@@ -1,14 +1,14 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
+import { map, record, set } from "../composite";
 import { array, minItems } from "../composite/array";
-import { number } from "../simple/number";
 import { object } from "../composite/object";
-import { optional } from "./optional";
-import { deepPartial } from "./deep-partial";
-import { string } from "../simple/string";
 import { tuple } from "../composite/tuple";
 import { date } from "../simple/date";
-import { map, record, set } from "../composite";
+import { number } from "../simple/number";
+import { string } from "../simple/string";
+import { deepPartial } from "./deep-partial";
+import { optional } from "./optional";
 
 const schema = object({
   id: number(),

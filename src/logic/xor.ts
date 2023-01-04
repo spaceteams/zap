@@ -1,4 +1,3 @@
-import { Unionize } from "../utility";
 import {
   InferOutputTypes,
   InferTypes,
@@ -6,6 +5,7 @@ import {
   Schema,
   ValidationOptions,
 } from "../schema";
+import { Unionize } from "../utility";
 import { isSuccess, ValidationIssue, ValidationResult } from "../validation";
 
 export function xor<T extends readonly Schema<unknown>[]>(

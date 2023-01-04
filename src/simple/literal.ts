@@ -1,6 +1,6 @@
-import { Unionize } from "../utility";
 import { makeSimpleSchema, Schema } from "../schema";
-import { ValidationIssue, Validation } from "../validation";
+import { Unionize } from "../utility";
+import { Validation, ValidationIssue } from "../validation";
 
 export type Literal = number | string | boolean | symbol;
 

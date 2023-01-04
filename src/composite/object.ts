@@ -10,9 +10,9 @@ import {
 import { literals } from "../simple/literal";
 import {
   isFailure,
-  ValidationIssue,
-  Validation,
   isSuccess,
+  Validation,
+  ValidationIssue,
   ValidationResult,
 } from "../validation";
 

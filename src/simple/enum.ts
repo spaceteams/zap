@@ -1,5 +1,5 @@
 import { makeSimpleSchema, Schema } from "../schema";
-import { ValidationIssue, Validation } from "../validation";
+import { Validation, ValidationIssue } from "../validation";
 
 export type EnumLike<E> = Record<keyof E, number | string>;
 

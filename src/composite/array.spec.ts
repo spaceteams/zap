@@ -1,6 +1,10 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
+import { refineAsync } from "../refine";
+import { coerce } from "../schema";
+import { number } from "../simple/number";
+import { translate } from "../validation";
 import {
   array,
   includes,
@@ -10,10 +14,6 @@ import {
   nonEmptyArray,
   uniqueItems,
 } from "./array";
-import { number } from "../simple/number";
-import { coerce } from "../schema";
-import { translate } from "../validation";
-import { refineAsync } from "../refine";
 
 const schema = array(number());
 const asyncSchema = refineAsync(array(number()), (v, { validIf }) =>

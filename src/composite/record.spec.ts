@@ -1,11 +1,11 @@
 /* eslint-disable unicorn/no-null */
 
+import { refineAsync } from "../refine";
+import { minLength, pattern, string } from "../simple";
 import { number } from "../simple/number";
 import { defaultValue, optional } from "../utility/optional";
-import { keyedRecord, record } from "./record";
 import { translate } from "../validation";
-import { minLength, pattern, string } from "../simple";
-import { refineAsync } from "../refine";
+import { keyedRecord, record } from "./record";
 
 const schema = record(number());
 const keyedSchema = keyedRecord(minLength(string(), 3), number());

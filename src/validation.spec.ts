@@ -1,6 +1,6 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
-import { ValidationIssue, mergeValidations } from "./validation";
+import { mergeValidations, ValidationIssue } from "./validation";
 
 type S = {
   array: string[];

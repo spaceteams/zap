@@ -1,12 +1,12 @@
-import { and } from "./and";
 import { array } from "../composite/array";
-import { integer, number } from "../simple/number";
 import { object } from "../composite/object";
-import { defaultValue, optional } from "../utility/optional";
-import { string } from "../simple/string";
-import { translate } from "../validation";
-import { procedure } from "../utility";
 import { refineAsync } from "../refine";
+import { integer, number } from "../simple/number";
+import { string } from "../simple/string";
+import { procedure } from "../utility";
+import { defaultValue, optional } from "../utility/optional";
+import { translate } from "../validation";
+import { and } from "./and";
 
 const Named = object({
   id: number(),

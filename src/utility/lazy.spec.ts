@@ -1,7 +1,7 @@
 import { array, object } from "../composite";
+import { Schema } from "../schema";
 import { lazy } from "./lazy";
 import { optional } from "./optional";
-import { Schema } from "../schema";
 
 interface Category {
   subCategories?: Category[] | undefined;

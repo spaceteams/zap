@@ -1,23 +1,23 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
-import {
-  integer,
-  nan,
-  negative,
-  number,
-  positive,
-  multipleOf,
-  coercedNumber,
-  nonPositive,
-  nonNegative,
-  exclusiveMinimum,
-  exclusiveMaximum,
-  minimum,
-  maximum,
-} from "./number";
 import { or } from "../logic/or";
 import { translate } from "../validation";
+import {
+  coercedNumber,
+  exclusiveMaximum,
+  exclusiveMinimum,
+  integer,
+  maximum,
+  minimum,
+  multipleOf,
+  nan,
+  negative,
+  nonNegative,
+  nonPositive,
+  number,
+  positive,
+} from "./number";
 
 it("accepts", () => {
   expect(number().accepts(0)).toBeTruthy();

@@ -1,13 +1,13 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
-import { nan, number } from "./simple/number";
 import { object } from "./composite/object";
-import { undefinedSchema } from "./utility/optional";
 import { or } from "./logic/or";
-import { coerce, json, narrow, options, transform } from "./schema";
-import { string } from "./simple/string";
-import { translate } from "./validation";
 import { refine } from "./refine";
+import { coerce, json, narrow, options, transform } from "./schema";
+import { nan, number } from "./simple/number";
+import { string } from "./simple/string";
+import { undefinedSchema } from "./utility/optional";
+import { translate } from "./validation";
 
 describe("coerce", () => {
   const schema = coerce(number(), Number);

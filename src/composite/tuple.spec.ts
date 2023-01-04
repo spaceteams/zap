@@ -1,12 +1,12 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
+import { refineAsync } from "../refine";
 import { literal } from "../simple/literal";
 import { number } from "../simple/number";
 import { defaultValue, optional } from "../utility/optional";
-import { tuple } from "./tuple";
 import { translate } from "../validation";
-import { refineAsync } from "../refine";
+import { tuple } from "./tuple";
 
 const schema = tuple(number(), literal("a"));
 schema.meta().schemas[1].meta();

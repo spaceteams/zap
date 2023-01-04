@@ -1,8 +1,8 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
-import { date, before, after, coercedDate } from "./date";
 import { translate } from "../validation";
+import { after, before, coercedDate, date } from "./date";
 
 it("accepts", () => {
   expect(date().accepts(new Date())).toBeTruthy();
