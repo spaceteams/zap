@@ -1,4 +1,3 @@
-import { and, or } from "../logic";
 import {
   array,
   catchAll,
@@ -8,19 +7,20 @@ import {
   strict,
   tuple,
 } from "../composite";
+import { and, or } from "../logic";
 import {
   boolean,
-  literal,
-  literals,
   exclusiveMaximum,
   exclusiveMinimum,
   integer,
+  literal,
+  literals,
   maximum,
   minimum,
   multipleOf,
   nan,
-  string,
   number,
+  string,
 } from "../simple";
 import { nullable, nullSchema, optional } from "./optional";
 import { toJsonSchema } from "./to-json-schema";

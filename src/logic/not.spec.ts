@@ -1,13 +1,13 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
+import { object } from "../composite/object";
+import { refineAsync } from "../refine";
+import { integer, number } from "../simple/number";
+import { get, into } from "../utility";
+import { translate } from "../validation";
 import { and } from "./and";
 import { not } from "./not";
-import { integer, number } from "../simple/number";
-import { object } from "../composite/object";
-import { translate } from "../validation";
-import { refineAsync } from "../refine";
-import { get, into } from "../utility";
 
 const schema = and(
   not(object({ a: integer(number()) })),

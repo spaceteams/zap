@@ -1,5 +1,4 @@
 import { array, keyedRecord, map, object, set, tuple } from "../composite";
-import { optional } from "./optional";
 import {
   InferMetaType,
   InferOutputType,
@@ -7,6 +6,7 @@ import {
   Schema,
   withMetaInformation,
 } from "../schema";
+import { optional } from "./optional";
 
 type WithMeta<T, M> = Schema<
   InferType<T>,

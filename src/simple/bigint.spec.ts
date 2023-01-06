@@ -1,8 +1,8 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
-import { bigInt, coercedBigInt } from "./bigint";
 import { translate } from "../validation";
+import { bigInt, coercedBigInt } from "./bigint";
 import {
   exclusiveMaximum,
   exclusiveMinimum,

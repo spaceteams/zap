@@ -1,6 +1,6 @@
 import { array, map, object, record, set, tuple } from "../composite";
 import { number, string } from "../simple";
-import { into, get } from "./optics";
+import { get, into } from "./optics";
 import { validatedProcedure } from "./procedure";
 import { validatedPromise } from "./promise";
 

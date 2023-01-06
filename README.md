@@ -153,6 +153,7 @@ The coerce function applies the `Date` only if the value is a string or a number
   - [Optics](#optics)
   - [Optional, Required, Nullable & Nullish](#optional-required-nullable--nullish)
   - [Partial & DeepPartial](#partial--deeppartial)
+  - [PathValidation](#pathvalidation)
   - [ToJsonSchema](#tojsonschema)
 
 ## Core
@@ -220,7 +221,33 @@ To make traversing the meta object tree easier we have [Optics](#optics)
 
 > [spec](src/validation.spec.ts) and [source](src/validation.ts)
 
-Let us have a closer look at the ValidationResult. The type is defined as
+How we represent validation results is quite unique to zap. Let's say you have a schema.
+
+```typescript
+const schema = object({
+  a: object({
+    b: array(number()),
+  }),
+  c: string(),
+});
+```
+
+then a validation might look something like this
+
+```typescript
+const validation = {
+  a: {
+    b: [undefined, new ValidationIssue(...)]
+  }
+  c: new ValidationIssue(...)
+}
+```
+
+Our validation result resembles the schema closely which can be quite convenient to work with. If you want a more traditional representation however, we got you covered. The [path validation functions](#pathvalidation) convert between this representation and a list of path-issue pairs.
+
+As you have seen before you can also translate this validation. By default `translate` will use a canonical way to transform each validation error into a string but you can customize that behavior.
+
+Let us have a closer look at the `ValidationResult` since its type is a bit off-putting at first (and the type of `Validation` is even more complicated)
 
 ```typescript
 export type ValidationResult<T, E = ValidationIssue> =
@@ -544,6 +571,35 @@ this replaces the field `a` by `c` resulting in a `Schema<{ c: number; moreField
 
 > Partial: [spec](src/utility/partial.spec.ts) and [source](src/utility/partial.ts)
 > DeepPartial: [spec](src/utility/deep-partial.spec.ts) and [source](src/utility/deep-partial.ts)
+
+### PathValidation
+
+> [spec](src/utility/path-validation.spec.ts) and [source](src/utility/path-validation.ts)
+
+The default validation result is an object that resembles the structure of the schema. While this is quite handy and easy to use in Javascript and Typescript, such a structure is very hard to generate and work with in languages that do not support structural typing (like most running on the JVM).  
+This is why we support `PathValidationResult`. A structure like this:
+
+```typescript
+const validation = {
+  a: {
+    b: [undefined, new ValidationIssue(...)]
+  }
+  c: new ValidationIssue(...)
+}
+```
+
+would be represented as
+
+```typescript
+const pathValidation = [
+  { path: ".a.b", issue: new ValidationIssue(...) },
+  { path: ".c", issue: new ValidationIssue(...) }
+]
+```
+
+you can transform between the two representations with `toPathValidation` and `fromPathValidation`.
+
+Special care is taken to also transform `Set` and `Map`. To build those in `fromPathValidation` the `toPathValidation` function also generates a list of `PathValidationHint`s.
 
 ### ToJsonSchema
 

@@ -1,10 +1,10 @@
 /* eslint-disable unicorn/no-null */
 
-import { number } from "../simple/number";
-import { map } from "./map";
-import { translate } from "../validation";
-import { string } from "../simple";
 import { refineAsync } from "../refine";
+import { string } from "../simple";
+import { number } from "../simple/number";
+import { translate } from "../validation";
+import { map } from "./map";
 
 const schema = map(number(), string());
 

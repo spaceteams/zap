@@ -1,9 +1,9 @@
 import {
-  InferTypes,
   getOption,
+  InferOutputTypes,
+  InferTypes,
   makeSchema,
   Schema,
-  InferOutputTypes,
 } from "../schema";
 import {
   isFailure,

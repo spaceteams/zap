@@ -1,5 +1,5 @@
-import { Literal } from "../simple";
 import { Schema } from "../schema";
+import { Literal } from "../simple";
 
 interface JsonSchemaHeader {
   $schema: string;

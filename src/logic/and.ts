@@ -1,4 +1,4 @@
-import { InferTypes, InferOutputTypes, makeSchema, Schema } from "../schema";
+import { InferOutputTypes, InferTypes, makeSchema, Schema } from "../schema";
 import { Intersect } from "../utility";
 import { isFailure, mergeValidations, ValidationResult } from "../validation";
 

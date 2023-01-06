@@ -1,11 +1,11 @@
 import { array } from "../composite/array";
-import { number } from "../simple/number";
 import { object } from "../composite/object";
-import { defaultValue, optional } from "../utility/optional";
-import { xor } from "./xor";
-import { string } from "../simple/string";
-import { translate } from "../validation";
 import { refineAsync } from "../refine";
+import { number } from "../simple/number";
+import { string } from "../simple/string";
+import { defaultValue, optional } from "../utility/optional";
+import { translate } from "../validation";
+import { xor } from "./xor";
 
 const Named = object({
   id: number(),

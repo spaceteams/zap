@@ -1,8 +1,8 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
-import { boolean, coercedBoolean } from "./boolean";
 import { translate } from "../validation";
+import { boolean, coercedBoolean } from "./boolean";
 
 it("accepts", () => {
   expect(boolean().accepts(true)).toBeTruthy();

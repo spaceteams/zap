@@ -2,10 +2,10 @@ import { getOption, makeSchema, Schema } from "../schema";
 import { string } from "../simple";
 import {
   isFailure,
-  ValidationIssue,
-  Validation,
-  ValidationResult,
   isSuccess,
+  Validation,
+  ValidationIssue,
+  ValidationResult,
 } from "../validation";
 
 export function record<I, O, M>(

@@ -1,10 +1,10 @@
 /* eslint-disable unicorn/no-useless-undefined */
 /* eslint-disable unicorn/no-null */
 
-import { arity, Procedure, procedure, validatedProcedure } from "./procedure";
-import { translate } from "../validation";
 import { tuple } from "../composite";
-import { string, number, boolean } from "../simple";
+import { boolean, number, string } from "../simple";
+import { translate } from "../validation";
+import { arity, Procedure, procedure, validatedProcedure } from "./procedure";
 
 const lazyString = procedure<[], string>();
 const binaryPredicate = procedure<[string, number], boolean>();
