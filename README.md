@@ -144,6 +144,7 @@ The coerce function applies the `Date` only if the value is a string or a number
 - [Logic](#logic)
 
   - [And](#and)
+  - [Discrimated Union](#discrimated-union)
   - [Not](#not)
   - [Or](#or)
   - [XOR](#xor)
@@ -450,6 +451,26 @@ resulting in a type `Schema<"a" | "c" | 12>`.
 
 > [spec](src/simple/literal.spec.ts) and [source](src/simple/literal.ts)
 
+The `literal` method expresses typescript literals. Examples include
+
+```typescript
+literal("a");
+literal(true);
+literal(1);
+literal(Symbol());
+```
+
+`null` and `undefined` must be expressed using `nullSchema` and `undefinedSchema` or through the [optionals](#optional-required-nullable--nullish).
+
+There is also `literals` to create a union of literals like
+
+```typescript
+literals(true, false);
+literals(1, 2, "a", "some enum");
+```
+
+If you need even more power you can use [or](#or).
+
 ### Number
 
 > [spec](src/simple/number.spec.ts) and [source](src/simple/number.ts)
@@ -498,23 +519,113 @@ resulting in a type `Schema<"a" | "c" | 12>`.
 
 > [spec](src/logic/and.spec.ts) and [source](src/logic/and.ts)
 
+The `and` method (aka _intersection_) is equivalent to the `&` operator. Say you want to describe a type `{ id: string } & { name: string }` then you would write this as
+
+```typescript
+const entityWithName = and(
+  object({ id: string() }),
+  object({ name: string() })
+);
+```
+
+Such a schema accepts only if all subschemas accept and returns the sum of all validation errors (using the `mergeValidations` method on all subschemas).
+
+### Discrimated Union
+
+> [spec](src/logic/discrimiated-union.spec.ts) and [source](src/logic/discrimiated-union.ts)
+
+The discriminated union is similar to the more general [or](#or) operator. While `or` can be applied to any type, the `discrimated union` only works for objects. Say you have CRUD operations like this
+
+```typescript
+const commands = [
+  object({
+    type: literal("create-recipe"),
+    recipe: RecipeValueSchema,
+  }),
+  object({
+    type: literal("delete-recipe"),
+    id: get(EntitySchema, "id"),
+  }),
+];
+const CreateOrDelete = or(...commands);
+```
+
+This creates a schema `CreateOrDelete` schema that will accept either a create or a delete command. Internally, the schema will try to validate against each subschema one after the other. A similar process is done for parsing.
+
+In the `commands` in our example the sole purpose of the `type` attribute is to differentiate the commands from one another. This can be expressed in this way
+
+```typescript
+const CreateOrDelete = discriminatedUnion("type", ...commands);
+```
+
+which will result in a schema that selects the sub-schema based on the value of the `type` attribute. The matching schema will be used for validation and parsing. This can be slightly more efficient and will also result in clearer validation errors.
+
 ### Not
 
 > [spec](src/logic/not.spec.ts) and [source](src/logic/not.ts)
+
+With the `not` operator you can describe a schema like this
+
+```typescript
+const schema = and(
+  not(object({ a: integer(number()) })),
+  object({ a: number() })
+);
+```
+
+The `not` operator is a `Schema<unknown>` because is does not give any information about the type of the current value. It accepts if the inner schema rejects.
+
+However, we can write a clearer schema using a custom validation
+
+```typescript
+const nonNatural = validIf(
+  number(),
+  (v) => !isInteger(v),
+  "must not be an natural number"
+);
+const schema = object({ a: nonNatural });
+```
 
 ### Or
 
 > [spec](src/logic/or.spec.ts) and [source](src/logic/or.ts)
 
+The or operator (aka union) is the equivalent to the `|` operator. Say you want to describe a type `number | { name: string }` then you would write this as
+
+```typescript
+const numberOrBoxedString = or(number(), object({ name: string() }));
+```
+
+Such a schema accepts if at least one subschema accepts. It returns the validation error of the last sub schema. For parsing it finds the first accepting schema and parses the value into this one.
+
+If you just want to create a union of literals you can use the [literals](#literal) method.
+
 ### XOR
 
 > [spec](src/logic/xor.spec.ts) and [source](src/logic/xor.ts)
+
+The xor operator is a stricter `or` that accepts if and only if one subschema accepts. It uses that schema for validation and parsing. If more than one schema accepts it returns an xor validation error otherwise it returns the validation error of the last failing sub schema.
 
 ## Utility
 
 ### Lazy
 
 > [spec](src/utility/lazy.spec.ts) and [source](src/utility/lazy.ts)
+
+If you need to write recursive types you can do this with the `lazy` method
+
+```typescript
+interface Category {
+  subCategories?: Category[] | undefined;
+}
+const schema: Schema<Category, Category, { type: "object" }> = lazy(() =>
+  object({
+    subCategories: optional(array(schema)),
+  })
+);
+```
+
+Note that you need help with the type inference here. Circular types are not supported.
 
 ### Optics
 

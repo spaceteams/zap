@@ -1,6 +1,6 @@
 {
   "name": "@spaceteams/zap",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "validation-first schema library with a functional api",
   "repository": "github:spaceteams/zap.git",
   "license": "BSD-3-Clause",
