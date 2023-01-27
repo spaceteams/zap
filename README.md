@@ -131,10 +131,12 @@ The coerce function applies the `Date` only if the value is a string or a number
 
 - [Simple Schema Types](#simple-schema-types)
 
+  - [Bigint](#bigint)
   - [Boolean](#boolean)
   - [Date](#date)
   - [Enum](#enum)
   - [Literal](#literal)
+  - [Null Schema](#null-schema)
   - [Number](#number)
   - [String](#string)
 
@@ -362,16 +364,15 @@ By default, a schema will not try to convert values during the parse step. In th
 
 `coerce` takes a schema and a function `(v: unknown) => unknown` that may or may not convert the given value. Currently, this function is applied during `parse` before the validation step and _again_ for the actual parsing. Coercion is not applied in `accepts` or `validate` so a `coercedDate()` will still accept only dates (it is a `Schema<Date>` after all!). You can override this behaviour using the `withCoercion` option.
 
-The predefined coerced schemas are
+The predefined coerced schemas are `coercedBoolean`, `coercedDate `, `coercedNumber`, `coercedString` and `json`
 
-```
-coercedBoolean,
-coercedDate,
-coercedNumber,
-coercedString
-```
+All except `json` are implemented using the default coercion of javascript. Note that this comes with all the pitfalls and weirdnesses of javascript. For example `[]` is coerced to `0`, `''` or `true` with to coercedNumber, coercedString and coercedBoolean respectively.
 
-They are implemented using the default coercion of javascript. Note that this comes with all the pitfalls and weirdnesses of javascript. For example `[]` is coerced to `0`, `''` or `true` with to coercedNumber, coercedString and coercedBoolean respectively.
+`json` is a wrapper for `JSON.parse` and will attempt to coerce a string into an object. This is useful when parsing request bodies like this
+
+```typescript
+json(requestSchema).parse(event.body);
+```
 
 ### Transform and Narrow
 
@@ -466,7 +467,7 @@ literal(1);
 literal(Symbol());
 ```
 
-`null` and `undefined` must be expressed using `nullSchema` and `undefinedSchema` or through the [optionals](#optional-required-nullable--nullish).
+`null` and `undefined` must be expressed using `nullSchema` or through the [optionals](#optional-required-nullable--nullish).
 
 There is also `literals` to create a union of literals like
 
@@ -477,13 +478,51 @@ literals(1, 2, "a", "some enum");
 
 If you need even more power you can use [or](#or).
 
+### Null Schema
+
+> [spec](src/simple/null-schema.spec.ts) and [source](src/simple/null-schema.ts)
+
+This schema accepts only `null`. Also have a look at [optionals](#optional-required-nullable--nullish).
+
 ### Number
 
 > [spec](src/simple/number.spec.ts) and [source](src/simple/number.ts)
 
+The `number` schema accepts any number that is not `NaN`.
+
+> Note that `typeof NaN === "number"` in javascript
+
+There is coercion function `coercedNumber` that uses javascript `Number` constructor.
+
+#### Validation Functions
+
+`nan` - accepts if value is `NaN`  
+`positive` - accepts positive numbers (>0)  
+`nonPositive` - accepts non-positive numbers (<=0)  
+`negative` - accepts negative numbers (<0)  
+`nonNegative` - accepts non-negative number (>=0)  
+`integer` - accepts integer numbers  
+`multipleOf` - accepts numbers that are multiples of the given value (also works for floating points)  
+`exclusiveMaximum` - accepts numbers that are strictly smaller than a threshold (<)  
+`exclusiveMinimum` - accepts numbers that are strictly greater than a threshold (>)  
+`maximum` - accepts numbers that are smaller than or equal to a threshold (<=)  
+`minimum` - accepts numbers that are greater than or equal to a threshold (>=)
+
 ### String
 
 > [spec](src/simple/string.spec.ts) and [source](src/simple/string.ts)
+
+The `string` schema accepts any string. There is a coercion function `coercedString` that uses jacscripts `String` constructor. Also note that you can use `json` to coerce a json string into an object (see [schema-section](#schema))
+
+#### Validation Functions
+
+`minLength` - accepts strings with a length greater than or equal to a threshold (>=)  
+`maxLength` - accepts strings with a length smaller than or equal to a threshold (<=)  
+`length` - accepts strings with a length equal to a threshold  
+`nonEmptyString` - accepts strings that have `minLength` 1  
+`pattern` - accepts strings that match a regular expression (using RegExp.test)  
+`startsWith` - accepts strings that start with the given string  
+`endsWith` - accepts strings that end with the given string
 
 ## Composite Schema Types
 
@@ -550,6 +589,8 @@ the infered type is `S & Record<string, number>` and the catchall schema can be 
 
 you can add an instanceOf check using the `isInstance` method. That way you can ensure that the prototype property is correctly set. You can also create a schema from an instance using `fromInstance`. Note that this will only validate the prototype and not any of the contents of your type.
 
+> The [date](#date) method is implemented as a refinement on `fromInstance(Date)`
+
 #### Merge
 
 The logical operator [and](#and) can be used to extend an object
@@ -561,7 +602,7 @@ and(schema, object({ more: string() }));
 While this results in a schema that adds the `more` property to the `schema` it also yields an `and` type schema that does not compose well with other methods like `omit` and `pick`. This is because the `and` operator is more general and works for arbitrary types. That is why you should prefer the `merge` method. Merge behaves like `and` except that it can only be called with object schemas and will result in an object schema. So you can do
 
 ```typescript
-const m = and(schema, object({ more: string() }));
+const m = merge(schema, object({ more: string() }));
 merged.meta().schema.id;
 merged.meta().schema.more;
 ```
@@ -770,6 +811,8 @@ this replaces the field `a` by `c` resulting in a `Schema<{ c: number; moreField
 
 > Optional: [spec](src/utility/optional.spec.ts) and [source](src/utility/optional.ts)
 
+To express
+
 ### Partial & DeepPartial
 
 > Partial: [spec](src/utility/partial.spec.ts) and [source](src/utility/partial.ts)
@@ -802,7 +845,7 @@ const pathValidation = [
 
 you can transform between the two representations with `toPathValidation` and `fromPathValidation`.
 
-Special care is taken to also transform `Set` and `Map`. To build those in `fromPathValidation` the `toPathValidation` function also generates a list of `PathValidationHint`s.
+Special care is taken to also transform `Set` and `Map`. This is mediated using a list of `PathValidationHint`s.
 
 ### ToJsonSchema
 

@@ -6,7 +6,7 @@ import { refine } from "./refine";
 import { coerce, json, narrow, options, transform } from "./schema";
 import { nan, number } from "./simple/number";
 import { string } from "./simple/string";
-import { undefinedSchema } from "./utility/optional";
+import { optional } from "./utility";
 import { translate } from "./validation";
 
 describe("coerce", () => {
@@ -35,7 +35,7 @@ describe("coerce", () => {
 });
 
 describe("narrow", () => {
-  const schema = narrow(or(number(), nan(), undefinedSchema()), (v) =>
+  const schema = narrow(optional(or(number(), nan())), (v) =>
     Number.isNaN(v) ? undefined : v
   );
 
