@@ -19,10 +19,11 @@ import {
   minimum,
   multipleOf,
   nan,
+  nullSchema,
   number,
   string,
 } from "../simple";
-import { nullable, nullSchema, optional } from "./optional";
+import { nullable, optional } from "./optional";
 import { toJsonSchema } from "./to-json-schema";
 
 it("renders header", () => {

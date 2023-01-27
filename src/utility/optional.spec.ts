@@ -8,11 +8,9 @@ import { translate } from "../validation";
 import {
   nullable,
   nullish,
-  nullSchema,
   nullToUndefined,
   optional,
   required,
-  undefinedSchema,
 } from "./optional";
 
 const asyncPositiveNumber = refineAsync(number(), (v, { validIf }) =>
@@ -150,45 +148,5 @@ describe("nullToUndefined", () => {
   it("coerces", () => {
     const schema = nullToUndefined(nullish(string()));
     expect(schema.parse(null).parsedValue).toEqual(undefined);
-  });
-});
-
-describe("undefinedSchema", () => {
-  const schema = undefinedSchema();
-
-  it("accepts", () => {
-    expect(schema.accepts(undefined)).toBeTruthy();
-    expect(schema.accepts(null)).toBeFalsy();
-  });
-
-  it("validates", () => {
-    expect(schema.validate(undefined)).toBeUndefined();
-    expect(translate(schema.validate(null))).toEqual(
-      "value was of type object expected undefined"
-    );
-  });
-
-  it("builds meta", () => {
-    expect(schema.meta().type).toEqual("undefined");
-  });
-});
-
-describe("nullSchema", () => {
-  const schema = nullSchema();
-
-  it("accepts", () => {
-    expect(schema.accepts(null)).toBeTruthy();
-    expect(schema.accepts(undefined)).toBeFalsy();
-  });
-
-  it("validates", () => {
-    expect(schema.validate(null)).toBeUndefined();
-    expect(translate(schema.validate(undefined))).toEqual(
-      "value was of type undefined expected null"
-    );
-  });
-
-  it("builds meta", () => {
-    expect(schema.meta().type).toEqual("null");
   });
 });
