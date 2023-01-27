@@ -493,6 +493,90 @@ If you need even more power you can use [or](#or).
 
 > [spec](src/composite/object.spec.ts) and [source](src/composite/object.ts)
 
+The object schema is perhaps the most common and the most complex schema of the bunch. With object you can describe what corresponds to an interface in typescript. The example from the spec
+
+```typescript
+const schema = object({
+  id: number(),
+  name: array(string()),
+  description: optional(string()),
+  nested: object({
+    user: string(),
+  }),
+});
+```
+
+will be infered to
+
+```typescript
+type S = {
+  id: number;
+  name: string[];
+  nested: {
+    user: string;
+  };
+} & {
+  description?: string | undefined;
+};
+```
+
+This shows that nesting works and that we do some fixup work for optional types so that they are also partial in the schema. That means this schema accept both `{ id: 1, name: [], nested: { user: "" }}` and `{ id: 1, name: [], description: undefined, nested: { user: "" }}`.
+
+You can access any nested schema using the `meta` function like this `schema.meta().schema.name.meta().schema` or more succinct `into(get(schema, "name"))`.
+
+By default this schema will strip additional properties on parse. You can avoid this by calling `schema.parse(value, { strip: false })`.
+
+#### Strict
+
+An object schema allows for additional property to be present during validation and will strip them during parsing. If you wrap it with the schema with the `strict` method it will return a validation error containing the first additional property. A strict schema will also fail to parse objects with additional fields.
+
+#### Catchall
+
+Sometimes you want to allow additional properties only if they are valid according to some other schema. In that case (instead of trying to build it using logical operators) you can express it like this
+
+```typescript
+const newSchema = catchAll(schema, number());
+```
+
+the infered type is `S & Record<string, number>` and the catchall schema can be accessed using `newSchema.meta().additionalProperties`
+
+#### IsInstance and fromInstance
+
+you can add an instanceOf check using the `isInstance` method. That way you can ensure that the prototype property is correctly set. You can also create a schema from an instance using `fromInstance`. Note that this will only validate the prototype and not any of the contents of your type.
+
+#### Merge
+
+The logical operator [and](#and) can be used to extend an object
+
+```typescript
+and(schema, object({ more: string() }));
+```
+
+While this results in a schema that adds the `more` property to the `schema` it also yields an `and` type schema that does not compose well with other methods like `omit` and `pick`. This is because the `and` operator is more general and works for arbitrary types. That is why you should prefer the `merge` method. Merge behaves like `and` except that it can only be called with object schemas and will result in an object schema. So you can do
+
+```typescript
+const m = and(schema, object({ more: string() }));
+merged.meta().schema.id;
+merged.meta().schema.more;
+```
+
+and also apply `omit`, `pick`, `keys`, `strict` etc to it.
+
+#### Omit and Pick
+
+Omit and pick both correspond to the respective typescript types. You can do
+
+```typescript
+omit(schema, "id", "description");
+pick(schema, "nested");
+```
+
+to get `Omit<S, 'id' | 'description'>` and `Pick<S, 'nested'>` as the result type.
+
+#### Keys
+
+The keys method returns a [literals](#literal) schema of the keys of the schema. You can get the keys as a list using `keys(schema).meta().literals` which is typed in our example as `("id" | "name" | "description" | "nested")[]`
+
 ### Procedure
 
 > [spec](src/composite/procedure.spec.ts) and [source](src/composite/procedure.ts)
@@ -529,6 +613,8 @@ const entityWithName = and(
 ```
 
 Such a schema accepts only if all subschemas accept and returns the sum of all validation errors (using the `mergeValidations` method on all subschemas).
+
+> This method is (like the `&`) defined on arbitrary types. However, you most likely need it to combine interfaces. In those cases you are better of using [merge](#merge).
 
 ### Discrimated Union
 
@@ -666,10 +752,10 @@ will return the `string()` schema.
 
 > These functions are inspired by [lenses and functional references](https://en.wikibooks.org/wiki/Haskell/Lenses_and_functional_references) but are unfortunately not as powerful. They are directly applied onto a schema, you are only able to reach down one level and you cannot mutate schemas. So not at all optics, but it is the spirit that counts!
 
-If you want to mutate an existing schema you could do that together with `and` and `omit`
+If you want to mutate an existing schema you could do that together with `merge` and `omit`
 
 ```typescript
-and(omit(schema, "a"), get(get(schema, "a"), "b"));
+merge(omit(schema, "a"), get(get(schema, "a"), "b"));
 ```
 
 this replaces the field `a` by `c` resulting in a `Schema<{ c: number; moreFields: number(); }>`
