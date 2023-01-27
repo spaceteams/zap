@@ -4,7 +4,7 @@
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/spaceteams/zap/main.yaml)
 [![NPM Version](https://img.shields.io/npm/v/@spaceteams/zap)](https://www.npmjs.com/package/zap)
-![License](https://img.shields.io/github/license/spaceteams/zap)
+[![License](https://img.shields.io/github/license/spaceteams/zap)](https://github.com/spaceteams/zap/blob/main/LICENSE)
 
 zap is a validation-first schema library with a functional Api.
 
@@ -632,11 +632,11 @@ The discriminated union is similar to the more general [or](#or) operator. While
 const commands = [
   object({
     type: literal("create-recipe"),
-    recipe: RecipeValueSchema,
+    recipe: omit(RecipeSchema, "id"),
   }),
   object({
     type: literal("delete-recipe"),
-    id: get(EntitySchema, "id"),
+    id: get(RecipeSchema, "id"),
   }),
 ];
 const CreateOrDelete = or(...commands);
