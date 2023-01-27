@@ -1,5 +1,11 @@
 # zap ⚡
 
+[![Developed during Spacetime at Spaceteams](https://raw.githubusercontent.com/spaceteams/badges/main/developed-during-spacetime.svg)](https://spaceteams.de)
+
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/spaceteams/zap/main.yaml)
+[![NPM Version](https://img.shields.io/npm/v/@spaceteams/zap)](https://www.npmjs.com/package/zap)
+![License](https://img.shields.io/github/license/spaceteams/zap)
+
 zap is a validation-first schema library with a functional Api.
 
 Some major features are
