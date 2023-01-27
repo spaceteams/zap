@@ -11,6 +11,7 @@ import {
   fromInstance,
   isInstance,
   keys,
+  merge,
   object,
   omit,
   pick,
@@ -98,6 +99,7 @@ it("validates with early exit", () => {
 it("builds metadata", () => {
   expect(schema.meta().type).toEqual("object");
   expect(schema.meta().additionalProperties).toBeTruthy();
+  expect(schema.meta().schema.id).toBeDefined();
   expect(Object.keys(schema.meta().schema)).toEqual([
     "id",
     "name",
@@ -215,6 +217,46 @@ describe("isInstance", () => {
   });
 });
 
+const merged = merge(schema, object({ more: string() }));
+describe("merge", () => {
+  it("accepts", () => {
+    expect(
+      merged.accepts({
+        id: 12,
+        name: ["some", "string"],
+        nested: { user: "3" },
+        more: "string",
+      })
+    ).toBeTruthy();
+    expect(
+      merged.accepts({
+        name: ["some", "string"],
+        nested: { user: "3" },
+        more: "string",
+      })
+    ).toBeFalsy();
+    expect(
+      merged.accepts({
+        id: 12,
+        name: ["some", "string"],
+        nested: { user: "3" },
+      })
+    ).toBeFalsy();
+  });
+  it("builds metadata", () => {
+    expect(merged.meta().type).toEqual("object");
+    expect(merged.meta().schema.id).toBeDefined();
+    expect(merged.meta().schema.more).toBeDefined();
+    expect(Object.keys(merged.meta().schema)).toEqual([
+      "id",
+      "name",
+      "description",
+      "nested",
+      "more",
+    ]);
+  });
+});
+
 describe("omit", () => {
   it("accepts", () => {
     expect(
@@ -231,6 +273,25 @@ describe("omit", () => {
       Object.keys(omit(schema, "id", "description").meta().schema)
     ).toEqual(["name", "nested"]);
   });
+
+  it("interops with merge", () => {
+    expect(
+      omit(merged, "id", "description").accepts({
+        id: "",
+        name: ["some", "string"],
+        nested: { user: "3" },
+        more: "string",
+      })
+    ).toBeTruthy();
+    expect(
+      omit(merged, "id", "more").accepts({
+        id: "",
+        name: ["some", "string"],
+        nested: { user: "3" },
+        description: "string",
+      })
+    ).toBeTruthy();
+  });
 });
 
 describe("pick", () => {
@@ -244,6 +305,22 @@ describe("pick", () => {
     expect(Object.keys(pick(schema, "nested").meta().schema)).toEqual([
       "nested",
     ]);
+  });
+
+  it("interops with merge", () => {
+    expect(
+      pick(merged, "id", "description").accepts({
+        id: 12,
+        name: ["some", "string"],
+        nested: { user: "3" },
+      })
+    ).toBeTruthy();
+    expect(
+      pick(merged, "id", "more").accepts({
+        id: 12,
+        more: "string",
+      })
+    ).toBeTruthy();
   });
 });
 

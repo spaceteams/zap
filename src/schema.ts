@@ -350,6 +350,13 @@ export type InferOutputType<T> = T extends Schema<unknown, infer U, unknown>
   ? U
   : never;
 
+export type InferMetaTypes<T extends readonly unknown[]> = T extends [
+  infer Head,
+  ...infer Tail
+]
+  ? [InferMetaType<Head>, ...InferMetaTypes<Tail>]
+  : [];
+
 /**
  * Infers the meta type of a Schema<T, M> to M
  */

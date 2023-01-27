@@ -1,13 +1,18 @@
+import { and } from "../logic";
 import { RefineContext, refineWithMetainformation } from "../refine";
 import {
   getOption,
+  InferMetaTypes,
   InferOutputType,
+  InferOutputTypes,
   InferType,
+  InferTypes,
   makeSchema,
   makeSimpleSchema,
   Schema,
 } from "../schema";
 import { literals } from "../simple/literal";
+import { Intersect } from "../utility";
 import {
   isFailure,
   isSuccess,
@@ -250,6 +255,36 @@ export function isInstance<I, O, M>(
   );
 }
 
+export function merge<
+  T extends readonly Schema<
+    unknown,
+    unknown,
+    {
+      type: "object";
+      schema: { [key in string]: Schema<unknown> };
+    }
+  >[]
+>(
+  ...schemas: T
+): Schema<
+  Intersect<InferTypes<T>>,
+  Intersect<InferOutputTypes<T>>,
+  Intersect<InferMetaTypes<T>>
+> {
+  let schema = {};
+  for (const nested of schemas) {
+    schema = {
+      ...schema,
+      ...nested.meta().schema,
+    };
+  }
+
+  return {
+    ...and(...schemas),
+    meta: () => ({ type: "object", schema } as Intersect<InferMetaTypes<T>>),
+  };
+}
+
 export function omit<
   I,
   O,
@@ -364,7 +399,6 @@ export function pick<
     })
   );
 }
-
 export function keys<
   I,
   O,
