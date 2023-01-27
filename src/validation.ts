@@ -48,7 +48,8 @@ export type ValidationIssueCode =
   | "literal"
   // logic
   | "xor"
-  | "not";
+  | "not"
+  | "unknownDiscrimate";
 
 export class ValidationIssue extends Error {
   public readonly args?: unknown[];
