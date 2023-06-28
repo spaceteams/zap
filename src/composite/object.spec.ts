@@ -1,5 +1,6 @@
 /* eslint-disable unicorn/no-null */
 
+import { refine } from "../refine";
 import { InferType } from "../schema";
 import { number } from "../simple/number";
 import { string } from "../simple/string";
@@ -254,6 +255,24 @@ describe("merge", () => {
       "nested",
       "more",
     ]);
+  });
+
+  it("interops with refine", () => {
+    const s = merge(
+      refine(schema, ({ id, name }, { validIf }) => {
+        return { name: validIf(name.length > id, "asdf") };
+      }),
+      object({ more: string() })
+    );
+    expect(
+      translate(
+        s.validate({
+          id: 4,
+          name: ["some", "string"],
+          nested: { user: "3" },
+        })
+      )
+    ).toEqual({ name: "asdf", more: "value is required" });
   });
 });
 

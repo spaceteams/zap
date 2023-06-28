@@ -60,6 +60,7 @@ it("validates", () => {
     translate(schema.validate({ id: "", name: ["some", "string"], nested: {} }))
   ).toEqual({
     id: "value was of type string expected number",
+    nested: { user: "value is required" },
   });
   expect(
     translate(schema.validate({ id: 12, name: ["some", "string"], nested: {} }))
