@@ -21,7 +21,7 @@ export function nativeEnum<T extends EnumLike<T>>(
 
   return makeSimpleSchema(
     (v) => {
-      if (typeof v === "undefined" || v === null) {
+      if (v === undefined || v === null) {
         return new ValidationIssue("required", issues?.required, v) as V;
       }
       if (typeof v !== "string" && typeof v !== "number") {

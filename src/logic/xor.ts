@@ -6,7 +6,7 @@ import {
   ValidationOptions,
 } from "../schema";
 import { Unionize } from "../utility";
-import { isSuccess, ValidationIssue, ValidationResult } from "../validation";
+import { ValidationIssue, ValidationResult, isSuccess } from "../validation";
 
 export function xor<T extends readonly Schema<unknown>[]>(
   ...schemas: T

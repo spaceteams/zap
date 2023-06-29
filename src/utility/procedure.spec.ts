@@ -4,7 +4,7 @@
 import { tuple } from "../composite";
 import { boolean, number, string } from "../simple";
 import { translate } from "../validation";
-import { arity, Procedure, procedure, validatedProcedure } from "./procedure";
+import { Procedure, arity, procedure, validatedProcedure } from "./procedure";
 
 const lazyString = procedure<[], string>();
 const binaryPredicate = procedure<[string, number], boolean>();

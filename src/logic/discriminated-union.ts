@@ -1,10 +1,10 @@
 import { InferOutputTypes, InferTypes, ParseResult, Schema } from "../schema";
 import { Unionize } from "../utility";
 import {
-  isFailure,
-  isSuccess,
   ValidationIssue,
   ValidationResult,
+  isFailure,
+  isSuccess,
 } from "../validation";
 
 export function discriminatedUnion<
@@ -72,7 +72,7 @@ export function discriminatedUnionWithIssues<
     ) as ValidationResult<ResultI>;
 
   const preValidate = (v: unknown) => {
-    if (typeof v === "undefined" || v === null) {
+    if (v === undefined || v === null) {
       return new ValidationIssue("required", issues?.required, v) as ResultI;
     }
     if (typeof v !== "object") {

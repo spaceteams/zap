@@ -6,7 +6,7 @@ import {
   ValidationOptions,
 } from "../schema";
 import { Unionize } from "../utility";
-import { isFailure, isSuccess, ValidationResult } from "../validation";
+import { ValidationResult, isFailure, isSuccess } from "../validation";
 
 export function or<T extends Schema<unknown>[]>(
   ...schemas: T

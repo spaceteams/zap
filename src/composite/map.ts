@@ -21,7 +21,7 @@ export function map<K extends string | number | symbol, N, I, O, M>(
   { type: "map"; schema: { key: Schema<K, K, N>; value: Schema<I, O, M> } }
 > {
   const preValidate = (v: unknown) => {
-    if (typeof v === "undefined" || v === null) {
+    if (v === undefined || v === null) {
       return new ValidationIssue("required", issues?.required, v);
     }
     if (!(v instanceof Map)) {

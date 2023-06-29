@@ -1,5 +1,5 @@
 import { refine, refineWithMetainformation } from "../refine";
-import { coerce, makeSimpleSchema, Schema } from "../schema";
+import { Schema, coerce, makeSimpleSchema } from "../schema";
 import { ValidationIssue } from "../validation";
 
 export function string(
@@ -10,7 +10,7 @@ export function string(
 ): Schema<string, string, { type: "string" }> {
   return makeSimpleSchema(
     (v) => {
-      if (typeof v === "undefined" || v === null) {
+      if (v === undefined || v === null) {
         return new ValidationIssue("required", issues?.required, v);
       }
       if (typeof v !== "string") {

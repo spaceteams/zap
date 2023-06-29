@@ -9,7 +9,7 @@ export function promise<T>(
 ): Schema<Promise<T>, Promise<T>, { type: "promise" }> {
   return makeSimpleSchema(
     (v) => {
-      if (typeof v === "undefined" || v === null) {
+      if (v === undefined || v === null) {
         return new ValidationIssue("required", issues?.required, v);
       }
       if (typeof v !== "object") {

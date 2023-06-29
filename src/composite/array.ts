@@ -1,10 +1,10 @@
 import { refine, refineWithMetainformation } from "../refine";
-import { getOption, makeSchema, Schema } from "../schema";
+import { Schema, getOption, makeSchema } from "../schema";
 import {
-  isFailure,
-  isSuccess,
   ValidationIssue,
   ValidationResult,
+  isFailure,
+  isSuccess,
 } from "../validation";
 
 export function array<I, O, M>(
@@ -15,7 +15,7 @@ export function array<I, O, M>(
   }>
 ): Schema<I[], O[], { type: "array"; schema: Schema<I, O, M> }> {
   const preValidate = (v: unknown) => {
-    if (typeof v === "undefined" || v === null) {
+    if (v === undefined || v === null) {
       return new ValidationIssue("required", issues?.required, v);
     }
     if (!Array.isArray(v)) {

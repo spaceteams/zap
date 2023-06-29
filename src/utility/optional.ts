@@ -6,20 +6,18 @@ export function optional<I, O, M>(
 ): Schema<I | undefined, O | undefined, { required: false } & M> {
   return makeSchema(
     (v, o) => {
-      if (typeof v !== "undefined") {
+      if (v !== undefined) {
         return schema.validate(v, o);
       }
     },
     async (v, o) => {
-      if (typeof v !== "undefined") {
+      if (v !== undefined) {
         return schema.validateAsync(v, o);
       }
     },
     () => ({ ...schema.meta(), required: false }),
     (v, o) =>
-      typeof v !== "undefined"
-        ? schema.parse(v, o).parsedValue
-        : (v as undefined)
+      v === undefined ? (v as undefined) : schema.parse(v, o).parsedValue
   );
 }
 export function nullable<I, O, M>(
@@ -38,7 +36,7 @@ export function nullable<I, O, M>(
     },
     () => ({ ...schema.meta() }),
     (v, o) => {
-      const result = v !== null ? schema.parse(v, o).parsedValue : undefined;
+      const result = v === null ? undefined : schema.parse(v, o).parsedValue;
       // eslint-disable-next-line unicorn/no-null
       return result ?? null;
     }
@@ -49,18 +47,18 @@ export function nullish<I, O, M>(
 ): Schema<I | undefined | null, O | undefined | null, { required: false } & M> {
   return makeSchema(
     (v, o) => {
-      if (typeof v !== "undefined" && v !== null) {
+      if (v !== undefined && v !== null) {
         return schema.validate(v, o);
       }
     },
     async (v, o) => {
-      if (typeof v !== "undefined" && v !== null) {
+      if (v !== undefined && v !== null) {
         return schema.validateAsync(v, o);
       }
     },
     () => ({ ...schema.meta(), required: false }),
     (v, o) =>
-      typeof v !== "undefined" && v !== null
+      v !== undefined && v !== null
         ? schema.parse(v, o).parsedValue
         : (v as undefined | null)
   );
@@ -77,13 +75,13 @@ export function required<I, O, M>(
   type V = ValidationResult<NonNullable<I>>;
   return makeSchema(
     (v, o) => {
-      if (typeof v === "undefined" || v === null) {
+      if (v === undefined || v === null) {
         return new ValidationIssue("required", issue, v) as V;
       }
       return schema.validate(v, o);
     },
     async (v, o) => {
-      if (typeof v === "undefined" || v === null) {
+      if (v === undefined || v === null) {
         return new ValidationIssue("required", issue, v) as V;
       }
       return schema.validateAsync(v, o);

@@ -1,7 +1,7 @@
 import { object } from "./composite";
 import { refine, refineAsync, validIf, validIfAsync } from "./refine";
 import { number, string } from "./simple";
-import { translate, ValidationIssue } from "./validation";
+import { ValidationIssue, translate } from "./validation";
 
 describe("validIf", () => {
   const schema = validIf(number(), (v) => v % 2 === 0, "even");

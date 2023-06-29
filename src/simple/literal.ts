@@ -15,7 +15,7 @@ export function literal<T extends Literal>(
   type V = Validation<typeof literal>;
   return makeSimpleSchema(
     (v) => {
-      if (typeof v === "undefined" || v === null) {
+      if (v === undefined || v === null) {
         return new ValidationIssue("required", issues?.required, v) as V;
       }
       if (
@@ -57,7 +57,7 @@ export function literalsWithIssues<T extends readonly Literal[]>(
   type V = Validation<Unionize<T>>;
   return makeSimpleSchema(
     (v) => {
-      if (typeof v === "undefined" || v === null) {
+      if (v === undefined || v === null) {
         return new ValidationIssue("required", issues?.required, v) as V;
       }
       if (

@@ -166,11 +166,10 @@ export function mergeValidations<S, T>(
       const validation = {};
 
       for (const key of Object.keys(left)) {
-        if (right[key] !== undefined) {
-          validation[key] = mergeValidations(left[key], right[key]);
-        } else {
-          validation[key] = left[key];
-        }
+        validation[key] =
+          right[key] === undefined
+            ? left[key]
+            : mergeValidations(left[key], right[key]);
       }
       for (const key of Object.keys(right)) {
         if (left[key] === undefined) {

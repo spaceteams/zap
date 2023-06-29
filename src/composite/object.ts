@@ -1,24 +1,24 @@
 import { and } from "../logic";
 import { RefineContext, refineWithMetainformation } from "../refine";
 import {
-  getOption,
   InferMetaTypes,
   InferOutputType,
   InferOutputTypes,
   InferType,
   InferTypes,
+  Schema,
+  getOption,
   makeSchema,
   makeSimpleSchema,
-  Schema,
 } from "../schema";
 import { literals } from "../simple/literal";
 import { Intersect } from "../utility";
 import {
-  isFailure,
-  isSuccess,
   Validation,
   ValidationIssue,
   ValidationResult,
+  isFailure,
+  isSuccess,
 } from "../validation";
 
 type optionalKeys<T> = {
@@ -51,7 +51,7 @@ export function object<
   type V = ValidationResult<ResultI>;
 
   const preValidate = (v: unknown) => {
-    if (typeof v === "undefined" || v === null) {
+    if (v === undefined || v === null) {
       return new ValidationIssue("required", issues?.required, v) as V;
     }
     if (typeof v !== "object") {
@@ -212,7 +212,7 @@ export function fromInstance<T>(
 ): Schema<T, T, { type: "object"; instance: string }> {
   return makeSimpleSchema(
     (v) => {
-      if (typeof v === "undefined" || v === null) {
+      if (v === undefined || v === null) {
         return new ValidationIssue(
           "required",
           issues?.required,
