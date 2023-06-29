@@ -11,7 +11,7 @@ export function number(
 ): Schema<number, number, { type: "number" }> {
   return makeSimpleSchema(
     (v) => {
-      if (typeof v === "undefined" || v === null) {
+      if (v === undefined || v === null) {
         return new ValidationIssue("required", issues?.required, v);
       }
       if (typeof v !== "number") {

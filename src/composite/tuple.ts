@@ -31,7 +31,7 @@ export function tupleWithIssues<T extends readonly Schema<unknown>[]>(
   type V = ValidationResult<ResultI>;
 
   const preValidate = (v: unknown) => {
-    if (typeof v === "undefined" || v === null) {
+    if (v === undefined || v === null) {
       return new ValidationIssue("required", issues?.required, v) as V;
     }
     if (!Array.isArray(v)) {

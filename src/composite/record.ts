@@ -36,7 +36,7 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
   type V = ValidationResult<ResultI>;
 
   const preValidate = (v: unknown) => {
-    if (typeof v === "undefined" || v === null) {
+    if (v === undefined || v === null) {
       return new ValidationIssue("required", issues?.required, v) as V;
     }
     if (typeof v !== "object") {

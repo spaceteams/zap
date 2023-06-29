@@ -14,6 +14,25 @@ Some major features are
 - Transformation, Coercion and type narrowing
 - JSONSchema support
 
+## Why another schema validation library?
+
+I found it hard to describe complicated nested form validations in libraries like [zod](https://zod.dev/). For example describing a form that consists of multiple modules and have them validate independently can be a hassle. In Zap you can write
+
+```typescript
+const dates = refine(
+  object({ startDate: date(), endDate: date() }),
+  ({ startDate, endDate }, { validIf }) => ({
+    startDate: validIf(endDate > startDate, "start must be before end"),
+  })
+);
+const name = object({ name: string() });
+const form = merge(dates, name);
+```
+
+And all validations will be run in the way you would expect. I.e. the name field will be validated _and_ the date range. And not the date range only once all fields are filled in the first place.
+
+This is achievable in Zap because the schema types can be nested more flexibly. On the other hand we do not support a fluent API.
+
 ## Quick Start
 
 ### Install
@@ -663,6 +682,32 @@ Such a schema accepts only if all subschemas accept and returns the sum of all v
 
 > This method is (like the `&`) defined on arbitrary types. However, you most likely need it to combine interfaces. In those cases you are better of using [merge](#merge).
 
+One especially nice feature of this method is that it will generate validations of all branches and merge them into a single validation object (except if you use the `early-exit` option). This is useful when validating forms.
+
+```typescript
+const form = refine(
+  object({ name: string(), startDate: date(), endDate: date() }),
+  ({ startDate, endDate }, { validIf }) => ({
+    startDate: validIf(endDate > startDate, "start must be before end"),
+  })
+);
+```
+
+This form expects a name and a date pair. Now the date range is only validated _after_ the whole object is valid. It would be nice however, if the user got instant feedback while he is entering the date range. One way to get around this is by writing
+
+```typescript
+const dates = refine(
+  object({ startDate: date(), endDate: date() }),
+  ({ startDate, endDate }, { validIf }) => ({
+    startDate: validIf(endDate > startDate, "start must be before end"),
+  })
+);
+const name = object({ name: string() });
+const form = and(dates, name);
+```
+
+The form has been split into modules and both describe their validation rules locally. Zap will merge together all validations into one object and a missing name is displayed together with invalid date ranges. This also works well with [merge](#merge).
+
 ### Discrimated Union
 
 > [spec](src/logic/discrimiated-union.spec.ts) and [source](src/logic/discrimiated-union.ts)
@@ -811,12 +856,58 @@ this replaces the field `a` by `c` resulting in a `Schema<{ c: number; moreField
 
 > Optional: [spec](src/utility/optional.spec.ts) and [source](src/utility/optional.ts)
 
-To express
+To express optional types like `number | undefined` there are several helper functions available.
+
+Here is a list of the type mappings they allow
+
+- _optional()_: `T | undefined`
+- _nullable()_: `T | null`
+- _nullish()_: `T | undefined | null`
+- _required()_: `NonNullable<T>` (that is `T & {}`)
+
+here we also have two narrowing transfomrations
+
+- _defaultValue()_: `defaultValue(optional(number()), 42)` will result in `number` and during parse zap will default to `42`
+- _nullToUndefined()_: `nullToUndefined(nullish(number()))` will result in `number | undefined` and default any `null` value to `undefined`
 
 ### Partial & DeepPartial
 
 > Partial: [spec](src/utility/partial.spec.ts) and [source](src/utility/partial.ts)
 > DeepPartial: [spec](src/utility/deep-partial.spec.ts) and [source](src/utility/deep-partial.ts)
+
+Here we have utility functions to make full objects partial. This is inspired by typescript's `Partial<T>`. For example a schema
+
+```typescript
+const schema = object({
+  id: number(),
+  name: array(string()),
+  description: optional(string()),
+  nested: object({
+    user: string(),
+  }),
+});
+```
+
+will infer to this type
+
+```typescript
+type t = {
+  id?: number | undefined;
+  name?: string[] | undefined;
+  nested?:
+    | {
+        user: string;
+      }
+    | undefined;
+  description?: string | undefined;
+};
+```
+
+Note how we not only replace `number` by `undefined` but also make the field partial. So `{}` would be a valid object here.
+
+This function will also work for Sets, Arrays, Records, Maps and Tuples and it updates to metadata structure accordingly.
+
+Note that - like `Partial<T>` - the schema only got partialized one level deep. If you want a deeply partialized Schema you can use `deep-partial()`.
 
 ### PathValidation
 
@@ -846,6 +937,27 @@ const pathValidation = [
 you can transform between the two representations with `toPathValidation` and `fromPathValidation`.
 
 Special care is taken to also transform `Set` and `Map`. This is mediated using a list of `PathValidationHint`s.
+
+### Readonly
+
+> Readonly: [spec](src/utility/readonly.spec.ts) and [source](src/utility/readonly.ts)
+
+If you want to express a type like
+
+```typescript
+type T = {
+  a: number;
+  readonly b: string;
+};
+```
+
+You can do so using
+
+```typescript
+readonly(object({ a: number(), b: string() }), "b");
+```
+
+This will also work for tuples and arrays.
 
 ### ToJsonSchema
 

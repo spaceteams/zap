@@ -5,8 +5,8 @@ import { array, map, object, set } from "../composite";
 import { nonNegative, number, string } from "../simple";
 import { ValidationIssue, ValidationResult } from "../validation";
 import {
-  fromPathValidation,
   PathValidationResult,
+  fromPathValidation,
   toPathValidation,
 } from "./path-validation";
 

@@ -35,7 +35,7 @@ export function set<I, O, M>(
   }
 
   const preValidate = (v: unknown) => {
-    if (typeof v === "undefined" || v === null) {
+    if (v === undefined || v === null) {
       return new ValidationIssue("required", issues?.required, v);
     }
     if (!(v instanceof Set)) {
