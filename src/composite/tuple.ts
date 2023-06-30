@@ -56,16 +56,20 @@ export function tupleWithIssues<T extends readonly Schema<unknown>[]>(
     constructor(readonly earlyExit: boolean) {}
 
     public readonly validations: ValidationResult<unknown>[] = [];
+    public valid = true;
 
     onValidate(validation: ValidationResult<unknown>): boolean {
       this.validations.push(validation);
-      return this.earlyExit && isFailure(validation);
+      if (isSuccess(validation)) {
+        return false;
+      }
+      this.valid = false;
+      return this.earlyExit;
     }
     result(): V {
-      if (this.validations.every((v) => isSuccess(v))) {
-        return undefined;
+      if (!this.valid) {
+        return this.validations as V;
       }
-      return this.validations as V;
     }
   }
 

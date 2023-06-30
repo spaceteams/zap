@@ -63,10 +63,9 @@ export function map<K extends string | number | symbol, N, I, O, M>(
     }
 
     result(): ValidationResult<Map<K, I>> {
-      if (this.validations.size === 0) {
-        return;
+      if (this.validations.size > 0) {
+        return this.validations;
       }
-      return this.validations;
     }
   }
 

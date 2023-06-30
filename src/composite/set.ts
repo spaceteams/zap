@@ -27,10 +27,9 @@ export function set<I, O, M>(
       return this.earlyExit;
     }
     result(): ValidationResult<Set<I>> {
-      if (this.validations.size === 0) {
-        return;
+      if (this.validations.size > 0) {
+        return this.validations;
       }
-      return this.validations;
     }
   }
 

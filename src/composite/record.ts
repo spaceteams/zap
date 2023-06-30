@@ -52,6 +52,7 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
   class Aggregator {
     constructor(readonly earlyExit: boolean) {}
 
+    public valid = true;
     public readonly validations: { [key: string]: unknown } = {};
 
     onKeyValidation(
@@ -62,6 +63,7 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
       if (isSuccess(validation)) {
         return false;
       }
+      this.valid = false;
       this.validations[k] = new ValidationIssue(
         "invalid_key",
         issues?.invalidKey,
@@ -75,15 +77,15 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
       if (isSuccess(validation)) {
         return false;
       }
+      this.valid = false;
       this.validations[k] = validation;
       return this.earlyExit;
     }
 
     result(): V {
-      if (Object.keys(this.validations).length === 0) {
-        return;
+      if (!this.valid) {
+        return this.validations as V;
       }
-      return this.validations as V;
     }
   }
 
@@ -95,13 +97,14 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
       }
 
       const aggregator = new Aggregator(getOption(o, "earlyExit"));
-      for (const [k, value] of Object.entries(v as Record<string, unknown>)) {
+      const value = v as Record<string, unknown>;
+      for (const k in value) {
         const keyValidation = key.validate(k, o);
-        if (aggregator.onKeyValidation(k, value, keyValidation)) {
+        if (aggregator.onKeyValidation(k, value[k], keyValidation)) {
           break;
         }
 
-        const validation = schema.validate(value, o);
+        const validation = schema.validate(value[k], o);
         if (aggregator.onValidation(k, validation)) {
           break;
         }
@@ -115,13 +118,14 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
       }
 
       const aggregator = new Aggregator(getOption(o, "earlyExit"));
-      for (const [k, value] of Object.entries(v as Record<string, unknown>)) {
+      const value = v as Record<string, unknown>;
+      for (const k in value) {
         const keyValidation = await key.validateAsync(k, o);
-        if (aggregator.onKeyValidation(k, value, keyValidation)) {
+        if (aggregator.onKeyValidation(k, value[k], keyValidation)) {
           break;
         }
 
-        const validation = await schema.validateAsync(value, o);
+        const validation = await schema.validateAsync(value[k], o);
         if (aggregator.onValidation(k, validation)) {
           break;
         }
@@ -131,9 +135,9 @@ export function keyedRecord<K extends string | number | symbol, N, I, O, M>(
     () => ({ type: "record", schema: { key, value: schema } }),
     (v, o) => {
       const result: Partial<ResultO> = {};
-      for (const [k, value] of Object.entries(v)) {
+      for (const k in v) {
         const parsedKey = key.parse(k).parsedValue;
-        result[parsedKey as K] = schema.parse(value, o).parsedValue;
+        result[parsedKey as K] = schema.parse(v[k], o).parsedValue;
       }
       return result as ResultO;
     }
