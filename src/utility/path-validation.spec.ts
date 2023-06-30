@@ -24,14 +24,14 @@ it("handles primitives", () => {
 
 it("handles objects", () => {
   const validation = object({ a: schema }).validate({ a: -1 });
-  check(validation, { validations: [{ issue, path: ".a" }], hints: [] });
+  check(validation, { validations: [{ issue, path: "a" }], hints: [] });
 });
 
 it("handles nested objects", () => {
   const validation = object({
     a: object({ a: schema }),
   }).validate({ a: { a: -1 } });
-  check(validation, { validations: [{ issue, path: ".a.a" }], hints: [] });
+  check(validation, { validations: [{ issue, path: "a.a" }], hints: [] });
 });
 
 it("handles arrays", () => {
@@ -68,17 +68,17 @@ it("handles larger validations objects", () => {
   };
   check(validation as unknown as ValidationResult<unknown>, {
     validations: [
-      { issue, path: ".a.b" },
-      { issue, path: ".c[0]" },
-      { issue, path: ".c[1].d" },
-      { issue, path: ".m['key']" },
-      { issue, path: ".m['object'].c" },
-      { issue, path: ".d[0]" },
-      { issue, path: ".d[1].d" },
+      { issue, path: "a.b" },
+      { issue, path: "c[0]" },
+      { issue, path: "c[1].d" },
+      { issue, path: "m['key']" },
+      { issue, path: "m['object'].c" },
+      { issue, path: "d[0]" },
+      { issue, path: "d[1].d" },
     ],
     hints: [
-      { hint: "Map", path: ".m" },
-      { hint: "Set", path: ".d" },
+      { hint: "Map", path: "m" },
+      { hint: "Set", path: "d" },
     ],
   });
 });

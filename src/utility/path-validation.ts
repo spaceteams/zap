@@ -31,6 +31,22 @@ function flattenPathValidationResults<E>(
 }
 
 export function toPathValidation<T>(
+  validation: ValidationResult<T, ValidationIssue>
+): PathValidationResult {
+  const { validations, hints } = toPathValidationInner(validation);
+  return {
+    validations: validations.map(({ path, issue }) => ({
+      path: path[0] === "." ? path.slice(1) : path,
+      issue,
+    })),
+    hints: hints.map(({ path, hint }) => ({
+      path: path[0] === "." ? path.slice(1) : path,
+      hint,
+    })),
+  };
+}
+
+function toPathValidationInner<T>(
   validation: ValidationResult<T, ValidationIssue>,
   path = ""
 ): PathValidationResult {
@@ -50,7 +66,7 @@ export function toPathValidation<T>(
   if (Array.isArray(validation)) {
     return flattenPathValidationResults(
       validation.flatMap((inner, index) =>
-        toPathValidation(inner, `${path}[${index}]`)
+        toPathValidationInner(inner, `${path}[${index}]`)
       )
     );
   }
@@ -59,7 +75,7 @@ export function toPathValidation<T>(
   if (validation instanceof Set) {
     const result = flattenPathValidationResults(
       [...validation.values()].flatMap((inner, index) =>
-        toPathValidation(inner, `${path}[${index}]`)
+        toPathValidationInner(inner, `${path}[${index}]`)
       )
     );
     return {
@@ -72,7 +88,7 @@ export function toPathValidation<T>(
   if (validation instanceof Map) {
     const result = flattenPathValidationResults(
       [...validation.keys()].flatMap((key) =>
-        toPathValidation(validation.get(key), `${path}['${String(key)}']`)
+        toPathValidationInner(validation.get(key), `${path}['${String(key)}']`)
       )
     );
     return {
@@ -85,7 +101,7 @@ export function toPathValidation<T>(
   if (typeof validation === "object") {
     return flattenPathValidationResults(
       Object.keys(validation).flatMap((key) =>
-        toPathValidation(validation[key], `${path}.${key}`)
+        toPathValidationInner(validation[key], `${path}.${key}`)
       )
     );
   }
@@ -101,10 +117,10 @@ export function fromPathValidation<T, E = ValidationIssue>(
 ): ValidationResult<T, E> {
   const result = {};
   for (const { path, issue } of validations.validations) {
-    set(result, `root${path}`, issue);
+    set(result, `root${path === "" ? "" : "."}${path}`, issue);
   }
   for (const { path, hint } of validations.hints) {
-    const p = `root${path}`;
+    const p = `root${path === "" ? "" : "."}${path}`;
     switch (hint) {
       case "Map": {
         set(result, p, new Map(Object.entries(get(result, p) as object)));
