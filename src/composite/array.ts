@@ -27,16 +27,20 @@ export function array<I, O, M>(
     constructor(readonly earlyExit: boolean) {}
 
     public readonly validations: ValidationResult<I>[] = [];
+    public valid = true;
 
     onValidate(validation: ValidationResult<I>): boolean {
       this.validations.push(validation);
-      return this.earlyExit && isFailure(validation);
+      if (isSuccess(validation)) {
+        return false;
+      }
+      this.valid = false;
+      return this.earlyExit;
     }
     result(): ValidationResult<I[]> {
-      if (this.validations.every((v) => isSuccess(v))) {
-        return undefined;
+      if (!this.valid) {
+        return this.validations;
       }
-      return this.validations;
     }
   }
 

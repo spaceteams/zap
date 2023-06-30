@@ -67,20 +67,21 @@ export function object<
   class Aggregator {
     constructor(readonly earlyExit: boolean) {}
 
+    public valid = true;
     public readonly validations: { [key: string]: unknown } = {};
 
     onValidate(key: string, validation: ValidationResult<unknown>): boolean {
       if (isSuccess(validation)) {
         return false;
       }
+      this.valid = false;
       this.validations[key] = validation;
-      return this.earlyExit && isFailure(validation);
+      return this.earlyExit;
     }
     result(): V {
-      if (Object.keys(this.validations).length === 0) {
-        return undefined;
+      if (!this.valid) {
+        return this.validations as V;
       }
-      return this.validations as V;
     }
   }
 
@@ -93,8 +94,11 @@ export function object<
 
       const aggregator = new Aggregator(getOption(o, "earlyExit"));
       const record = v as { [k: string]: unknown };
-      for (const [key, inner] of Object.entries(schema)) {
-        const validation = (inner as Schema<unknown>).validate(record[key], o);
+      for (const key in schema) {
+        const validation = (schema[key] as Schema<unknown>).validate(
+          record[key],
+          o
+        );
         if (aggregator.onValidate(key, validation)) {
           break;
         }
@@ -109,8 +113,8 @@ export function object<
 
       const aggregator = new Aggregator(getOption(o, "earlyExit"));
       const record = v as { [k: string]: unknown };
-      for (const [key, inner] of Object.entries(schema)) {
-        const validation = await (inner as Schema<unknown>).validateAsync(
+      for (const key in schema) {
+        const validation = await (schema[key] as Schema<unknown>).validateAsync(
           record[key],
           o
         );
@@ -123,16 +127,16 @@ export function object<
     () => ({ type: "object", schema, additionalProperties: true }),
     (v, o) => {
       const result: Partial<ResultO> = {};
-      for (const [key, inner] of Object.entries(schema)) {
-        result[key] = (inner as Schema<unknown>).parse(
+      for (const key in schema) {
+        result[key as string] = (schema[key] as Schema<unknown>).parse(
           v[key as keyof ResultI],
           o
         ).parsedValue;
       }
       if (!getOption(o, "strip")) {
-        for (const [key, inner] of Object.entries(v)) {
+        for (const key in v) {
           if (!(key in result)) {
-            result[key] = inner;
+            result[key as string] = v[key];
           }
         }
       }
@@ -151,7 +155,7 @@ export function strict<
   return refineWithMetainformation(
     schema,
     (v) => {
-      for (const key of Object.keys(v)) {
+      for (const key in v) {
         if (!Object.hasOwn(schema.meta().schema, key)) {
           return new ValidationIssue(
             "additionalProperty",
@@ -179,15 +183,19 @@ export function catchAll<
     schema,
     (v, { options }: RefineContext<K>) => {
       const validation: { [key: string]: unknown } = {};
-      for (const key of Object.keys(v)) {
+      let valid = true;
+      for (const key in v) {
         if (!Object.hasOwn(schema.meta().schema, key)) {
-          validation[key] = catchAll.validate(v[key], options);
+          const result = catchAll.validate(v[key], options);
+          if (isFailure(result)) {
+            valid = false;
+            validation[key] = result;
+          }
         }
       }
-      if (Object.keys(validation).length === 0) {
-        return;
+      if (!valid) {
+        return validation as Validation<K>;
       }
-      return validation as Validation<K>;
     },
     { additionalProperties: catchAll }
   );
@@ -306,20 +314,21 @@ export function omit<
   }
 > {
   const filteredSchemas = {};
-  for (const [key, value] of Object.entries(schema.meta().schema)) {
-    if (!keys.includes(key as K)) {
-      filteredSchemas[key] = value;
+  const s = schema.meta().schema;
+  for (const key in s) {
+    if (!keys.includes(key as unknown as K)) {
+      filteredSchemas[key as string] = s[key];
     }
   }
 
   const filterValidation = (validation: Validation<I>) => {
     const filteredValidation: { [key: string]: unknown } = {};
-    for (const [key, value] of Object.entries(validation)) {
-      if (!keys.includes(key as K)) {
-        filteredValidation[key] = value;
+    for (const key in validation) {
+      if (!keys.includes(key as unknown as K)) {
+        filteredValidation[key] = validation[key];
       }
     }
-    if (Object.keys(filteredValidation as object).length === 0) {
+    if (!filteredValidation.length) {
       return;
     }
     return validation;
@@ -361,17 +370,18 @@ export function pick<
   { type: "object"; schema: { [key in K]: M["schema"][key] } }
 > {
   const filteredSchemas = {};
-  for (const [key, value] of Object.entries(schema.meta().schema)) {
-    if (keys.includes(key as K)) {
-      filteredSchemas[key] = value;
+  const s = schema.meta().schema;
+  for (const key in s) {
+    if (keys.includes(key as unknown as K)) {
+      filteredSchemas[key as string] = s[key];
     }
   }
 
   const filterValidation = (validation: Validation<I>) => {
     const filteredValidation: { [key: string]: unknown } = {};
-    for (const [key, value] of Object.entries(validation)) {
-      if (keys.includes(key as K)) {
-        filteredValidation[key] = value;
+    for (const key in validation) {
+      if (keys.includes(key as unknown as K)) {
+        filteredValidation[key] = validation[key];
       }
     }
     if (Object.keys(filteredValidation as object).length === 0) {
