@@ -8,6 +8,7 @@ import {
   tuple,
 } from "../composite";
 import { and, or } from "../logic";
+import { withMetaInformation } from "../schema";
 import {
   boolean,
   exclusiveMaximum,
@@ -28,11 +29,13 @@ import { toJsonSchema } from "./to-json-schema";
 
 it("renders header", () => {
   expect(
-    toJsonSchema(string(), {
-      title: "title",
-      $id: "$id",
-      description: "description",
-    })
+    toJsonSchema(
+      withMetaInformation(string(), {
+        title: "title",
+        $id: "$id",
+        description: "description",
+      })
+    )
   ).toEqual({
     $id: "$id",
     $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -43,20 +46,20 @@ it("renders header", () => {
 });
 
 it("translates types", () => {
-  expect(toJsonSchema(nullSchema())).toEqual({ type: "null" });
-  expect(toJsonSchema(number())).toEqual({ type: "number" });
-  expect(toJsonSchema(boolean())).toEqual({ type: "boolean" });
-  expect(toJsonSchema(number())).toEqual({ type: "number" });
-  expect(toJsonSchema(string())).toEqual({ type: "string" });
+  expect(toJsonSchema(nullSchema())).toMatchObject({ type: "null" });
+  expect(toJsonSchema(number())).toMatchObject({ type: "number" });
+  expect(toJsonSchema(boolean())).toMatchObject({ type: "boolean" });
+  expect(toJsonSchema(number())).toMatchObject({ type: "number" });
+  expect(toJsonSchema(string())).toMatchObject({ type: "string" });
 
-  expect(toJsonSchema(integer(number()))).toEqual({ type: "integer" });
-  expect(toJsonSchema(nan())).toEqual({ type: "number" });
+  expect(toJsonSchema(integer(number()))).toMatchObject({ type: "integer" });
+  expect(toJsonSchema(nan())).toMatchObject({ type: "number" });
 
   expect(toJsonSchema(object({}))).toMatchObject({ type: "object" });
   expect(toJsonSchema(array(string()))).toMatchObject({ type: "array" });
   expect(toJsonSchema(tuple(string()))).toMatchObject({ type: "array" });
 
-  expect(toJsonSchema(literal("a"))).toEqual({ const: "a" });
+  expect(toJsonSchema(literal("a"))).toMatchObject({ const: "a" });
   expect(toJsonSchema(literals("a", 2))).toMatchObject({ enum: ["a", 2] });
 });
 
@@ -69,7 +72,7 @@ describe("number", () => {
       ),
       5
     );
-    expect(toJsonSchema(veryRefinedNumber)).toEqual({
+    expect(toJsonSchema(veryRefinedNumber)).toMatchObject({
       type: "number",
       minimum: 1,
       exclusiveMinimum: 2,

@@ -1,6 +1,11 @@
 /* eslint-disable unicorn/no-useless-undefined */
 
-import { mergeValidations, ValidationIssue } from "./validation";
+import {
+  mergeValidations,
+  translate,
+  ValidationIssue,
+  ValidationResult,
+} from "./validation";
 
 type S = {
   array: string[];
@@ -62,5 +67,35 @@ describe("mergeValidations", () => {
     expect(
       mergeValidations<S, T>({ array: [error] }, { array: [error] })
     ).toEqual({ array: [error, error] });
+  });
+});
+
+describe("translate", () => {
+  it("translates success", () => {
+    expect(translate(undefined)).toBeUndefined();
+  });
+  it("throws on corrupted input", () => {
+    // a previous implementation would run into a stack overflow
+    expect(() =>
+      translate("success" as unknown as ValidationResult<unknown>)
+    ).toThrow();
+  });
+  it("returns message by default", () => {
+    expect(translate(new ValidationIssue("generic", "message", 1))).toEqual(
+      "message"
+    );
+  });
+  it("creates a generic error message", () => {
+    expect(
+      translate(new ValidationIssue("generic", undefined, 1, "arg"))
+    ).toEqual("generic(arg)");
+  });
+  it("allows for custom messages", () => {
+    expect(
+      translate(
+        new ValidationIssue("generic", "failure", 1),
+        (e) => `${e.message} with value ${e.value as string}`
+      )
+    ).toEqual("failure with value 1");
   });
 });

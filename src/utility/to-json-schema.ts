@@ -13,32 +13,39 @@ const defaultHeader: Partial<JsonSchemaHeader> = {
 
 export function toJsonSchema<M extends { type: string }>(
   schema: Schema<unknown, unknown, M>,
-  header?: Partial<JsonSchemaHeader>
+  root = true
 ): Record<string, unknown> {
-  if (header) {
+  const meta = schema.meta();
+  if (root) {
+    const header = {};
+    const keys = ["description", "title", "$id", "$schema"];
+    for (const key of keys) {
+      if (key in meta) {
+        header[key] = meta[key] as string;
+      }
+    }
     return {
       ...defaultHeader,
       ...header,
-      ...toJsonSchema(schema),
+      ...toJsonSchema(schema, false),
     };
   }
 
-  const meta = schema.meta();
   switch (meta.type) {
     case "null":
     case "boolean":
     case "string": {
-      return meta;
+      return cleanSimpleMeta<M>(meta);
     }
     case "number": {
       const { type, isInteger, ...rest } = meta as unknown as {
         type: "number";
         isInteger?: boolean;
       };
-      return {
+      return cleanSimpleMeta({
         ...rest,
         type: isInteger ? "integer" : type,
-      };
+      });
     }
     case "record": {
       const recordMeta = meta as unknown as {
@@ -47,8 +54,8 @@ export function toJsonSchema<M extends { type: string }>(
       };
       return {
         type: "object",
-        propertyNames: toJsonSchema(recordMeta.schema.key),
-        additionalProperties: toJsonSchema(recordMeta.schema.value),
+        propertyNames: toJsonSchema(recordMeta.schema.key, false),
+        additionalProperties: toJsonSchema(recordMeta.schema.value, false),
       };
     }
     case "object": {
@@ -60,7 +67,7 @@ export function toJsonSchema<M extends { type: string }>(
       const required: string[] = [];
       const properties = {};
       for (const [key, inner] of Object.entries(objectMeta.schema)) {
-        properties[key] = toJsonSchema(inner);
+        properties[key] = toJsonSchema(inner, false);
         const innerMeta = inner.meta();
         if (innerMeta["required"] === undefined || innerMeta["required"]) {
           required.push(key);
@@ -73,34 +80,34 @@ export function toJsonSchema<M extends { type: string }>(
         additionalProperties:
           typeof objectMeta.additionalProperties === "boolean"
             ? objectMeta.additionalProperties
-            : toJsonSchema(objectMeta.additionalProperties),
+            : toJsonSchema(objectMeta.additionalProperties, false),
       };
     }
     case "array": {
       const arrayMeta = meta as unknown as { schema: Schema<unknown> };
       return {
         type: "array",
-        items: toJsonSchema(arrayMeta.schema),
+        items: toJsonSchema(arrayMeta.schema, false),
       };
     }
     case "tuple": {
       const tupleMeta = meta as unknown as { schemas: Schema<unknown>[] };
       return {
         type: "array",
-        prefixItems: tupleMeta.schemas.map((s) => toJsonSchema(s)),
+        prefixItems: tupleMeta.schemas.map((s) => toJsonSchema(s, false)),
         items: false,
       };
     }
     case "or": {
       const tupleMeta = meta as unknown as { schemas: Schema<unknown>[] };
       return {
-        anyOf: tupleMeta.schemas.map((s) => toJsonSchema(s)),
+        anyOf: tupleMeta.schemas.map((s) => toJsonSchema(s, false)),
       };
     }
     case "and": {
       const tupleMeta = meta as unknown as { schemas: Schema<unknown>[] };
       return {
-        allOf: tupleMeta.schemas.map((s) => toJsonSchema(s)),
+        allOf: tupleMeta.schemas.map((s) => toJsonSchema(s, false)),
       };
     }
     case "literal": {
@@ -120,4 +127,12 @@ export function toJsonSchema<M extends { type: string }>(
     }
   }
   return {};
+}
+
+function cleanSimpleMeta<M extends { type: string }>(meta: M) {
+  const m = { ...meta };
+  if ("required" in m) {
+    delete m["required"];
+  }
+  return m;
 }

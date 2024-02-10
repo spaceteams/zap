@@ -283,11 +283,14 @@ export function translate<T>(
     }
     return result as Validation<T, string>;
   }
-  const result = {};
-  for (const [key, value] of Object.entries(validation)) {
-    result[key] = translate(
-      value as ValidationResult<unknown, ValidationIssue>
-    );
+  if (typeof validation === "object") {
+    const result = {};
+    for (const [key, value] of Object.entries(validation)) {
+      result[key] = translate(
+        value as ValidationResult<unknown, ValidationIssue>
+      );
+    }
+    return result as Validation<T, string>;
   }
-  return result as Validation<T, string>;
+  throw new Error("validation cannot be translated");
 }
