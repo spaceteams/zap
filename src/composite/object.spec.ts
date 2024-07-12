@@ -9,6 +9,7 @@ import { translate } from "../validation";
 import { array } from "./array";
 import {
   catchAll,
+  Creatable,
   fromInstance,
   isInstance,
   keys,
@@ -29,14 +30,19 @@ const schema = object({
 });
 
 class MyObject implements InferType<typeof schema> {
-  constructor(
+  private constructor(
     public readonly id: number,
     public readonly name: string[],
     public readonly nested: {
       user: string;
     }
   ) {}
+
+  static build(id: number, name: string[]) {
+    return new MyObject(id, name, {user: id.toFixed(0)})
+  }
 }
+
 
 it("accepts", () => {
   expect(
@@ -198,15 +204,15 @@ describe("catchAll", () => {
 });
 
 describe("isInstance", () => {
-  const strictSchema = isInstance(schema, MyObject);
-  const instanceSchema = fromInstance(MyObject);
+  const strictSchema = isInstance(schema, MyObject as Creatable<MyObject, "build">);
+  const instanceSchema = fromInstance(MyObject as Creatable<MyObject, "build">);
 
   it("accepts", () => {
     expect(
-      strictSchema.accepts(new MyObject(12, [], { user: "12" }))
+      strictSchema.accepts(MyObject.build(12, []))
     ).toBeTruthy();
     expect(
-      instanceSchema.accepts(new MyObject(12, [], { user: "12" }))
+      instanceSchema.accepts(MyObject.build(12, []))
     ).toBeTruthy();
 
     expect(

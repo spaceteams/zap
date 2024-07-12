@@ -209,10 +209,15 @@ export function empty(): Schema<
   return object({});
 }
 
-export function fromInstance<T>(
-  constructor: {
-    new (...args: unknown[]): T;
-  },
+export type Constructable<T> = {
+  new (...args: unknown[]): T;
+}
+export type Creatable<T, K extends string> = Constructable<T> | {
+  [key in K]:  (...args: unknown[]) => T;
+}
+
+export function fromInstance<T, K extends string>(
+  constructor: Creatable<T, K>,
   issues?: Partial<{
     required: string;
     wrongType: string;
@@ -227,7 +232,7 @@ export function fromInstance<T>(
           v
         ) as Validation<T>;
       }
-      const isValid = v instanceof constructor;
+      const isValid = v instanceof (constructor as Constructable<T>);
       if (!isValid) {
         return new ValidationIssue(
           "wrong_type",
@@ -237,19 +242,19 @@ export function fromInstance<T>(
         ) as Validation<T>;
       }
     },
-    () => ({ type: "object", instance: constructor.name })
+    () => ({ type: "object", instance: (constructor as Constructable<T>).name })
   );
 }
 
-export function isInstance<I, O, M>(
+export function isInstance<K extends string, I, O, M>(
   schema: Schema<I, O, M>,
-  constructor: { new (...args: unknown[]): I },
+  constructor: Creatable<I, K>,
   issue?: string
 ) {
   return refineWithMetainformation(
     schema,
     (v) => {
-      const isValid = v instanceof constructor;
+      const isValid = v instanceof (constructor as  Constructable<I>);
       if (!isValid) {
         return new ValidationIssue(
           "wrong_type",
@@ -259,7 +264,7 @@ export function isInstance<I, O, M>(
         ) as Validation<I>;
       }
     },
-    { instance: constructor.name }
+    { instance: (constructor as  Constructable<I>).name }
   );
 }
 
